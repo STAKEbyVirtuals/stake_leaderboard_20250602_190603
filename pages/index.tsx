@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import { treemap, hierarchy } from "d3-hierarchy";
 import axios from "axios";
 
-// Sheet.best API 설정
-const SHEET_BEST_URL = 'https://api.sheetbest.com/sheets/de22dc8c-2579-461b-b255-4d9833d13dd3'; // 실제 URL로 변경
+// 8번째 줄 근처
+const SHEET_BEST_URL = 'https://stake_leaderboard_20250602_190603.github.io/stake_leaderboard_20250602_190603/leaderboard.json';
 
 // 등급별 컬러 매핑
 const tierColors: Record<string, string> = {
