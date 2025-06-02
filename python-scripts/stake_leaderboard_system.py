@@ -408,8 +408,10 @@ def process_leaderboard_data():
         logger.error(traceback.format_exc())
         return []
 
+# stake_leaderboard_system.py 파일의 upload_to_sheet_best 함수를 이렇게 수정:
+
 def upload_to_sheet_best(data):
-    """Sheet.best API로 데이터 업로드"""
+    """Sheet.best API로 데이터 업로드 (개선된 버전)"""
     logger.info("📤 Sheet.best API 업로드 시작...")
     
     try:
@@ -417,31 +419,110 @@ def upload_to_sheet_best(data):
         if not data:
             raise Exception("업로드할 데이터가 없습니다")
         
-        # API 호출
+        # Sheet.best 호환 형식으로 변환
+        clean_data = []
+        for item in data[:100]:  # 상위 100개만 (API 제한 고려)
+            clean_item = {
+                'address': str(item.get('address', '')),
+                'rank': int(item.get('rank', 0)),
+                'grade': str(item.get('grade', '')),
+                'grade_emoji': str(item.get('grade_emoji', '')),
+                'percentile': float(item.get('percentile', 0)),
+                'total_staked': float(item.get('total_staked', 0)),
+                'time_score': float(item.get('time_score', 0)),
+                'holding_days': float(item.get('holding_days', 0)),
+                'stake_count': int(item.get('stake_count', 0)),
+                'unstake_count': int(item.get('unstake_count', 0)),
+                'is_active': bool(item.get('is_active', True)),
+                'current_phase': int(item.get('current_phase', 1)),
+                'airdrop_share_phase': float(item.get('airdrop_share_phase', 0)),
+                'airdrop_share_total': float(item.get('airdrop_share_total', 0))
+            }
+            
+            # None 값 제거 및 무한대/NaN 처리
+            for key, value in clean_item.items():
+                if value is None:
+                    clean_item[key] = 0 if key in ['percentile', 'total_staked', 'time_score', 'holding_days', 'airdrop_share_phase', 'airdrop_share_total'] else ''
+                elif isinstance(value, float) and (not math.isfinite(value)):
+                    clean_item[key] = 0
+            
+            clean_data.append(clean_item)
+        
+        logger.info(f"📊 정제된 데이터: {len(clean_data)}개 항목")
+        
+        # 헤더 설정
         headers = {
             'Content-Type': 'application/json',
-            'User-Agent': 'STAKE-Leaderboard/1.0'
+            'User-Agent': 'STAKE-Leaderboard/1.0',
+            'Accept': 'application/json'
         }
         
-        response = requests.put(  # PUT으로 전체 교체
-            SHEET_BEST_URL,
-            json=data,
-            headers=headers,
-            timeout=60
-        )
-        
-        if response.status_code == 200:
-            logger.info(f"✅ Sheet.best 업로드 성공: {len(data)}개 항목")
-            return True
-        else:
-            logger.error(f"❌ Sheet.best 업로드 실패: {response.status_code}")
-            logger.error(f"응답: {response.text}")
-            return False
+        # 작은 배치로 나누어 업로드 시도
+        batch_size = 50
+        for i in range(0, len(clean_data), batch_size):
+            batch = clean_data[i:i+batch_size]
             
+            logger.info(f"📤 배치 {i//batch_size + 1} 업로드 중... ({len(batch)}개 항목)")
+            
+            # API 호출
+            response = requests.put(
+                SHEET_BEST_URL,
+                json=batch,
+                headers=headers,
+                timeout=60
+            )
+            
+            if response.status_code == 200:
+                logger.info(f"✅ 배치 {i//batch_size + 1} 업로드 성공")
+                break  # 첫 번째 배치만 성공하면 중단 (전체 교체)
+            else:
+                logger.error(f"❌ 배치 {i//batch_size + 1} 업로드 실패: {response.status_code}")
+                logger.error(f"응답: {response.text[:200]}")
+                
+                if i == 0:  # 첫 번째 배치 실패시 다른 방법 시도
+                    # 더 간단한 형식으로 재시도
+                    simple_data = []
+                    for item in batch:
+                        simple_data.append({
+                            'address': item['address'],
+                            'rank': item['rank'],
+                            'grade': item['grade'],
+                            'total_staked': item['total_staked'],
+                            'time_score': item['time_score']
+                        })
+                    
+                    logger.info("🔄 간단한 형식으로 재시도...")
+                    response = requests.put(
+                        SHEET_BEST_URL,
+                        json=simple_data,
+                        headers=headers,
+                        timeout=60
+                    )
+                    
+                    if response.status_code == 200:
+                        logger.info("✅ 간단한 형식으로 업로드 성공")
+                        return True
+                
+                continue
+        
+        # 전체 실패시 로그 저장
+        logger.error("❌ 모든 배치 업로드 실패")
+        
+        # 디버그용 샘플 데이터 저장
+        with open('debug_sample.json', 'w', encoding='utf-8') as f:
+            import json
+            json.dump(clean_data[:5], f, ensure_ascii=False, indent=2)
+        logger.info("🔍 디버그용 샘플 저장: debug_sample.json")
+        
+        return False
+        
     except Exception as e:
         logger.error(f"❌ Sheet.best 업로드 오류: {e}")
         logger.error(traceback.format_exc())
         return False
+
+# 추가: math 모듈 import 필요
+import math
 
 def save_backup_data(data):
     """백업 데이터 저장"""
