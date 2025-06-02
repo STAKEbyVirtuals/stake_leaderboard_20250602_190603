@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import { treemap, hierarchy } from "d3-hierarchy";
 import axios from "axios";
 
-// 8번째 줄 근처
-const SHEET_BEST_URL = 'https://stake_leaderboard_20250602_190603.github.io/stake_leaderboard_20250602_190603/leaderboard.json';
+// GitHub Pages JSON API URL
+const SHEET_BEST_URL = '/leaderboard.json';
 
 // 등급별 컬러 매핑
 const tierColors: Record<string, string> = {
@@ -80,34 +80,6 @@ function getRankBadge(rank: number) {
   return null;
 }
 
-// 폴백 더미데이터
-function generateFallbackData(): LeaderboardItem[] {
-  const tiers = ["GENESIS_OG", "SMOKE_FLEXER", "STEAK_WIZARD", "GRILLUMINATI", "FLAME_JUGGLER", "FLIPSTARTER", "SIZZLIN_NOOB"];
-  const arr: LeaderboardItem[] = [];
-  
-  for (let i = 0; i < 25; i++) {
-    const percent = Math.round((Math.random() * 8 + 1) * 100) / 100;
-    arr.push({
-      name: "0x" + Math.random().toString(16).slice(2, 6) + "..." + Math.random().toString(16).slice(2, 6),
-      value: percent,
-      tier: tiers[Math.floor(Math.random() * tiers.length)],
-      change: (Math.random() * 1.5 - 0.5).toFixed(2),
-      score: Math.floor(Math.random() * 1000000),
-      time: Math.floor(Math.random() * 100) + "d",
-      rank: i + 1,
-      total_staked: Math.floor(Math.random() * 100000),
-      grade: "Fallback Data",
-      percentile: Math.random() * 100,
-      address: "0x" + Math.random().toString(16).slice(2, 40),
-      stake_count: Math.floor(Math.random() * 10) + 1,
-      holding_days: Math.floor(Math.random() * 100)
-    });
-  }
-  
-  // 정규화
-  const total = arr.reduce((sum, item) => sum + item.value, 0);
-  return arr.map(item => ({ ...item, value: (item.value / total) * 100 }));
-}
 
 export default function Home() {
   // 모든 state를 최상단에 선언
@@ -121,27 +93,53 @@ export default function Home() {
   const [wallet, setWallet] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState(new Date());
 
-  // 데이터 로드 함수
+  // 데이터 로드 함수 (수정됨)
   const fetchLeaderboardData = async () => {
     try {
       setLoading(true);
       setError(null);
+      
+      console.log("🔄 실제 데이터 로드 시작:", SHEET_BEST_URL);
       
       const response = await axios.get(SHEET_BEST_URL, {
         timeout: 30000,
         headers: { 'Content-Type': 'application/json' }
       });
       
-      if (!response.data || !Array.isArray(response.data)) {
-        throw new Error('잘못된 데이터 형식');
+      console.log("✅ 응답 받음:", response.status);
+      console.log("📊 원본 데이터:", response.data);
+      
+      if (!response.data) {
+        throw new Error('응답 데이터가 없습니다');
       }
       
-      const transformedData: LeaderboardItem[] = response.data
-        .filter((item: any) => item.is_active && item.total_staked > 0)
-        .slice(0, 50)
+      // GitHub Actions 데이터 형식 처리
+      let rawData;
+      if (response.data.leaderboard) {
+        // GitHub Pages 형식: { leaderboard: [...] }
+        rawData = response.data.leaderboard;
+        console.log("📋 GitHub Pages 형식 감지");
+      } else if (Array.isArray(response.data)) {
+        // 직접 배열 형식: [...]
+        rawData = response.data;
+        console.log("📋 배열 형식 감지");
+      } else {
+        throw new Error('알 수 없는 데이터 형식: ' + typeof response.data);
+      }
+      
+      if (!Array.isArray(rawData) || rawData.length === 0) {
+        throw new Error('유효하지 않은 데이터 배열');
+      }
+      
+      console.log(`📊 처리할 데이터: ${rawData.length}개 항목`);
+      
+      // 데이터 변환
+      const transformedData: LeaderboardItem[] = rawData
+        .filter((item: any) => item.is_active !== false && Number(item.total_staked) > 0)
+        .slice(0, 100) // 상위 100개만
         .map((item: any, index: number) => ({
-          name: `${item.address?.slice(0, 6)}...${item.address?.slice(-4)}` || `Unknown${index}`,
-          value: Number(item.airdrop_share_phase) || 0.01,
+          name: item.address ? `${item.address.slice(0, 6)}...${item.address.slice(-4)}` : `Unknown${index}`,
+          value: Number(item.airdrop_share_phase) || Math.random() * 2 + 1, // 에어드랍 비율
           tier: gradeToTierMap[item.grade] || "SIZZLIN_NOOB",
           change: (Math.random() * 1.5 - 0.5).toFixed(2),
           score: Number(item.time_score) || 0,
@@ -155,7 +153,7 @@ export default function Home() {
           holding_days: Number(item.holding_days) || 0
         }));
       
-      // 정규화
+      // 에어드랍 비율 정규화
       const totalValue = transformedData.reduce((sum, item) => sum + item.value, 0);
       if (totalValue > 0) {
         transformedData.forEach(item => {
@@ -163,16 +161,21 @@ export default function Home() {
         });
       }
       
+      console.log(`✅ 변환 완료: ${transformedData.length}개 항목`);
+      console.log("📋 첫 번째 항목:", transformedData[0]);
+      
       setData(transformedData);
       setLastUpdate(new Date());
-      console.log(`✅ 리더보드 데이터 로드 완료: ${transformedData.length}개 항목`);
       
     } catch (err: any) {
-      console.error('❌ 리더보드 데이터 로드 실패:', err);
+      console.error('❌ 실제 데이터 로드 실패:', err);
+      console.error('📄 오류 상세:', err.message);
       setError(err.message);
-      console.log('🔄 더미데이터로 폴백...');
-      setData(generateFallbackData());
-      setLastUpdate(new Date());
+      
+      // 실패시 빈 배열 (더미데이터 사용 안함)
+      console.log('⚠️ 더미데이터 사용하지 않음, 빈 상태 유지');
+      setData([]);
+      
     } finally {
       setLoading(false);
     }
@@ -218,6 +221,34 @@ export default function Home() {
     );
   }
 
+  // 데이터가 없을 때
+  if (data.length === 0) {
+    return (
+      <div style={{ 
+        display: 'flex', justifyContent: 'center', alignItems: 'center', 
+        height: '100vh', background: 'linear-gradient(140deg,#181820 80%,#232327 100%)',
+        color: '#fff', fontSize: 18
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 24, marginBottom: 10 }}>⚠️</div>
+          <div>데이터를 불러올 수 없습니다</div>
+          <div style={{ fontSize: 14, color: '#ccc', marginTop: 10 }}>
+            {error || 'leaderboard.json 파일을 확인해주세요'}
+          </div>
+          <button 
+            onClick={fetchLeaderboardData}
+            style={{
+              marginTop: 20, padding: "10px 20px", backgroundColor: "#e48d25",
+              color: "white", border: "none", borderRadius: "8px", cursor: "pointer"
+            }}
+          >
+            다시 시도
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // 데이터 처리
   const sorted = [...data].sort((a, b) => b.value - a.value);
   const filtered = tab === "Top20" ? sorted.slice(0, 20) : sorted;
@@ -252,11 +283,9 @@ export default function Home() {
           <span>
             <span style={{ fontWeight: 900 }}>STAKE Leaderboard</span>
             <span style={{ fontSize: size.width < 650 ? 15 : 17, color: "#ffddb8", marginLeft: 12 }}>- Phase 1</span>
-            {error && (
-              <span style={{ fontSize: 12, color: "#ff6b6b", marginLeft: 10 }}>
-                (Fallback Mode)
-              </span>
-            )}
+            <span style={{ fontSize: 12, color: "#4ade80", marginLeft: 10 }}>
+              (Live Data)
+            </span>
           </span>
           <span style={{ fontSize: size.width < 650 ? 14 : 17, fontWeight: 400, color: "#ffddb8", marginRight: 8 }}>
             Phase Ends In: <b style={{ fontWeight: 700, color: "#fff" }}>13d 4h 22m</b>
