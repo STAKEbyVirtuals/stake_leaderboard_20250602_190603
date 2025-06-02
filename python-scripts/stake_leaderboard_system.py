@@ -532,53 +532,128 @@ def process_leaderboard_data():
 
 # stake_leaderboard_system.py 파일의 upload_to_sheet_best 함수를 이렇게 수정:
 
-# 기존 upload_to_sheet_best 함수를 이렇게 수정:
+# upload_to_sheet_best 함수를 이렇게 교체:
+
 def upload_to_sheet_best(data):
-    """Sheet.best API 업로드 (형식 테스트 포함)"""
+    """Sheet.best API 업로드 (수정된 버전)"""
     logger.info("📤 Sheet.best API 업로드 시작...")
     
     if not data:
         logger.error("❌ 업로드할 데이터가 없습니다")
         return False
     
-    # 1. 현재 시트 정보 확인
-    get_sheet_best_info()
-    
-    # 2. 다양한 형식 테스트
-    successful_format = test_sheet_best_formats(data)
-    
-    if successful_format:
-        logger.info(f"🎯 성공한 형식 발견: {successful_format}")
+    try:
+        # Sheet.best는 단일 객체를 원함 (배열 아님!)
+        # 각 항목을 개별적으로 업로드하거나 
+        # 하나의 큰 객체로 만들어야 함
         
-        # 3. 성공한 형식으로 전체 데이터 업로드
-        if successful_format == "Simple Array":
-            final_data = []
-            for item in data[:50]:  # 50개까지
-                final_data.append({
-                    "address": str(item.get('address', '')),
-                    "rank": int(item.get('rank', 0))
-                })
+        # 방법 1: 첫 번째 항목만 테스트
+        test_item = data[0]
+        single_object = {
+            "address": str(test_item.get('address', '')),
+            "rank": str(test_item.get('rank', '')),
+            "grade": str(test_item.get('grade', '')),
+            "total_staked": str(test_item.get('total_staked', '')),
+            "time_score": str(test_item.get('time_score', '')),
+            "holding_days": str(test_item.get('holding_days', '')),
+            "is_active": str(test_item.get('is_active', ''))
+        }
         
-        elif successful_format == "String Only":
-            final_data = []
-            for item in data[:50]:
-                final_data.append({
-                    "address": str(item.get('address', '')),
-                    "rank": str(item.get('rank', '')),
-                    "grade": str(item.get('grade', '')),
-                    "total_staked": str(item.get('total_staked', ''))
-                })
+        headers = {
+            'Content-Type': 'application/json',
+            'User-Agent': 'STAKE-Leaderboard/1.0'
+        }
         
+        logger.info(f"📤 단일 객체 업로드 시도...")
+        logger.info(f"📊 데이터: {single_object}")
+        
+        response = requests.put(
+            SHEET_BEST_URL,
+            json=single_object,  # 배열이 아닌 단일 객체!
+            headers=headers,
+            timeout=60
+        )
+        
+        logger.info(f"📡 응답 코드: {response.status_code}")
+        logger.info(f"📄 응답 내용: {response.text}")
+        
+        if response.status_code == 200:
+            logger.info("✅ Sheet.best 단일 객체 업로드 성공!")
+            
+            # 성공시 전체 데이터를 여러 번 업로드 시도
+            return upload_multiple_objects(data[:10])  # 상위 10개만
+            
+        elif response.status_code == 403:
+            logger.error("❌ Sheet.best 권한 오류: Google Sheets 권한을 확인하세요")
+            logger.error("🔧 해결방법:")
+            logger.error("   1. Google Sheets를 '링크가 있는 모든 사용자' 편집 권한으로 설정")
+            logger.error("   2. Sheet.best 연결을 다시 설정")
+            return False
+            
         else:
-            # 기본 형식
-            final_data = data[:50]
-        
-        # 최종 업로드
-        return try_upload_format(final_data, "Final Upload")
-    
-    else:
-        logger.error("❌ 모든 형식 테스트 실패")
+            logger.error(f"❌ Sheet.best 업로드 실패: {response.status_code}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"❌ Sheet.best 업로드 오류: {e}")
         return False
+    
+def upload_multiple_objects(data):
+    """여러 객체를 순차적으로 업로드"""
+    logger.info(f"📤 {len(data)}개 객체 순차 업로드 시작...")
+    
+    success_count = 0
+    
+    for i, item in enumerate(data):
+        try:
+            # POST로 개별 추가 시도
+            single_object = {
+                "address": str(item.get('address', '')),
+                "rank": str(item.get('rank', '')),
+                "grade": str(item.get('grade', '')),
+                "total_staked": str(item.get('total_staked', ''))
+            }
+            
+            # PUT 대신 POST 시도 (추가 모드)
+            response = requests.post(
+                SHEET_BEST_URL,
+                json=single_object,
+                headers={'Content-Type': 'application/json'},
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                success_count += 1
+                logger.info(f"✅ 항목 {i+1} 업로드 성공")
+            else:
+                logger.warning(f"⚠️ 항목 {i+1} 업로드 실패: {response.status_code}")
+                
+            time.sleep(1)  # API 제한 방지
+            
+        except Exception as e:
+            logger.error(f"❌ 항목 {i+1} 오류: {e}")
+            continue
+    
+    logger.info(f"📊 순차 업로드 완료: {success_count}/{len(data)}개 성공")
+    return success_count > 0
+
+# 권한 문제 해결을 위한 안내 함수
+def show_sheet_permission_guide():
+    """Google Sheets 권한 설정 안내"""
+    logger.info("🔧 === Sheet.best 권한 설정 안내 ===")
+    logger.info("1. Google Sheets 열기")
+    logger.info("2. 오른쪽 상단 '공유' 버튼 클릭") 
+    logger.info("3. '링크가 있는 모든 사용자'로 설정")
+    logger.info("4. 권한을 '편집자'로 설정")
+    logger.info("5. '완료' 클릭")
+    logger.info("6. Sheet.best 연결 다시 테스트")
+    logger.info("============================================")
+
+# 기존 함수 앞에 권한 안내 추가
+def upload_to_sheet_best_with_guide(data):
+    """권한 안내 포함 업로드"""
+    show_sheet_permission_guide()
+    return upload_to_sheet_best(data)    
 
 # 추가: math 모듈 import 필요
 import math
