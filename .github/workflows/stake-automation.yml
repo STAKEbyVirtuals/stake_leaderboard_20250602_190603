@@ -40,8 +40,11 @@ jobs:
     - name: 📦 Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install requests pandas schedule
-        pip install python-dateutil pytz
+        if [ -f requirements.txt ]; then
+          pip install -r requirements.txt
+        else
+          pip install requests pandas schedule python-dateutil pytz
+        fi
     
     # 4. Python 스크립트 실행 전 준비
     - name: ⚙️ Prepare Environment
