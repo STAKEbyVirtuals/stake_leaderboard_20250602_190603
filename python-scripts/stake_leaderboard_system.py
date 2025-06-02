@@ -535,19 +535,27 @@ def process_leaderboard_data():
 # upload_to_sheet_best 함수를 이렇게 교체:
 
 def upload_to_sheet_best(data):
-    """Sheet.best API 업로드 (수정된 버전)"""
+    """Sheet.best 시도 후 실패시 GitHub Pages로 자동 전환"""
     logger.info("📤 Sheet.best API 업로드 시작...")
     
     if not data:
         logger.error("❌ 업로드할 데이터가 없습니다")
         return False
     
+    # 1. Sheet.best 시도
+    sheet_success = try_sheet_best_upload(data)
+    
+    if sheet_success:
+        logger.info("✅ Sheet.best 업로드 성공!")
+        return True
+    else:
+        logger.warning("⚠️ Sheet.best 실패, GitHub Pages로 전환...")
+        return save_to_github_pages(data)
+    
+
+def try_sheet_best_upload(data):
+    """Sheet.best 업로드만 시도"""
     try:
-        # Sheet.best는 단일 객체를 원함 (배열 아님!)
-        # 각 항목을 개별적으로 업로드하거나 
-        # 하나의 큰 객체로 만들어야 함
-        
-        # 방법 1: 첫 번째 항목만 테스트
         test_item = data[0]
         single_object = {
             "address": str(test_item.get('address', '')),
@@ -564,39 +572,93 @@ def upload_to_sheet_best(data):
             'User-Agent': 'STAKE-Leaderboard/1.0'
         }
         
-        logger.info(f"📤 단일 객체 업로드 시도...")
-        logger.info(f"📊 데이터: {single_object}")
-        
         response = requests.put(
             SHEET_BEST_URL,
-            json=single_object,  # 배열이 아닌 단일 객체!
+            json=single_object,
             headers=headers,
             timeout=60
         )
         
-        logger.info(f"📡 응답 코드: {response.status_code}")
-        logger.info(f"📄 응답 내용: {response.text}")
+        logger.info(f"📡 Sheet.best 응답: {response.status_code}")
+        logger.info(f"📄 응답 내용: {response.text[:200]}")
         
-        if response.status_code == 200:
-            logger.info("✅ Sheet.best 단일 객체 업로드 성공!")
-            
-            # 성공시 전체 데이터를 여러 번 업로드 시도
-            return upload_multiple_objects(data[:10])  # 상위 10개만
-            
-        elif response.status_code == 403:
-            logger.error("❌ Sheet.best 권한 오류: Google Sheets 권한을 확인하세요")
-            logger.error("🔧 해결방법:")
-            logger.error("   1. Google Sheets를 '링크가 있는 모든 사용자' 편집 권한으로 설정")
-            logger.error("   2. Sheet.best 연결을 다시 설정")
-            return False
-            
-        else:
-            logger.error(f"❌ Sheet.best 업로드 실패: {response.status_code}")
-            return False
-            
+        return response.status_code == 200
+        
     except Exception as e:
-        logger.error(f"❌ Sheet.best 업로드 오류: {e}")
+        logger.error(f"❌ Sheet.best 오류: {e}")
         return False
+
+def save_to_github_pages(data):
+    """GitHub Pages용 JSON 파일 생성 및 자동 커밋"""
+    logger.info("📄 GitHub Pages용 JSON 파일 생성...")
+    
+    try:
+        # public 폴더 생성
+        public_dir = '../public'
+        os.makedirs(public_dir, exist_ok=True)
+        
+        # API 형식으로 데이터 정리
+        api_data = {
+            "last_updated": datetime.now(timezone.utc).isoformat(),
+            "total_wallets": len(data),
+            "active_wallets": len([d for d in data if d.get('is_active')]),
+            "phase": 1,
+            "leaderboard": data[:100]  # 상위 100개
+        }
+        
+        # JSON 파일 저장
+        json_file = f'{public_dir}/leaderboard.json'
+        with open(json_file, 'w', encoding='utf-8') as f:
+            json.dump(api_data, f, ensure_ascii=False, indent=2)
+        
+        logger.info(f"✅ JSON 파일 생성: {json_file}")
+        logger.info(f"📊 데이터 크기: {len(api_data['leaderboard'])}개 항목")
+        
+        # Git 자동 커밋 (GitHub Actions 환경에서)
+        try:
+            import subprocess
+            
+            # Git 설정
+            subprocess.run(['git', 'config', 'user.name', 'STAKE-Bot'], 
+                         cwd='..', check=False)
+            subprocess.run(['git', 'config', 'user.email', 'stake-bot@noreply.github.com'], 
+                         cwd='..', check=False)
+            
+            # 파일 추가 및 커밋
+            subprocess.run(['git', 'add', 'public/leaderboard.json'], 
+                         cwd='..', check=True)
+            
+            commit_msg = f"Update leaderboard data - {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}"
+            subprocess.run(['git', 'commit', '-m', commit_msg], 
+                         cwd='..', check=True)
+            
+            subprocess.run(['git', 'push'], cwd='..', check=True)
+            
+            logger.info("✅ GitHub에 자동 커밋 완료")
+            
+            # GitHub Pages URL 생성
+            repo_name = os.environ.get('GITHUB_REPOSITORY', 'stake-leaderboard')
+            pages_url = f"https://{repo_name.split('/')[-1]}.github.io/{repo_name.split('/')[-1]}/leaderboard.json"
+            logger.info(f"🔗 데이터 URL: {pages_url}")
+            
+        except subprocess.CalledProcessError as e:
+            logger.warning(f"⚠️ Git 커밋 실패: {e}")
+            logger.info("📁 파일은 로컬에 저장됨")
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ GitHub Pages 생성 실패: {e}")
+        logger.error(traceback.format_exc())
+        return False
+
+# 추가할 새로운 함수 (새로 추가):
+def create_next_js_config():
+    """Next.js에서 GitHub Pages JSON 사용하도록 설정"""
+    logger.info("⚙️ Next.js 설정 안내...")
+    logger.info("🔧 index.tsx에서 이렇게 변경:")
+    logger.info("const SHEET_BEST_URL = 'https://username.github.io/repo-name/leaderboard.json';")
+    logger.info("===============================================")    
     
 def upload_multiple_objects(data):
     """여러 객체를 순차적으로 업로드"""
