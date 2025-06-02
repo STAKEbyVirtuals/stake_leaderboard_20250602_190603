@@ -30,6 +30,21 @@ const gradeToTierMap: Record<string, string> = {
   "Jeeted": "JEETED"
 };
 
+// 등급별 이미지 매핑
+const getGradeImage = (grade: string) => {
+  const images: Record<string, string> = {
+    "Genesis OG": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iMjAiIGZpbGw9InVybCgjZ3JhZGllbnQwXzEyM180NTYpIi8+CjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9ImdyYWRpZW50MF8xMjNfNDU2IiB4MT0iMCIgeTE9IjAiIHgyPSIxMDAiIHkyPSIxMDAiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPHN0b3Agc3RvcC1jb2xvcj0iIzAwZTBkNSIvPgo8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwMGI4ZDQiLz4KPC9saW5lYXJHcmFkaWVudD4KPC9kZWZzPgo8L3N2Zz4K",
+    "Smoke Flexer": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iMjAiIGZpbGw9InVybCgjZ3JhZGllbnQwXzEyM180NTcpIi8+CjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9ImdyYWRpZW50MF8xMjNfNDU3IiB4MT0iMCIgeTE9IjAiIHgyPSIxMDAiIHkyPSIxMDAiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPHN0b3Agc3RvcC1jb2xvcj0iI2ZmNDM0MyIvPgo8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmZjZiNmIiLz4KPC9saW5lYXJHcmFkaWVudD4KPC9kZWZzPgo8L3N2Zz4K",
+    "Steak Wizard": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iMjAiIGZpbGw9InVybCgjZ3JhZGllbnQwXzEyM180NTgpIi8+CjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9ImdyYWRpZW50MF8xMjNfNDU4IiB4MT0iMCIgeTE9IjAiIHgyPSIxMDAiIHkyPSIxMDAiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPHN0b3Agc3RvcC1jb2xvcj0iI2JjNmZmMSIvPgo8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNkMDg0ZmYiLz4KPC9saW5lYXJHcmFkaWVudD4KPC9kZWZzPgo8L3N2Zz4K",
+    "Grilluminati": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iMjAiIGZpbGw9InVybCgjZ3JhZGllbnQwXzEyM180NTkpIi8+CjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9ImdyYWRpZW50MF8xMjNfNDU5IiB4MT0iMCIgeTE9IjAiIHgyPSIxMDAiIHkyPSIxMDAiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPHN0b3Agc3RvcC1jb2xvcj0iI2ZmZDcwMCIvPgo8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmZmVkNGUiLz4KPC9saW5lYXJHcmFkaWVudD4KPC9kZWZzPgo8L3N2Zz4K",
+    "Flame Juggler": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iMjAiIGZpbGw9InVybCgjZ3JhZGllbnQwXzEyM180NjApIi8+CjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9ImdyYWRpZW50MF8xMjNfNDYwIiB4MT0iMCIgeTE9IjAiIHgyPSIxMDAiIHkyPSIxMDAiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPHN0b3Agc3RvcC1jb2xvcj0iIzYyYjZmYSIvPgo8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiM4MmQ0ZmYiLz4KPC9saW5lYXJHcmFkaWVudD4KPC9kZWZzPgo8L3N2Zz4K",
+    "Flipstarter": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iMjAiIGZpbGw9InVybCgjZ3JhZGllbnQwXzEyM180NjEpIi8+CjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9ImdyYWRpZW50MF8xMjNfNDYxIiB4MT0iMCIgeTE9IjAiIHgyPSIxMDAiIHkyPSIxMDAiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPHN0b3Agc3RvcC1jb2xvcj0iIzhjZmZhMyIvPgo8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNhOGZmYjgiLz4KPC9saW5lYXJHcmFkaWVudD4KPC9kZWZzPgo8L3N2Zz4K",
+    "Sizzlin' Noob": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iMjAiIGZpbGw9InVybCgjZ3JhZGllbnQwXzEyM180NjIpIi8+CjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9ImdyYWRpZW50MF8xMjNfNDYyIiB4MT0iMCIgeTE9IjAiIHgyPSIxMDAiIHkyPSIxMDAiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPHN0b3Agc3RvcC1jb2xvcj0iI2ZmZjllMiIvPgo8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmZmU5YTYiLz4KPC9saW5lYXJHcmFkaWVudD4KPC9kZWZzPgo8L3N2Zz4K",
+    "Jeeted": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iMjAiIGZpbGw9InVybCgjZ3JhZGllbnQwXzEyM180NjMpIi8+CjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9ImdyYWRpZW50MF8xMjNfNDYzIiB4MT0iMCIgeTE9IjAiIHgyPSIxMDAiIHkyPSIxMDAiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPHN0b3Agc3RvcC1jb2xvcj0iI2VhZjFmNCIvPgo8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNiZWQ4ZGIiLz4KPC9saW5lYXJHcmFkaWVudD4KPC9kZWZzPgo8L3N2Zz4K"
+  };
+  return images[grade] || images["Sizzlin' Noob"];
+};
+
 // 데이터 타입
 interface LeaderboardItem {
   name: string;
@@ -61,85 +76,442 @@ function useTreemapLayout(data: LeaderboardItem[], width: number, height: number
 
 // 랭킹 배지
 function getRankBadge(rank: number) {
-  if (rank === 1) return <span style={{
-    background: "gold", color: "#fff", borderRadius: "50%", fontWeight: 900,
-    padding: "2px 8px", fontSize: 16, marginRight: 4, boxShadow: "0 2px 8px #0003"
-  }}>👑</span>;
-  if (rank === 2) return <span style={{
-    background: "silver", color: "#fff", borderRadius: "50%", fontWeight: 900,
-    padding: "2px 8px", fontSize: 16, marginRight: 4, boxShadow: "0 2px 8px #0002"
-  }}>🥈</span>;
-  if (rank === 3) return <span style={{
-    background: "#cc8f50", color: "#fff", borderRadius: "50%", fontWeight: 900,
-    padding: "2px 8px", fontSize: 16, marginRight: 4, boxShadow: "0 2px 8px #0002"
-  }}>🥉</span>;
-  if (rank <= 10) return <span style={{
-    background: "#111c", color: "#fff", borderRadius: "10px", fontWeight: 900,
-    padding: "2px 8px", fontSize: 13, marginRight: 3
-  }}>TOP{rank}</span>;
-  return null;
+  if (rank === 1) return "👑";
+  if (rank === 2) return "🥈";
+  if (rank === 3) return "🥉";
+  if (rank <= 10) return `🔥`;
+  return "⭐";
 }
 
+// 개선된 모달 컴포넌트
+function SimpleModal({ modal, onClose }: { modal: LeaderboardItem; onClose: () => void }) {
+  useEffect(() => {
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", esc);
+    return () => window.removeEventListener("keydown", esc);
+  }, [onClose]);
+
+  // 할당 토큰 계산
+  const totalPhaseReward = 41670000;
+  const allocatedStake = (modal.value / 100) * totalPhaseReward;
+  const virtualRate = 0.32;
+  const allocatedVirtual = allocatedStake * virtualRate;
+  const stakePrice = 0.52;
+  const dollarValue = allocatedStake * stakePrice;
+
+  return (
+    <>
+      <style jsx>{`
+        @keyframes modalAppear {
+          0% { transform: scale(0.8); opacity: 0; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
+      <div
+        style={{
+          position: "fixed", left: 0, top: 0, width: "100vw", height: "100vh",
+          background: "rgba(0,0,0,0.85)", zIndex: 99, display: "flex",
+          alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)"
+        }}
+        onClick={onClose}
+      >
+        <div
+          onClick={e => e.stopPropagation()}
+          style={{
+            background: "linear-gradient(135deg, #1a1d29 0%, #252833 50%, #1e2028 100%)",
+            borderRadius: 24, width: 380, maxWidth: "95vw",
+            padding: 0, color: "#fff", fontSize: 16,
+            boxShadow: "0 25px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.1)",
+            border: "2px solid rgba(255,255,255,0.05)",
+            overflow: "hidden",
+            position: "relative",
+            transform: "scale(1)",
+            animation: "modalAppear 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)"
+          }}
+        >
+          <button
+            onClick={onClose}
+            style={{
+              position: "absolute", top: 16, right: 20, fontSize: 28,
+              color: "#666", background: "none", border: "none", cursor: "pointer",
+              zIndex: 10, transition: "all 0.2s", borderRadius: "50%", 
+              width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center"
+            }}
+          >×</button>
+          
+          <div style={{
+            background: tierColors[modal.grade] || tierColors["Sizzlin' Noob"],
+            padding: "32px 32px 24px", textAlign: "center",
+            borderRadius: "24px 24px 0 0", position: "relative"
+          }}>
+            <div style={{ 
+              width: 80, height: 80, margin: "0 auto 16px",
+              borderRadius: 20, overflow: "hidden",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+              border: "3px solid rgba(255,255,255,0.2)"
+            }}>
+              <img 
+                src={getGradeImage(modal.grade)}
+                alt={modal.grade}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            </div>
+            
+            <div style={{ 
+              fontSize: 20, fontWeight: 800, color: "#1a1a1a", 
+              textShadow: "0 2px 4px rgba(255,255,255,0.3)",
+              letterSpacing: "1px", marginBottom: 4
+            }}>
+              {modal.grade}
+            </div>
+            
+            <div style={{
+              display: "inline-block", background: "rgba(0,0,0,0.2)",
+              borderRadius: 12, padding: "4px 12px", fontSize: 14,
+              fontWeight: 700, color: "#fff"
+            }}>
+              할당 순위 #{modal.rank}
+            </div>
+          </div>
+
+          <div style={{ padding: "28px 32px 32px" }}>
+            <div style={{ 
+              textAlign: "center", marginBottom: 20,
+              fontSize: 15, fontFamily: "monospace", 
+              color: "#a0a0a0", fontWeight: 600,
+              background: "rgba(255,255,255,0.05)", 
+              padding: "8px 16px", borderRadius: 8
+            }}>
+              {modal.address.slice(0, 10)}...{modal.address.slice(-8)}
+            </div>
+            
+            <div style={{ 
+              textAlign: "center", marginBottom: 24,
+              background: "linear-gradient(135deg, rgba(255,107,107,0.1), rgba(238,90,36,0.1))",
+              borderRadius: 16, padding: "20px"
+            }}>
+              <div style={{ 
+                fontSize: 42, fontWeight: 900, 
+                background: "linear-gradient(135deg, #ff6b6b, #ee5a24)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                marginBottom: 8, lineHeight: 1
+              }}>
+                {modal.value.toFixed(2)}%
+              </div>
+              <div style={{ 
+                fontSize: 14, color: "#888", fontWeight: 600
+              }}>
+                Phase 1 Allocation
+              </div>
+              
+              <div style={{ 
+                marginTop: 12, fontSize: 16, fontWeight: 700,
+                color: +modal.change > 0 ? "#2ecc71" : "#e74c3c"
+              }}>
+                {+modal.change > 0 ? "📈 +" : "📉 "}{modal.change}%
+              </div>
+            </div>
+
+            <div style={{
+              background: "linear-gradient(135deg, rgba(76,222,128,0.08), rgba(34,197,94,0.08))",
+              borderRadius: 16, padding: "20px", marginBottom: 20,
+              border: "1px solid rgba(76,222,128,0.2)"
+            }}>
+              <div style={{
+                fontSize: 16, fontWeight: 700, color: "#4ade80",
+                marginBottom: 16, textAlign: "center"
+              }}>
+                🎯 Phase 1 할당 보상
+              </div>
+              
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ 
+                  fontSize: 24, fontWeight: 900, color: "#fff",
+                  textAlign: "center"
+                }}>
+                  {allocatedStake.toLocaleString(undefined, { 
+                    minimumFractionDigits: 0, 
+                    maximumFractionDigits: 0 
+                  })} STAKE
+                </div>
+              </div>
+              
+              <div style={{ marginBottom: 8, textAlign: "center" }}>
+                <span style={{ 
+                  fontSize: 16, color: "#22d3ee", fontWeight: 700
+                }}>
+                  ≈ {allocatedVirtual.toLocaleString(undefined, { 
+                    minimumFractionDigits: 2, 
+                    maximumFractionDigits: 2 
+                  })} VIRTUAL
+                </span>
+              </div>
+              
+              <div style={{ textAlign: "center" }}>
+                <span style={{ 
+                  fontSize: 18, color: "#4ade80", fontWeight: 800
+                }}>
+                  ≈ ${dollarValue.toLocaleString(undefined, { 
+                    minimumFractionDigits: 2, 
+                    maximumFractionDigits: 2 
+                  })}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ 
+              display: "flex", flexDirection: "column", gap: 10,
+              fontSize: 14, lineHeight: 1.4,
+              background: "rgba(255,255,255,0.02)",
+              borderRadius: 12, padding: "16px"
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "#999" }}>현재 스테이킹:</span>
+                <span style={{ color: "#fff", fontWeight: 600 }}>
+                  {modal.total_staked.toLocaleString()} STAKE
+                </span>
+              </div>
+              
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "#999" }}>보유 기간:</span>
+                <span style={{ color: "#fff", fontWeight: 600 }}>{modal.time}</span>
+              </div>
+              
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "#999" }}>타임 스코어:</span>
+                <span style={{ color: "#fff", fontWeight: 600 }}>
+                  {modal.score.toLocaleString()}
+                </span>
+              </div>
+              
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "#999" }}>퍼센타일:</span>
+                <span style={{ color: "#fff", fontWeight: 600 }}>
+                  상위 {modal.percentile.toFixed(1)}%
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// 리더보드 테이블 컴포넌트
+function LeaderboardTable({ data, isDesktop }: { data: LeaderboardItem[]; isDesktop: boolean }) {
+  const topData = data.slice(0, 10);
+
+  return (
+    <div style={{
+      background: "rgba(255,255,255,0.03)",
+      borderRadius: 16,
+      padding: isDesktop ? "20px" : "16px",
+      border: "1px solid rgba(255,255,255,0.1)"
+    }}>
+      <div style={{
+        fontSize: isDesktop ? 18 : 16,
+        fontWeight: 700,
+        color: "#fff",
+        marginBottom: 16,
+        textAlign: "center"
+      }}>
+        🏆 Top 10 Rankers
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {topData.map((item, index) => (
+          <div
+            key={index}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "12px 16px",
+              background: "rgba(255,255,255,0.05)",
+              borderRadius: 12,
+              border: "1px solid rgba(255,255,255,0.1)"
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{
+                fontSize: 20,
+                minWidth: 24,
+                textAlign: "center"
+              }}>
+                {getRankBadge(item.rank)}
+              </div>
+              
+              <div>
+                <div style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: "#fff",
+                  fontFamily: "monospace"
+                }}>
+                  {item.name}
+                </div>
+                <div style={{
+                  fontSize: 12,
+                  color: "#999",
+                  marginTop: 2
+                }}>
+                  {item.grade}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ textAlign: "right" }}>
+              <div style={{
+                fontSize: 16,
+                fontWeight: 700,
+                color: "#4ade80"
+              }}>
+                {item.value.toFixed(2)}%
+              </div>
+              <div style={{
+                fontSize: 12,
+                color: +item.change > 0 ? "#2ecc71" : "#e74c3c",
+                marginTop: 2
+              }}>
+                {+item.change > 0 ? "+" : ""}{item.change}%
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// 지갑 연결 컴포넌트
+function WalletConnect({ wallet, onConnect, onDisconnect }: { 
+  wallet: string | null; 
+  onConnect: () => void; 
+  onDisconnect: () => void; 
+}) {
+  return (
+    <div style={{
+      background: "rgba(255,255,255,0.03)",
+      borderRadius: 16,
+      padding: "20px",
+      border: "1px solid rgba(255,255,255,0.1)",
+      textAlign: "center"
+    }}>
+      <div style={{
+        fontSize: 18,
+        fontWeight: 700,
+        color: "#fff",
+        marginBottom: 16
+      }}>
+        💰 Wallet Connection
+      </div>
+
+      {wallet ? (
+        <div>
+          <div style={{
+            fontSize: 14,
+            color: "#4ade80",
+            marginBottom: 12,
+            fontFamily: "monospace"
+          }}>
+            Connected: {wallet}
+          </div>
+          <button
+            onClick={onDisconnect}
+            style={{
+              padding: "12px 24px",
+              background: "rgba(239,68,68,0.2)",
+              border: "1px solid rgba(239,68,68,0.3)",
+              borderRadius: 12,
+              color: "#ef4444",
+              fontWeight: 600,
+              cursor: "pointer",
+              fontSize: 14
+            }}
+          >
+            Disconnect
+          </button>
+        </div>
+      ) : (
+        <div>
+          <div style={{
+            fontSize: 14,
+            color: "#999",
+            marginBottom: 16
+          }}>
+            Connect your wallet to see your ranking
+          </div>
+          <button
+            onClick={onConnect}
+            style={{
+              padding: "12px 24px",
+              background: "linear-gradient(135deg, #4ade80, #22c55e)",
+              border: "none",
+              borderRadius: 12,
+              color: "#000",
+              fontWeight: 700,
+              cursor: "pointer",
+              fontSize: 14,
+              boxShadow: "0 4px 12px rgba(74,222,128,0.3)"
+            }}
+          >
+            Connect Wallet
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Home() {
-  // 모든 state를 최상단에 선언
   const [data, setData] = useState<LeaderboardItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modal, setModal] = useState<LeaderboardItem | null>(null);
-  const [size, setSize] = useState({ width: 950, height: 650 });
-  const [tab, setTab] = useState("Top20");
-  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const [wallet, setWallet] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState(new Date());
+  const [windowSize, setWindowSize] = useState({ width: 1200, height: 800 });
 
-  // 데이터 로드 함수 (수정됨)
+  // 반응형 계산
+  const isDesktop = windowSize.width >= 1024;
+  const isMobile = windowSize.width < 768;
+
+  // 데이터 로드 함수
   const fetchLeaderboardData = async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      console.log("🔄 실제 데이터 로드 시작:", SHEET_BEST_URL);
       
       const response = await axios.get(SHEET_BEST_URL, {
         timeout: 30000,
         headers: { 'Content-Type': 'application/json' }
       });
       
-      console.log("✅ 응답 받음:", response.status);
-      console.log("📊 원본 데이터:", response.data);
-      
       if (!response.data) {
         throw new Error('응답 데이터가 없습니다');
       }
       
-      // GitHub Actions 데이터 형식 처리
       let rawData;
       if (response.data.leaderboard) {
-        // GitHub Pages 형식: { leaderboard: [...] }
         rawData = response.data.leaderboard;
-        console.log("📋 GitHub Pages 형식 감지");
       } else if (Array.isArray(response.data)) {
-        // 직접 배열 형식: [...]
         rawData = response.data;
-        console.log("📋 배열 형식 감지");
       } else {
-        throw new Error('알 수 없는 데이터 형식: ' + typeof response.data);
+        throw new Error('알 수 없는 데이터 형식');
       }
       
       if (!Array.isArray(rawData) || rawData.length === 0) {
         throw new Error('유효하지 않은 데이터 배열');
       }
       
-      console.log(`📊 처리할 데이터: ${rawData.length}개 항목`);
-      
-      // 데이터 변환
       const transformedData: LeaderboardItem[] = rawData
         .filter((item: any) => item.is_active !== false && Number(item.total_staked) > 0)
-        .slice(0, 100) // 상위 100개만
+        .slice(0, 100)
         .map((item: any, index: number) => ({
           name: item.address ? `${item.address.slice(0, 6)}...${item.address.slice(-4)}` : `Unknown${index}`,
-          value: Number(item.airdrop_share_phase) || Math.random() * 2 + 1, // 에어드랍 비율
+          value: Number(item.airdrop_share_phase) || Math.random() * 2 + 1,
           tier: gradeToTierMap[item.grade] || "SIZZLIN_NOOB",
           change: (Math.random() * 1.5 - 0.5).toFixed(2),
           score: Number(item.time_score) || 0,
@@ -153,35 +525,34 @@ export default function Home() {
           holding_days: Number(item.holding_days) || 0
         }));
       
-      // 에어드랍 비율 정규화
       const totalValue = transformedData.reduce((sum, item) => sum + item.value, 0);
       if (totalValue > 0) {
         transformedData.forEach(item => {
           item.value = (item.value / totalValue) * 100;
         });
       }
-      
-      console.log(`✅ 변환 완료: ${transformedData.length}개 항목`);
-      console.log("📋 첫 번째 항목:", transformedData[0]);
-      
+    
       setData(transformedData);
       setLastUpdate(new Date());
       
     } catch (err: any) {
-      console.error('❌ 실제 데이터 로드 실패:', err);
-      console.error('📄 오류 상세:', err.message);
       setError(err.message);
-      
-      // 실패시 빈 배열 (더미데이터 사용 안함)
-      console.log('⚠️ 더미데이터 사용하지 않음, 빈 상태 유지');
       setData([]);
-      
     } finally {
       setLoading(false);
     }
   };
 
-  // 효과들
+  // 지갑 연결 함수들
+  const connectWallet = () => {
+    const mockAddress = "0x" + Math.random().toString(16).slice(2, 10) + "..." + Math.random().toString(16).slice(2, 6);
+    setWallet(mockAddress);
+  };
+
+  const disconnectWallet = () => {
+    setWallet(null);
+  };
+
   useEffect(() => {
     fetchLeaderboardData();
     const interval = setInterval(fetchLeaderboardData, 5 * 60 * 1000);
@@ -190,258 +561,335 @@ export default function Home() {
 
   useEffect(() => {
     function handleResize() {
-      const w = Math.min(window.innerWidth - 16, 950);
-      const h = Math.max(380, Math.min(window.innerHeight - 110, 680));
-      setSize({ width: w, height: h });
+      setWindowSize({ 
+        width: window.innerWidth, 
+        height: window.innerHeight 
+      });
     }
     window.addEventListener("resize", handleResize);
     handleResize();
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // 상수들
-  const infoBarHeight = size.width < 650 ? 140 : 102;
-
-  // 로딩 상태
   if (loading) {
     return (
       <div style={{ 
         display: 'flex', justifyContent: 'center', alignItems: 'center', 
-        height: '100vh', background: 'linear-gradient(140deg,#181820 80%,#232327 100%)',
-        color: '#fff', fontSize: 18
+        height: '100vh', background: '#0a0a0a', color: '#fff', fontSize: 18
       }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 24, marginBottom: 10 }}>🥩</div>
-          <div>Loading STAKE Leaderboard...</div>
-          <div style={{ fontSize: 14, color: '#ccc', marginTop: 10 }}>
-            실시간 데이터를 불러오는 중...
-          </div>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🥩</div>
+          <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>STAKE Leaderboard</div>
+          <div style={{ fontSize: 16, color: '#999' }}>Loading live data...</div>
         </div>
       </div>
     );
   }
 
-  // 데이터가 없을 때
   if (data.length === 0) {
     return (
       <div style={{ 
         display: 'flex', justifyContent: 'center', alignItems: 'center', 
-        height: '100vh', background: 'linear-gradient(140deg,#181820 80%,#232327 100%)',
-        color: '#fff', fontSize: 18
+        height: '100vh', background: '#0a0a0a', color: '#fff', fontSize: 18
       }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 24, marginBottom: 10 }}>⚠️</div>
-          <div>데이터를 불러올 수 없습니다</div>
-          <div style={{ fontSize: 14, color: '#ccc', marginTop: 10 }}>
-            {error || 'leaderboard.json 파일을 확인해주세요'}
+          <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+          <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>No Data Available</div>
+          <div style={{ fontSize: 16, color: '#999', marginBottom: 20 }}>
+            {error || 'Please check leaderboard.json'}
           </div>
           <button 
             onClick={fetchLeaderboardData}
             style={{
-              marginTop: 20, padding: "10px 20px", backgroundColor: "#e48d25",
-              color: "white", border: "none", borderRadius: "8px", cursor: "pointer"
+              padding: "12px 24px", background: "#4ade80", color: "#000",
+              border: "none", borderRadius: "12px", cursor: "pointer", fontWeight: 700
             }}
           >
-            다시 시도
+            Retry
           </button>
         </div>
       </div>
     );
   }
 
-  // 데이터 처리
   const sorted = [...data].sort((a, b) => b.value - a.value);
-  const filtered = tab === "Top20" ? sorted.slice(0, 20) : sorted;
-  const items = useTreemapLayout(filtered, size.width, size.height - infoBarHeight);
-  const totalAllocation = filtered.reduce((sum, item) => sum + item.value, 0);
+  const topData = sorted.slice(0, 20);
+
+  // 레이아웃 계산
+  let treemapWidth, treemapHeight, sidebarWidth;
+  
+  if (isMobile) {
+    // 모바일: 세로 레이아웃
+    treemapWidth = windowSize.width - 16;
+    treemapHeight = Math.min(500, windowSize.height * 0.6);
+    sidebarWidth = windowSize.width - 16;
+  } else if (isDesktop) {
+    // 데스크톱: 가로 레이아웃 (트리맵 70%, 사이드바 30%)
+    sidebarWidth = Math.min(380, windowSize.width * 0.3);
+    treemapWidth = windowSize.width - sidebarWidth - 48;
+    treemapHeight = windowSize.height - 120;
+  } else {
+    // 태블릿: 세로 레이아웃
+    treemapWidth = windowSize.width - 32;
+    treemapHeight = Math.min(600, windowSize.height * 0.6);
+    sidebarWidth = windowSize.width - 32;
+  }
+
+  const items = useTreemapLayout(topData, treemapWidth, treemapHeight);
 
   return (
     <div style={{
-      width: size.width,
-      height: size.height,
-      background: "linear-gradient(140deg,#181820 80%,#232327 100%)",
-      borderRadius: 24,
-      position: "relative",
-      margin: "32px auto",
-      boxShadow: "0 2px 32px #0005",
-      transition: "width 0.3s, height 0.3s",
-      border: "1.5px solid #222",
-      overflow: "hidden"
+      minHeight: "100vh",
+      background: "#0a0a0a",
+      color: "#fff",
+      padding: isMobile ? "8px" : "16px"
     }}>
-      {/* 상단 info bar */}
-      <div style={{
-        position: "sticky", top: 0, left: 0, zIndex: 20, width: "100%",
-        background: "linear-gradient(90deg, #181820 80%, #232327 100%)",
-        boxShadow: "0 1px 8px #0006", borderRadius: "24px 24px 0 0", paddingBottom: 3
+      {/* 헤더 */}
+      <header style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: isMobile ? "16px 8px" : "20px 16px",
+        marginBottom: 16
       }}>
-        {/* 타이틀 */}
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: size.width < 650 ? "18px 12px 4px 18px" : "22px 20px 7px 28px",
-          fontWeight: 700, fontSize: size.width < 650 ? 19 : 22, color: "#fff"
-        }}>
-          <span>
-            <span style={{ fontWeight: 900 }}>STAKE Leaderboard</span>
-            <span style={{ fontSize: size.width < 650 ? 15 : 17, color: "#ffddb8", marginLeft: 12 }}>- Phase 1</span>
-            <span style={{ fontSize: 12, color: "#4ade80", marginLeft: 10 }}>
-              (Live Data)
-            </span>
-          </span>
-          <span style={{ fontSize: size.width < 650 ? 14 : 17, fontWeight: 400, color: "#ffddb8", marginRight: 8 }}>
-            Phase Ends In: <b style={{ fontWeight: 700, color: "#fff" }}>13d 4h 22m</b>
-          </span>
+        <div>
+          <h1 style={{
+            fontSize: isMobile ? 24 : 32,
+            fontWeight: 900,
+            margin: 0,
+            background: "linear-gradient(135deg, #4ade80, #22c55e)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent"
+          }}>
+            🥩 STAKE Leaderboard
+          </h1>
+          <p style={{
+            fontSize: isMobile ? 14 : 16,
+            color: "#999",
+            margin: "4px 0 0 0"
+          }}>
+            Phase 1 • Live Data • Updated {lastUpdate.toLocaleTimeString()}
+          </p>
         </div>
-        
-        {/* 서브 정보 */}
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          fontSize: size.width < 650 ? 12.5 : 14, color: "#fff",
-          padding: size.width < 650 ? "2px 12px 6px 18px" : "4px 24px 4px 28px", minHeight: 34
-        }}>
-          <span>
-            <b style={{ color: "#e48d25" }}>Top Rankers:</b> {filtered.length}
-            <span style={{ marginLeft: 20 }}><b style={{ color: "#e48d25" }}>Total Allocation:</b> {totalAllocation.toFixed(2)}%</span>
-            <span style={{ marginLeft: 20, fontSize: 12, color: "#ccc" }}>
-              Last Update: {lastUpdate.toLocaleTimeString()}
-            </span>
-          </span>
-          
-          <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {/* 탭 버튼들 */}
-            <span
-              style={{
-                marginRight: 4, fontWeight: tab === "Top20" ? 700 : 400,
-                color: tab === "Top20" ? "#fff" : "#ccc",
-                background: tab === "Top20" ? "#e48d25" : "transparent",
-                padding: size.width < 650 ? "2px 10px" : "3px 15px",
-                borderRadius: 16, cursor: "pointer",
-                fontSize: size.width < 650 ? 13.5 : 15, transition: "all 0.18s"
-              }}
-              onClick={() => setTab("Top20")}
-            >Top 20</span>
+
+        {!isMobile && (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 16
+          }}>
+            <div style={{
+              fontSize: 14,
+              color: "#999"
+            }}>
+              Phase Ends In: <span style={{ color: "#4ade80", fontWeight: 700 }}>13d 4h 22m</span>
+            </div>
             
-            <span
-              style={{
-                fontWeight: tab === "All" ? 700 : 400,
-                color: tab === "All" ? "#fff" : "#ccc",
-                background: tab === "All" ? "#e48d25" : "transparent",
-                padding: size.width < 650 ? "2px 10px" : "3px 15px",
-                borderRadius: 16, cursor: "pointer",
-                fontSize: size.width < 650 ? 13.5 : 15, transition: "all 0.18s"
-              }}
-              onClick={() => setTab("All")}
-            >All</span>
-            
-            {/* 지갑 연결 버튼 */}
             {wallet ? (
               <button
+                onClick={disconnectWallet}
                 style={{
-                  marginLeft: 7, padding: size.width < 650 ? "3px 12px" : "4px 18px",
-                  borderRadius: 13, border: "none", background: "#222", color: "#fff",
-                  fontWeight: 600, cursor: "pointer", fontSize: size.width < 650 ? 13 : 15,
-                  boxShadow: "0 1px 6px #0002"
+                  padding: "8px 16px",
+                  background: "rgba(239,68,68,0.2)",
+                  border: "1px solid rgba(239,68,68,0.3)",
+                  borderRadius: 12,
+                  color: "#ef4444",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  fontSize: 14
                 }}
-                onClick={() => setWallet(null)}
               >
-                {wallet.slice(0, 6) + "..." + wallet.slice(-4)}
+                {wallet}
               </button>
             ) : (
               <button
+                onClick={connectWallet}
                 style={{
-                  marginLeft: 7, padding: size.width < 650 ? "3px 12px" : "4px 18px",
-                  borderRadius: 13, border: "none",
-                  background: "linear-gradient(95deg,#ffdeaa,#e48d25 85%)",
-                  color: "#222", fontWeight: 700, cursor: "pointer",
-                  fontSize: size.width < 650 ? 13 : 15, boxShadow: "0 1px 6px #0002"
+                  padding: "8px 16px",
+                  background: "linear-gradient(135deg, #4ade80, #22c55e)",
+                  border: "none",
+                  borderRadius: 12,
+                  color: "#000",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  fontSize: 14
                 }}
-                onClick={() => setWallet("0x" + Math.random().toString(16).slice(2, 8) + "...abcd")}
               >
                 Connect Wallet
               </button>
             )}
-          </span>
-        </div>
-      </div>
-      
-      {/* 트리맵 영역 */}
-      <div style={{
-        position: "absolute", top: infoBarHeight, left: 0, 
-        width: "100%", height: size.height - infoBarHeight, overflow: "auto"
+          </div>
+        )}
+      </header>
+
+      {/* 메인 컨텐츠 */}
+      <main style={{
+        display: "flex",
+        flexDirection: isDesktop ? "row" : "column",
+        gap: 16,
+        maxWidth: "100%"
       }}>
-        {items.map((d, i) => {
-          const isMini = (d.x1 - d.x0 < 62) || (d.y1 - d.y0 < 62);
-          const item = d.data as LeaderboardItem;
-          
-          return (
-            <div
-              key={i}
-              onClick={() => !isMini && setModal(item)}
-              onMouseEnter={() => setHoverIdx(i)}
-              onMouseLeave={() => setHoverIdx(null)}
-              style={{
-                position: "absolute",
-                left: d.x0, top: d.y0,
-                width: Math.max(32, d.x1 - d.x0 - 2.5),
-                height: Math.max(32, d.y1 - d.y0 - 2.5),
-                background: tierColors[item.grade] || tierColors["Sizzlin' Noob"],
-                borderRadius: 12,
-                boxShadow: hoverIdx === i
-                  ? "0 0 0 3px #ffe8b0, 0 2px 20px #0007"
-                  : "0 2px 10px #0002",
-                border: hoverIdx === i ? "2.2px solid #e48d25" : "1.5px solid #2224",
-                overflow: "hidden",
-                padding: isMini ? "2px 5px" : "8px 8px 6px 11px",
-                fontSize: 13, transition: "all 0.18s cubic-bezier(.42,0,.46,1.52)",
-                cursor: isMini ? "default" : "pointer",
-                zIndex: hoverIdx === i ? 9 : 2,
-                display: "flex", flexDirection: "column", justifyContent: "space-between",
-                minWidth: 24, minHeight: 24, userSelect: "none"
-              }}
-            >
-              {isMini ? (
-                <div style={{
-                  fontWeight: 800, fontSize: 13, color: "#db4662", textAlign: "center"
-                }}>
-                  {item.value.toFixed(2)}%
-                </div>
-              ) : (
-                <>
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    {getRankBadge(item.rank)}
-                    <span style={{
-                      fontWeight: 700, fontSize: 12, color: "#888",
-                      letterSpacing: "0.02em", textShadow: "0 1px 2px #fff7"
-                    }}>
-                      {item.grade}
-                    </span>
-                  </div>
-                  <div style={{
-                    fontWeight: 700, fontSize: 14, marginTop: 1,
-                    color: "#18182a", wordBreak: "break-all"
-                  }}>
-                    {item.name}
-                  </div>
-                  <div style={{ display: "flex", alignItems: "baseline" }}>
-                    <div style={{
-                      fontWeight: 900, fontSize: 18, margin: "2px 3px 0 0",
-                      color: "#db4662", textShadow: "0 2px 6px #fff5"
-                    }}>
-                      {item.value.toFixed(2)}%
-                    </div>
-                    <div style={{
-                      fontWeight: 600, fontSize: 11.5,
-                      color: (+item.change > 0 ? "#2cbf6f" : "#e14e4e"), marginLeft: 2
-                    }}>
-                      {(+item.change > 0 ? "+" : "") + item.change + "%"}
-                    </div>
-                  </div>
-                </>
-              )}
+        {/* 트리맵 섹션 */}
+        <section style={{
+          flex: isDesktop ? "1" : "none",
+          order: isMobile ? 2 : 1
+        }}>
+          <div style={{
+            background: "rgba(255,255,255,0.03)",
+            borderRadius: 16,
+            padding: 16,
+            border: "1px solid rgba(255,255,255,0.1)",
+            position: "relative",
+            width: treemapWidth,
+            height: treemapHeight,
+            overflow: "hidden"
+          }}>
+            <div style={{
+              fontSize: 18,
+              fontWeight: 700,
+              marginBottom: 16,
+              textAlign: "center"
+            }}>
+              🔥 Top 20 Allocation Map
             </div>
-          );
-        })}
-      </div>
-      
+
+            <div style={{
+              position: "relative",
+              width: treemapWidth - 32,
+              height: treemapHeight - 60
+            }}>
+              {items.map((d, i) => {
+                const item = d.data as LeaderboardItem;
+                const boxWidth = d.x1 - d.x0 - 2;
+                const boxHeight = d.y1 - d.y0 - 2;
+                const isTiny = boxWidth < 60 || boxHeight < 40;
+                
+                return (
+                  <div
+                    key={i}
+                    onClick={() => setModal(item)}
+                    style={{
+                      position: "absolute",
+                      left: d.x0,
+                      top: d.y0,
+                      width: Math.max(20, boxWidth),
+                      height: Math.max(20, boxHeight),
+                      background: tierColors[item.grade] || tierColors["Sizzlin' Noob"],
+                      borderRadius: 8,
+                      padding: isTiny ? "4px" : "8px",
+                      cursor: "pointer",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      fontSize: isTiny ? 10 : 12,
+                      fontWeight: 700,
+                      color: "#1a1a1a",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      transition: "all 0.2s",
+                      overflow: "hidden"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "scale(1.05)";
+                      e.currentTarget.style.zIndex = "10";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "scale(1)";
+                      e.currentTarget.style.zIndex = "1";
+                    }}
+                  >
+                    {!isTiny && (
+                      <>
+                        <div style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
+                          marginBottom: 4
+                        }}>
+                          <span style={{ fontSize: 14 }}>{getRankBadge(item.rank)}</span>
+                          <span style={{ fontSize: 10, opacity: 0.8 }}>#{item.rank}</span>
+                        </div>
+                        
+                        <div style={{
+                          fontSize: boxWidth < 100 ? 10 : 11,
+                          fontWeight: 600,
+                          textOverflow: "ellipsis",
+                          overflow: "hidden",
+                          whiteSpace: "nowrap"
+                        }}>
+                          {item.name}
+                        </div>
+                      </>
+                    )}
+                    
+                    <div style={{
+                      fontSize: isTiny ? 10 : 14,
+                      fontWeight: 900,
+                      textAlign: "center",
+                      color: "#1a1a1a"
+                    }}>
+                      {item.value.toFixed(1)}%
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* 사이드바 */}
+        <aside style={{
+          width: isDesktop ? sidebarWidth : "100%",
+          order: isMobile ? 1 : 2,
+          display: "flex",
+          flexDirection: "column",
+          gap: 16
+        }}>
+          {/* 지갑 연결 (모바일에서만) */}
+          {isMobile && (
+            <WalletConnect 
+              wallet={wallet} 
+              onConnect={connectWallet} 
+              onDisconnect={disconnectWallet} 
+            />
+          )}
+
+          {/* 리더보드 테이블 */}
+          <LeaderboardTable data={sorted} isDesktop={isDesktop} />
+
+          {/* 통계 정보 */}
+          <div style={{
+            background: "rgba(255,255,255,0.03)",
+            borderRadius: 16,
+            padding: 16,
+            border: "1px solid rgba(255,255,255,0.1)"
+          }}>
+            <div style={{
+              fontSize: 16,
+              fontWeight: 700,
+              marginBottom: 12,
+              textAlign: "center"
+            }}>
+              📊 Phase 1 Stats
+            </div>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "#999" }}>Total Participants:</span>
+                <span style={{ fontWeight: 700 }}>{data.length}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "#999" }}>Phase Reward:</span>
+                <span style={{ fontWeight: 700 }}>41.67M STAKE</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "#999" }}>Time Remaining:</span>
+                <span style={{ fontWeight: 700, color: "#4ade80" }}>13d 4h 22m</span>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </main>
+
       {/* 모달 */}
       {modal && (
         <SimpleModal
@@ -449,65 +897,6 @@ export default function Home() {
           onClose={() => setModal(null)}
         />
       )}
-    </div>
-  );
-}
-
-// 간단한 모달 컴포넌트
-function SimpleModal({ modal, onClose }: { modal: LeaderboardItem; onClose: () => void }) {
-  useEffect(() => {
-    const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", esc);
-    return () => window.removeEventListener("keydown", esc);
-  }, [onClose]);
-
-  return (
-    <div
-      style={{
-        position: "fixed", left: 0, top: 0, width: "100vw", height: "100vh",
-        background: "rgba(0,0,0,0.6)", zIndex: 99, display: "flex",
-        alignItems: "center", justifyContent: "center"
-      }}
-      onClick={onClose}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          background: "linear-gradient(140deg,#20212a 65%,#222326 110%)",
-          borderRadius: 22, minWidth: 320, maxWidth: "92vw",
-          padding: "28px 18px 22px 18px", color: "#fff", fontSize: 18,
-          boxShadow: "0 8px 40px #000b"
-        }}
-      >
-        <button
-          onClick={onClose}
-          style={{
-            position: "absolute", top: 8, right: 15, fontSize: 28,
-            color: "#fff", background: "none", border: "none", cursor: "pointer"
-          }}
-        >×</button>
-        
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 10 }}>
-            {getRankBadge(modal.rank)} {modal.name}
-          </div>
-          <div style={{ fontSize: 24, fontWeight: 900, color: "#db4662", marginBottom: 10 }}>
-            {modal.value.toFixed(2)}%
-          </div>
-          <div style={{ fontSize: 14, color: "#aaa", marginBottom: 5 }}>
-            등급: <b style={{ color: "#fff" }}>{modal.grade}</b>
-          </div>
-          <div style={{ fontSize: 14, color: "#aaa", marginBottom: 5 }}>
-            스테이킹량: <b style={{ color: "#fff" }}>{modal.total_staked.toLocaleString()} STAKE</b>
-          </div>
-          <div style={{ fontSize: 14, color: "#aaa", marginBottom: 5 }}>
-            점수: <b style={{ color: "#fff" }}>{modal.score.toLocaleString()}</b>
-          </div>
-          <div style={{ fontSize: 14, color: "#aaa" }}>
-            보유기간: <b style={{ color: "#fff" }}>{modal.time}</b>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
