@@ -75,7 +75,7 @@ jobs:
     # 6. 백업 파일 아티팩트로 저장
     - name: 💾 Save Backup Files
       if: always()  # 실패해도 백업 파일 저장
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: stake-leaderboard-backup-${{ github.run_number }}
         path: |
@@ -83,6 +83,7 @@ jobs:
           python-scripts/backup/*.json
           python-scripts/*.log
         retention-days: 30
+        if-no-files-found: ignore
     
     # 7. 실행 결과 요약
     - name: 📊 Execution Summary
