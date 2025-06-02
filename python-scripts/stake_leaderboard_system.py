@@ -62,6 +62,128 @@ staking_data = defaultdict(lambda: {
     'unstake_transactions': []
 })
 
+# stake_leaderboard_system.py에 추가할 테스트 함수들:
+
+def test_sheet_best_formats(data):
+    """다양한 형식으로 Sheet.best API 테스트"""
+    logger.info("🧪 Sheet.best API 형식 테스트 시작...")
+    
+    if not SHEET_BEST_URL or 'YOUR_SHEET_ID' in SHEET_BEST_URL:
+        logger.error("❌ SHEET_BEST_URL이 설정되지 않았습니다")
+        return False
+    
+    # 테스트할 다양한 형식들
+    test_formats = []
+    
+    # 형식 1: 매우 간단한 객체
+    test_formats.append({
+        "name": "Simple Object",
+        "data": {"address": "0x123", "rank": 1, "total": 1000}
+    })
+    
+    # 형식 2: 단순 배열
+    test_formats.append({
+        "name": "Simple Array", 
+        "data": [{"address": "0x123", "rank": 1}]
+    })
+    
+    # 형식 3: 문자열만
+    test_formats.append({
+        "name": "String Only",
+        "data": [{"address": "0x123", "rank": "1", "total": "1000"}]
+    })
+    
+    # 형식 4: 실제 데이터 1개
+    if data:
+        sample = data[0]
+        test_formats.append({
+            "name": "Real Data Single",
+            "data": [{
+                "address": str(sample.get('address', '')),
+                "rank": str(sample.get('rank', '')),
+                "grade": str(sample.get('grade', '')),
+                "total_staked": str(sample.get('total_staked', ''))
+            }]
+        })
+    
+    # 형식 5: 컬럼명 간소화
+    test_formats.append({
+        "name": "Short Columns",
+        "data": [{"addr": "0x123", "rank": 1, "amount": 1000}]
+    })
+    
+    # 각 형식 테스트
+    for i, test_format in enumerate(test_formats, 1):
+        logger.info(f"📝 테스트 {i}: {test_format['name']}")
+        
+        success = try_upload_format(test_format['data'], test_format['name'])
+        
+        if success:
+            logger.info(f"✅ 성공! 형식: {test_format['name']}")
+            return test_format['name']
+        
+        # 잠시 대기 (API 제한 방지)
+        time.sleep(2)
+    
+    logger.error("❌ 모든 형식 테스트 실패")
+    return False
+
+def try_upload_format(test_data, format_name):
+    """특정 형식으로 업로드 시도"""
+    try:
+        headers = {
+            'Content-Type': 'application/json',
+            'User-Agent': 'STAKE-Test/1.0'
+        }
+        
+        logger.info(f"📤 {format_name} 형식 업로드 시도...")
+        logger.info(f"📊 데이터: {str(test_data)[:100]}...")
+        
+        response = requests.put(
+            SHEET_BEST_URL,
+            json=test_data,
+            headers=headers,
+            timeout=30
+        )
+        
+        logger.info(f"📡 응답 코드: {response.status_code}")
+        logger.info(f"📄 응답 내용: {response.text[:200]}")
+        
+        if response.status_code == 200:
+            return True
+        else:
+            return False
+            
+    except Exception as e:
+        logger.error(f"❌ {format_name} 업로드 오류: {e}")
+        return False
+
+def get_sheet_best_info():
+    """Sheet.best API 정보 확인"""
+    logger.info("ℹ️ Sheet.best API 정보 확인...")
+    
+    try:
+        # GET 요청으로 현재 데이터 확인
+        response = requests.get(SHEET_BEST_URL, timeout=30)
+        
+        logger.info(f"📡 GET 응답 코드: {response.status_code}")
+        logger.info(f"📄 현재 시트 데이터: {response.text[:500]}")
+        
+        if response.status_code == 200:
+            try:
+                current_data = response.json()
+                if current_data:
+                    logger.info(f"📊 현재 데이터 구조: {type(current_data)}")
+                    if isinstance(current_data, list) and len(current_data) > 0:
+                        logger.info(f"🔍 첫 번째 항목: {current_data[0]}")
+                        logger.info(f"🗝️ 컬럼명들: {list(current_data[0].keys()) if isinstance(current_data[0], dict) else 'Not dict'}")
+            except:
+                logger.info("📄 JSON 파싱 실패, 텍스트 데이터")
+        
+    except Exception as e:
+        logger.error(f"❌ Sheet.best 정보 확인 실패: {e}")
+
+
 def rpc_call(method, params):
     """RPC 호출 with 에러 핸들링"""
     try:
@@ -410,115 +532,52 @@ def process_leaderboard_data():
 
 # stake_leaderboard_system.py 파일의 upload_to_sheet_best 함수를 이렇게 수정:
 
+# 기존 upload_to_sheet_best 함수를 이렇게 수정:
 def upload_to_sheet_best(data):
-    """Sheet.best API로 데이터 업로드 (개선된 버전)"""
+    """Sheet.best API 업로드 (형식 테스트 포함)"""
     logger.info("📤 Sheet.best API 업로드 시작...")
     
-    try:
-        # 데이터 검증
-        if not data:
-            raise Exception("업로드할 데이터가 없습니다")
-        
-        # Sheet.best 호환 형식으로 변환
-        clean_data = []
-        for item in data[:100]:  # 상위 100개만 (API 제한 고려)
-            clean_item = {
-                'address': str(item.get('address', '')),
-                'rank': int(item.get('rank', 0)),
-                'grade': str(item.get('grade', '')),
-                'grade_emoji': str(item.get('grade_emoji', '')),
-                'percentile': float(item.get('percentile', 0)),
-                'total_staked': float(item.get('total_staked', 0)),
-                'time_score': float(item.get('time_score', 0)),
-                'holding_days': float(item.get('holding_days', 0)),
-                'stake_count': int(item.get('stake_count', 0)),
-                'unstake_count': int(item.get('unstake_count', 0)),
-                'is_active': bool(item.get('is_active', True)),
-                'current_phase': int(item.get('current_phase', 1)),
-                'airdrop_share_phase': float(item.get('airdrop_share_phase', 0)),
-                'airdrop_share_total': float(item.get('airdrop_share_total', 0))
-            }
-            
-            # None 값 제거 및 무한대/NaN 처리
-            for key, value in clean_item.items():
-                if value is None:
-                    clean_item[key] = 0 if key in ['percentile', 'total_staked', 'time_score', 'holding_days', 'airdrop_share_phase', 'airdrop_share_total'] else ''
-                elif isinstance(value, float) and (not math.isfinite(value)):
-                    clean_item[key] = 0
-            
-            clean_data.append(clean_item)
-        
-        logger.info(f"📊 정제된 데이터: {len(clean_data)}개 항목")
-        
-        # 헤더 설정
-        headers = {
-            'Content-Type': 'application/json',
-            'User-Agent': 'STAKE-Leaderboard/1.0',
-            'Accept': 'application/json'
-        }
-        
-        # 작은 배치로 나누어 업로드 시도
-        batch_size = 50
-        for i in range(0, len(clean_data), batch_size):
-            batch = clean_data[i:i+batch_size]
-            
-            logger.info(f"📤 배치 {i//batch_size + 1} 업로드 중... ({len(batch)}개 항목)")
-            
-            # API 호출
-            response = requests.put(
-                SHEET_BEST_URL,
-                json=batch,
-                headers=headers,
-                timeout=60
-            )
-            
-            if response.status_code == 200:
-                logger.info(f"✅ 배치 {i//batch_size + 1} 업로드 성공")
-                break  # 첫 번째 배치만 성공하면 중단 (전체 교체)
-            else:
-                logger.error(f"❌ 배치 {i//batch_size + 1} 업로드 실패: {response.status_code}")
-                logger.error(f"응답: {response.text[:200]}")
-                
-                if i == 0:  # 첫 번째 배치 실패시 다른 방법 시도
-                    # 더 간단한 형식으로 재시도
-                    simple_data = []
-                    for item in batch:
-                        simple_data.append({
-                            'address': item['address'],
-                            'rank': item['rank'],
-                            'grade': item['grade'],
-                            'total_staked': item['total_staked'],
-                            'time_score': item['time_score']
-                        })
-                    
-                    logger.info("🔄 간단한 형식으로 재시도...")
-                    response = requests.put(
-                        SHEET_BEST_URL,
-                        json=simple_data,
-                        headers=headers,
-                        timeout=60
-                    )
-                    
-                    if response.status_code == 200:
-                        logger.info("✅ 간단한 형식으로 업로드 성공")
-                        return True
-                
-                continue
-        
-        # 전체 실패시 로그 저장
-        logger.error("❌ 모든 배치 업로드 실패")
-        
-        # 디버그용 샘플 데이터 저장
-        with open('debug_sample.json', 'w', encoding='utf-8') as f:
-            import json
-            json.dump(clean_data[:5], f, ensure_ascii=False, indent=2)
-        logger.info("🔍 디버그용 샘플 저장: debug_sample.json")
-        
+    if not data:
+        logger.error("❌ 업로드할 데이터가 없습니다")
         return False
+    
+    # 1. 현재 시트 정보 확인
+    get_sheet_best_info()
+    
+    # 2. 다양한 형식 테스트
+    successful_format = test_sheet_best_formats(data)
+    
+    if successful_format:
+        logger.info(f"🎯 성공한 형식 발견: {successful_format}")
         
-    except Exception as e:
-        logger.error(f"❌ Sheet.best 업로드 오류: {e}")
-        logger.error(traceback.format_exc())
+        # 3. 성공한 형식으로 전체 데이터 업로드
+        if successful_format == "Simple Array":
+            final_data = []
+            for item in data[:50]:  # 50개까지
+                final_data.append({
+                    "address": str(item.get('address', '')),
+                    "rank": int(item.get('rank', 0))
+                })
+        
+        elif successful_format == "String Only":
+            final_data = []
+            for item in data[:50]:
+                final_data.append({
+                    "address": str(item.get('address', '')),
+                    "rank": str(item.get('rank', '')),
+                    "grade": str(item.get('grade', '')),
+                    "total_staked": str(item.get('total_staked', ''))
+                })
+        
+        else:
+            # 기본 형식
+            final_data = data[:50]
+        
+        # 최종 업로드
+        return try_upload_format(final_data, "Final Upload")
+    
+    else:
+        logger.error("❌ 모든 형식 테스트 실패")
         return False
 
 # 추가: math 모듈 import 필요
