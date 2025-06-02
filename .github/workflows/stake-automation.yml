@@ -22,7 +22,11 @@ env:
 jobs:
   update-leaderboard:
     runs-on: ubuntu-latest
-    timeout-minutes: 180  # 3시간 타임아웃
+    timeout-minutes: 180
+    permissions:
+      contents: write  # JSON 파일 커밋을 위한 권한
+      pages: write     # GitHub Pages 배포 권한
+      id-token: write  # 토큰 권한
     
     steps:
     # 1. 코드 체크아웃
