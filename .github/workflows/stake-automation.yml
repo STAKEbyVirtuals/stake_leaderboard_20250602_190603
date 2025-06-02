@@ -1,0 +1,125 @@
+name: STAKE Leaderboard Auto Update
+
+on:
+  # 6시간마다 자동 실행 (UTC 기준: 00:00, 06:00, 12:00, 18:00)
+  schedule:
+    - cron: '0 */6 * * *'
+  
+  # 수동 실행 가능
+  workflow_dispatch:
+    inputs:
+      force_update:
+        description: 'Force full data update'
+        required: false
+        default: false
+        type: boolean
+
+# 환경변수 설정
+env:
+  PYTHONUNBUFFERED: 1
+  TZ: Asia/Seoul
+
+jobs:
+  update-leaderboard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180  # 3시간 타임아웃
+    
+    steps:
+    # 1. 코드 체크아웃
+    - name: 📂 Checkout Repository
+      uses: actions/checkout@v4
+    
+    # 2. Python 환경 설정
+    - name: 🐍 Setup Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    # 3. 의존성 설치
+    - name: 📦 Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests pandas schedule
+        pip install python-dateutil pytz
+    
+    # 4. Python 스크립트 실행 전 준비
+    - name: ⚙️ Prepare Environment
+      run: |
+        echo "🚀 STAKE 리더보드 업데이트 시작"
+        echo "⏰ 실행 시간: $(date)"
+        echo "🌍 타임존: $TZ"
+        
+        # 백업 디렉토리 생성
+        mkdir -p python-scripts/backup
+        
+        # 환경변수 확인 (민감정보 제외)
+        echo "🔗 Sheet.best URL 설정: ${SHEET_BEST_URL:0:30}..."
+    
+    # 5. STAKE 데이터 추출 및 업로드
+    - name: 🥩 Update STAKE Leaderboard
+      env:
+        SHEET_BEST_URL: ${{ secrets.SHEET_BEST_URL }}
+      working-directory: python-scripts
+      run: |
+        echo "📊 STAKE 데이터 추출 시작..."
+        
+        # 타임아웃과 함께 Python 스크립트 실행
+        timeout 10800 python stake_leaderboard_system.py || {
+          echo "❌ 스크립트 실행 실패 또는 타임아웃"
+          exit 1
+        }
+        
+        echo "✅ STAKE 리더보드 업데이트 완료"
+    
+    # 6. 백업 파일 아티팩트로 저장
+    - name: 💾 Save Backup Files
+      if: always()  # 실패해도 백업 파일 저장
+      uses: actions/upload-artifact@v3
+      with:
+        name: stake-leaderboard-backup-${{ github.run_number }}
+        path: |
+          python-scripts/backup/*.csv
+          python-scripts/backup/*.json
+          python-scripts/*.log
+        retention-days: 30
+    
+    # 7. 실행 결과 요약
+    - name: 📊 Execution Summary
+      if: always()
+      run: |
+        echo "🎯 === STAKE 리더보드 업데이트 완료 ==="
+        echo "📅 실행 시간: $(date)"
+        echo "🔢 실행 번호: ${{ github.run_number }}"
+        echo "📂 백업 파일 생성: python-scripts/backup/"
+        
+        # 백업 파일 목록 출력
+        if [ -d "python-scripts/backup" ]; then
+          echo "📁 생성된 백업 파일:"
+          ls -la python-scripts/backup/ || echo "백업 파일 없음"
+        fi
+        
+        # 로그 파일 확인
+        if [ -f "python-scripts/stake_leaderboard.log" ]; then
+          echo "📋 마지막 로그 10줄:"
+          tail -10 python-scripts/stake_leaderboard.log
+        fi
+    
+    # 8. 실패 시 알림 (선택사항)
+    - name: 🚨 Failure Notification
+      if: failure()
+      run: |
+        echo "💥 STAKE 리더보드 업데이트 실패!"
+        echo "🔍 로그를 확인하여 문제를 진단하세요."
+        echo "📧 GitHub Actions 탭에서 상세 로그를 확인할 수 있습니다."
+        
+        # 에러 로그 출력
+        if [ -f "python-scripts/stake_leaderboard.log" ]; then
+          echo "❌ 에러 로그:"
+          tail -20 python-scripts/stake_leaderboard.log
+        fi
+
+# 동시 실행 제한 (중복 실행 방지)
+concurrency:
+  group: stake-leaderboard-update
+  cancel-in-progress: false

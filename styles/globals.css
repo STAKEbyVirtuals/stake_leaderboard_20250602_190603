@@ -1,0 +1,31 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@keyframes flame {
+  0% { box-shadow: 0 0 10px #f87171; }
+  50% { box-shadow: 0 0 25px #ef4444; }
+  100% { box-shadow: 0 0 10px #f87171; }
+}
+.animate-flame {
+  animation: flame 1.5s infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.animate-twinkle {
+  animation: twinkle 2s infinite;
+}
+
+@keyframes shake-smoke {
+  0% { transform: translate(0, 0); opacity: 1; }
+  25% { transform: translate(-1px, 1px); opacity: 0.8; }
+  50% { transform: translate(1px, -1px); opacity: 0.6; }
+  75% { transform: translate(-1px, 1px); opacity: 0.4; }
+  100% { transform: translate(0, 0); opacity: 0.2; }
+}
+.animate-shake-smoke {
+  animation: shake-smoke 3s infinite;
+}
