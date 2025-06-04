@@ -9,11 +9,10 @@
     "clean": "rimraf .next"
   },
   "dependencies": {
-    "@rainbow-me/rainbowkit": "^2.2.5",
     "axios": "^1.9.0",
     "d3-hierarchy": "^3.1.2",
     "next": "13.4.12",
-    "react": "18.2.0",
+    "react": "^18.2.0",
     "react-dom": "18.2.0",
     "squarify": "^1.1.0",
     "viem": "^2.30.6",
