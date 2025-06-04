@@ -5,6 +5,7 @@ import axios from "axios";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount } from "wagmi";
 import Image from 'next/image';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area } from 'recharts';
 
 // JSON API URL (구글시트 or GitHub JSON)
 const SHEET_BEST_URL = '/leaderboard.json';
@@ -2602,28 +2603,1089 @@ function MyDashboardPage({ data, wallet }:{ data: LeaderboardItem[]; wallet: str
   );
 }
 
-// --- StatsPage ---
-function StatsPage({ data }:{ data: LeaderboardItem[] }) {
+// 개선된 StatsPage 컴포넌트 - pages/index.tsx의 StatsPage 함수를 이것으로 교체하세요
+
+// 더미 트렌드 데이터 생성
+const generateTrendData = () => {
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const baseStaking = 45000000;
+  const baseUsers = 800;
+  
+  return days.map((day, index) => {
+    const growth = Math.random() * 0.1 + 0.02; // 2-12% 성장
+    const stakingAmount = baseStaking * (1 + growth * index);
+    const activeUsers = baseUsers + Math.floor(Math.random() * 50 + index * 20);
+    
+    return {
+      day,
+      staking: Math.floor(stakingAmount),
+      users: activeUsers,
+      newStakers: Math.floor(Math.random() * 25 + 15),
+      avgStake: Math.floor(stakingAmount / activeUsers)
+    };
+  });
+};
+
+// 등급별 분포 데이터
+const gradeDistribution = [
+  { grade: 'Genesis OG', count: 45, color: '#4ade80', multiplier: 5.0 },
+  { grade: 'Smoke Flexer', count: 12, color: '#22d3ee', multiplier: 4.2 },
+  { grade: 'Steak Wizard', count: 67, color: '#818cf8', multiplier: 3.5 },
+  { grade: 'Grilluminati', count: 89, color: '#f472b6', multiplier: 3.0 },
+  { grade: 'Flame Juggler', count: 156, color: '#fb923c', multiplier: 2.5 },
+  { grade: 'Flipstarter', count: 234, color: '#64748b', multiplier: 2.0 },
+  { grade: 'Sizzlin\' Noob', count: 298, color: '#475569', multiplier: 1.5 },
+  { grade: 'Jeeted', count: 327, color: '#ef4444', multiplier: 1.0 }
+];
+
+// 배수별 리워드 분석 데이터
+const multiplierAnalysis = gradeDistribution.map(grade => {
+  const totalStaked = grade.count * (Math.random() * 2000000 + 500000); // 더미 스테이킹
+  const expectedReward = totalStaked * grade.multiplier * 0.001; // 더미 리워드 계산
+  
+  return {
+    grade: grade.grade,
+    count: grade.count,
+    totalStaked: Math.floor(totalStaked),
+    multiplier: grade.multiplier,
+    expectedReward: Math.floor(expectedReward),
+    avgPerUser: Math.floor(expectedReward / grade.count),
+    color: grade.color
+  };
+});
+
+// 상위 vs 하위 비교 데이터
+const tierComparison = [
+  {
+    tier: 'Top 10%',
+    users: 93,
+    avgStake: 2450000,
+    avgMultiplier: 4.2,
+    totalReward: 45600000,
+    color: '#4ade80'
+  },
+  {
+    tier: 'Middle 80%',
+    users: 744,
+    avgStake: 890000,
+    avgMultiplier: 2.1,
+    totalReward: 32400000,
+    color: '#818cf8'
+  },
+  {
+    tier: 'Bottom 10%',
+    users: 92,
+    avgStake: 156000,
+    avgMultiplier: 1.2,
+    totalReward: 2100000,
+    color: '#ef4444'
+  }
+];
+
+// 실시간 활동 피드 더미 데이터
+const generateActivityFeed = () => {
+  const activities = [
+    { type: 'rank_up', user: '0x95740c...ae15', from: 2, to: 1, time: '2m ago' },
+    { type: 'new_staker', user: '0x8fc1a0...e74', amount: 1250000, time: '5m ago' },
+    { type: 'rank_down', user: '0xca0bcd...477', from: 15, to: 18, time: '8m ago' },
+    { type: 'big_stake', user: '0x40d258...858', amount: 5000000, time: '12m ago' },
+    { type: 'grade_up', user: '0xd7afa0...031', from: 'Flame Juggler', to: 'Grilluminati', time: '15m ago' },
+    { type: 'new_staker', user: '0xe302da...332', amount: 850000, time: '18m ago' },
+    { type: 'rank_up', user: '0xe5a8be...d28', from: 45, to: 42, time: '22m ago' },
+    { type: 'unstake', user: '0x8fc1a0...e74', amount: 750000, time: '25m ago' },
+  ];
+  
+  return activities;
+};
+
+// 글로벌 건강도 지표
+const healthMetrics = {
+  stakingRatio: 78.5, // 전체 토큰 중 스테이킹 비율
+  activeRatio: 85.2, // 활성 사용자 비율
+  retentionRate: 92.1, // 7일 유지율
+  growthRate: 15.7, // 주간 성장률
+  diversityIndex: 0.73, // 등급 다양성 지수 (0-1)
+  liquidityHealth: 88.9 // 유동성 건강도
+};
+
+// 차트 색상 팔레트
+const chartColors = {
+  primary: '#4ade80',
+  secondary: '#818cf8', 
+  accent: '#f472b6',
+  warning: '#fb923c',
+  danger: '#ef4444',
+  neutral: '#64748b'
+};
+
+// 탭 데이터
+const statsTabs = [
+  { id: 'overview', label: '📊 Overview', icon: '📊' },
+  { id: 'trends', label: '📈 Trends', icon: '📈' },
+  { id: 'grades', label: '🏆 Grades', icon: '🏆' },
+  { id: 'rewards', label: '💰 Rewards', icon: '💰' },
+  { id: 'comparison', label: '⚖️ Compare', icon: '⚖️' },
+  { id: 'activity', label: '⚡ Activity', icon: '⚡' },
+];
+
+// 개선된 StatsPage 컴포넌트
+function StatsPage({ data }: { data: LeaderboardItem[] }) {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [windowSize, setWindowSize] = useState({ width: 1200, height: 800 });
+  
+  const isMobile = windowSize.width < 768;
+  const isTablet = windowSize.width < 1024;
+  
+  // 실제 데이터에서 계산된 통계
   const totalStaked = data.reduce((sum, item) => sum + item.total_staked, 0);
   const activeWallets = data.filter(item => item.total_staked > 0).length;
   const avgStake = totalStaked / (activeWallets || 1);
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24, maxWidth: 1200, margin: "0 auto" }}>
-      <h1 style={{ fontSize: 28, fontWeight: 700, color: "#fff", textAlign: "center", margin: 0 }}>📊 Platform Statistics</h1>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 20 }}>
-        <div style={{ background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: 16, padding: 24, textAlign: "center" }}>
-          <div style={{ fontSize: 36, fontWeight: 900, color: "#4ade80", marginBottom: 8 }}>{activeWallets.toLocaleString()}</div>
-          <div style={{ fontSize: 16, color: "#fff", fontWeight: 600 }}>Active Stakers</div>
+  const topStaker = data.reduce((max, item) => item.total_staked > max.total_staked ? item : max, data[0]);
+  
+  // 트렌드 데이터
+  const trendData = generateTrendData();
+  const activityFeed = generateActivityFeed();
+
+  // 윈도우 리사이즈 핸들러
+  useEffect(() => {
+    function handleResize() {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener("resize", handleResize);
+      handleResize();
+      return () => window.removeEventListener("resize", handleResize);
+    }
+  }, []);
+
+  // 숫자 포맷팅 함수
+  const formatNumber = (num: number) => {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(0) + 'K';
+    return num.toLocaleString();
+  };
+
+  // 탭 렌더링
+  const renderTabs = () => (
+    <div style={{
+      display: 'flex',
+      background: 'rgba(255,255,255,0.05)',
+      borderRadius: 16,
+      padding: 4,
+      marginBottom: 32,
+      gap: 2,
+      overflowX: 'auto',
+      flexWrap: isMobile ? 'wrap' : 'nowrap'
+    }}>
+      {statsTabs.map((tab) => (
+        <button
+          key={tab.id}
+          onClick={() => setActiveTab(tab.id)}
+          style={{
+            flex: isMobile ? '1 1 calc(50% - 4px)' : '1',
+            padding: isMobile ? '12px 8px' : '14px 16px',
+            background: activeTab === tab.id 
+              ? 'rgba(74,222,128,0.15)' 
+              : 'transparent',
+            border: activeTab === tab.id 
+              ? '1px solid rgba(74,222,128,0.3)' 
+              : '1px solid transparent',
+            borderRadius: 12,
+            color: activeTab === tab.id ? '#4ade80' : '#999',
+            fontSize: isMobile ? 12 : 14,
+            fontWeight: activeTab === tab.id ? 700 : 600,
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: isMobile ? 4 : 8,
+            whiteSpace: 'nowrap'
+          }}
+        >
+          <span style={{ fontSize: isMobile ? 14 : 16 }}>{tab.icon}</span>
+          {!isMobile && <span>{tab.label.split(' ')[1]}</span>}
+        </button>
+      ))}
+    </div>
+  );
+
+  // Overview 탭 컨텐츠
+  const renderOverview = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* 메인 통계 카드들 */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr 1fr' : isTablet ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)',
+        gap: 16
+      }}>
+        <div style={{
+          background: 'rgba(74,222,128,0.08)',
+          border: '1px solid rgba(74,222,128,0.2)',
+          borderRadius: 16,
+          padding: 20,
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: isMobile ? 24 : 32, fontWeight: 900, color: '#4ade80', marginBottom: 8 }}>
+            {formatNumber(totalStaked)}
+          </div>
+          <div style={{ fontSize: isMobile ? 12 : 14, color: '#fff', fontWeight: 600 }}>Total Staked</div>
+          <div style={{ fontSize: 10, color: '#4ade80', marginTop: 4 }}>+12.5% this week</div>
         </div>
-        <div style={{ background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.2)", borderRadius: 16, padding: 24, textAlign: "center" }}>
-          <div style={{ fontSize: 36, fontWeight: 900, color: "#ff6b6b", marginBottom: 8 }}>{(totalStaked / 1000000).toFixed(1)}M</div>
-          <div style={{ fontSize: 16, color: "#fff", fontWeight: 600 }}>Total Staked</div>
+
+        <div style={{
+          background: 'rgba(129,140,248,0.08)',
+          border: '1px solid rgba(129,140,248,0.2)',
+          borderRadius: 16,
+          padding: 20,
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: isMobile ? 24 : 32, fontWeight: 900, color: '#818cf8', marginBottom: 8 }}>
+            {activeWallets.toLocaleString()}
+          </div>
+          <div style={{ fontSize: isMobile ? 12 : 14, color: '#fff', fontWeight: 600 }}>Active Stakers</div>
+          <div style={{ fontSize: 10, color: '#818cf8', marginTop: 4 }}>+8.3% this week</div>
         </div>
-        <div style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)", borderRadius: 16, padding: 24, textAlign: "center" }}>
-          <div style={{ fontSize: 36, fontWeight: 900, color: "#8b5cf6", marginBottom: 8 }}>{(avgStake / 1000).toFixed(0)}K</div>
-          <div style={{ fontSize: 16, color: "#fff", fontWeight: 600 }}>Avg. Stake</div>
+
+        <div style={{
+          background: 'rgba(244,114,182,0.08)',
+          border: '1px solid rgba(244,114,182,0.2)',
+          borderRadius: 16,
+          padding: 20,
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: isMobile ? 24 : 32, fontWeight: 900, color: '#f472b6', marginBottom: 8 }}>
+            {formatNumber(avgStake)}
+          </div>
+          <div style={{ fontSize: isMobile ? 12 : 14, color: '#fff', fontWeight: 600 }}>Avg Stake</div>
+          <div style={{ fontSize: 10, color: '#f472b6', marginTop: 4 }}>+3.7% this week</div>
+        </div>
+
+        {!isMobile && (
+          <div style={{
+            background: 'rgba(251,146,60,0.08)',
+            border: '1px solid rgba(251,146,60,0.2)',
+            borderRadius: 16,
+            padding: 20,
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: 32, fontWeight: 900, color: '#fb923c', marginBottom: 8 }}>
+              {((activeWallets / 1247) * 100).toFixed(1)}%
+            </div>
+            <div style={{ fontSize: 14, color: '#fff', fontWeight: 600 }}>Participation</div>
+            <div style={{ fontSize: 10, color: '#fb923c', marginTop: 4 }}>+2.1% this week</div>
+          </div>
+        )}
+      </div>
+
+      {/* 글로벌 건강도 지표 */}
+      <div style={{
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: 20,
+        padding: 24
+      }}>
+        <h3 style={{
+          fontSize: 20,
+          fontWeight: 700,
+          color: '#fff',
+          margin: '0 0 24px 0',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8
+        }}>
+          🌍 Ecosystem Health
+        </h3>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)',
+          gap: 20
+        }}>
+          {Object.entries(healthMetrics).map(([key, value]) => {
+            const labels: Record<string, string> = {
+              stakingRatio: 'Staking Ratio',
+              activeRatio: 'Active Users',
+              retentionRate: 'Retention',
+              growthRate: 'Growth Rate',
+              diversityIndex: 'Diversity',
+              liquidityHealth: 'Liquidity'
+            };
+            
+            const getColor = (val: number) => {
+              if (val >= 80) return '#4ade80';
+              if (val >= 60) return '#fb923c';
+              return '#ef4444';
+            };
+
+            return (
+              <div key={key} style={{ textAlign: 'center' }}>
+                <div style={{
+                  width: isMobile ? 60 : 80,
+                  height: isMobile ? 60 : 80,
+                  borderRadius: '50%',
+                  background: `conic-gradient(${getColor(value)} ${value * 3.6}deg, rgba(255,255,255,0.1) 0deg)`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 12px',
+                  position: 'relative'
+                }}>
+                  <div style={{
+                    width: isMobile ? 45 : 60,
+                    height: isMobile ? 45 : 60,
+                    borderRadius: '50%',
+                    background: '#0a0a0a',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: isMobile ? 12 : 14,
+                    fontWeight: 700,
+                    color: getColor(value)
+                  }}>
+                    {value.toFixed(1)}%
+                  </div>
+                </div>
+                <div style={{
+                  fontSize: isMobile ? 11 : 13,
+                  color: '#fff',
+                  fontWeight: 600
+                }}>
+                  {labels[key]}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
+    </div>
+  );
+
+  // Trends 탭 컨텐츠
+  const renderTrends = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* 스테이킹 트렌드 차트 */}
+      <div style={{
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: 20,
+        padding: 24
+      }}>
+        <h3 style={{
+          fontSize: 20,
+          fontWeight: 700,
+          color: '#fff',
+          margin: '0 0 24px 0',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8
+        }}>
+          📈 Staking Trends (7 Days)
+        </h3>
+
+        <div style={{ height: isMobile ? 250 : 300, marginBottom: 20 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={trendData}>
+              <defs>
+                <linearGradient id="stakingGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#4ade80" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#4ade80" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+              <XAxis 
+                dataKey="day" 
+                stroke="#999" 
+                fontSize={12}
+                tick={{ fill: '#999' }}
+              />
+              <YAxis 
+                stroke="#999" 
+                fontSize={12}
+                tick={{ fill: '#999' }}
+                tickFormatter={(value) => formatNumber(value)}
+              />
+              <Tooltip 
+                contentStyle={{
+                  background: 'rgba(0,0,0,0.9)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 8,
+                  color: '#fff'
+                }}
+                formatter={(value: any, name: string) => [
+                  formatNumber(value),
+                  name === 'staking' ? 'Total Staked' : name === 'users' ? 'Active Users' : name
+                ]}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="staking" 
+                stroke="#4ade80" 
+                strokeWidth={2}
+                fill="url(#stakingGradient)" 
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* 트렌드 요약 */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
+          gap: 16
+        }}>
+          {[
+            { label: 'Peak Day', value: 'Friday', color: '#4ade80' },
+            { label: 'Growth Rate', value: '+15.7%', color: '#4ade80' },
+            { label: 'New Stakers', value: '147', color: '#818cf8' },
+            { label: 'Avg Daily', value: formatNumber(trendData[trendData.length - 1].staking), color: '#f472b6' }
+          ].map((item, index) => (
+            <div key={index} style={{
+              background: 'rgba(255,255,255,0.02)',
+              border: '1px solid rgba(255,255,255,0.05)',
+              borderRadius: 12,
+              padding: 16,
+              textAlign: 'center'
+            }}>
+              <div style={{
+                fontSize: isMobile ? 14 : 16,
+                fontWeight: 700,
+                color: item.color,
+                marginBottom: 4
+              }}>
+                {item.value}
+              </div>
+              <div style={{
+                fontSize: 11,
+                color: '#999'
+              }}>
+                {item.label}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  // Grades 탭 컨텐츠
+  const renderGrades = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* 등급별 분포 차트 */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+        gap: 24
+      }}>
+        {/* 도넛 차트 */}
+        <div style={{
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: 20,
+          padding: 24
+        }}>
+          <h3 style={{
+            fontSize: 18,
+            fontWeight: 700,
+            color: '#fff',
+            margin: '0 0 24px 0',
+            textAlign: 'center'
+          }}>
+            🏆 Grade Distribution
+          </h3>
+
+          <div style={{ height: isMobile ? 250 : 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={gradeDistribution}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={isMobile ? 40 : 60}
+                  outerRadius={isMobile ? 80 : 120}
+                  paddingAngle={2}
+                  dataKey="count"
+                >
+                  {gradeDistribution.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{
+                    background: 'rgba(0,0,0,0.9)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 8,
+                    color: '#fff'
+                  }}
+                  formatter={(value: any, name: string) => [value, 'Users']}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* 등급별 상세 리스트 */}
+        <div style={{
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: 20,
+          padding: 24
+        }}>
+          <h3 style={{
+            fontSize: 18,
+            fontWeight: 700,
+            color: '#fff',
+            margin: '0 0 24px 0'
+          }}>
+            📊 Grade Details
+          </h3>
+
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+            maxHeight: isMobile ? 250 : 300,
+            overflowY: 'auto'
+          }}>
+            {gradeDistribution.map((grade, index) => (
+              <div key={index} style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 16px',
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.05)',
+                borderRadius: 12
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12
+                }}>
+                  <div style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: '50%',
+                    background: grade.color
+                  }} />
+                  <div>
+                    <div style={{
+                      fontSize: isMobile ? 13 : 14,
+                      fontWeight: 600,
+                      color: '#fff'
+                    }}>
+                      {grade.grade}
+                    </div>
+                    <div style={{
+                      fontSize: 11,
+                      color: grade.color
+                    }}>
+                      {grade.multiplier}x multiplier
+                    </div>
+                  </div>
+                </div>
+                <div style={{
+                  textAlign: 'right'
+                }}>
+                  <div style={{
+                    fontSize: isMobile ? 14 : 16,
+                    fontWeight: 700,
+                    color: '#fff'
+                  }}>
+                    {grade.count}
+                  </div>
+                  <div style={{
+                    fontSize: 10,
+                    color: '#999'
+                  }}>
+                    {((grade.count / gradeDistribution.reduce((sum, g) => sum + g.count, 0)) * 100).toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Rewards 탭 컨텐츠  
+  const renderRewards = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* 배수별 리워드 분석 */}
+      <div style={{
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: 20,
+        padding: 24
+      }}>
+        <h3 style={{
+          fontSize: 20,
+          fontWeight: 700,
+          color: '#fff',
+          margin: '0 0 24px 0',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8
+        }}>
+          💰 Multiplier Reward Analysis
+        </h3>
+
+        <div style={{ height: isMobile ? 250 : 350, marginBottom: 20 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={multiplierAnalysis} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+              <XAxis 
+                dataKey="grade" 
+                stroke="#999" 
+                fontSize={10}
+                tick={{ fill: '#999' }}
+                angle={-45}
+                textAnchor="end"
+                height={60}
+              />
+              <YAxis 
+                stroke="#999" 
+                fontSize={12}
+                tick={{ fill: '#999' }}
+                tickFormatter={(value) => formatNumber(value)}
+              />
+              <Tooltip 
+                contentStyle={{
+                  background: 'rgba(0,0,0,0.9)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 8,
+                  color: '#fff'
+                }}
+                formatter={(value: any, name: string) => [
+                  formatNumber(value),
+                  name === 'expectedReward' ? 'Expected Reward' : name
+                ]}
+              />
+              <Bar 
+                dataKey="expectedReward" 
+                fill="#4ade80"
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* 리워드 요약 통계 */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
+          gap: 16
+        }}>
+          {[
+            { 
+              label: 'Total Rewards', 
+              value: formatNumber(multiplierAnalysis.reduce((sum, item) => sum + item.expectedReward, 0)),
+              color: '#4ade80' 
+            },
+            { 
+              label: 'Highest Multiplier', 
+              value: `${Math.max(...multiplierAnalysis.map(item => item.multiplier))}x`,
+              color: '#fb923c' 
+            },
+            { 
+              label: 'Avg Per User', 
+              value: formatNumber(multiplierAnalysis.reduce((sum, item) => sum + item.avgPerUser, 0) / multiplierAnalysis.length),
+              color: '#818cf8' 
+            },
+            { 
+              label: 'Top Grade Bonus', 
+              value: '+400%',
+              color: '#f472b6' 
+            }
+          ].map((item, index) => (
+            <div key={index} style={{
+              background: 'rgba(255,255,255,0.02)',
+              border: '1px solid rgba(255,255,255,0.05)',
+              borderRadius: 12,
+              padding: 16,
+              textAlign: 'center'
+            }}>
+              <div style={{
+                fontSize: isMobile ? 14 : 16,
+                fontWeight: 700,
+                color: item.color,
+                marginBottom: 4
+              }}>
+                {item.value}
+              </div>
+              <div style={{
+                fontSize: 11,
+                color: '#999'
+              }}>
+                {item.label}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  // Comparison 탭 컨텐츠
+  const renderComparison = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* 상위 vs 하위 비교 */}
+      <div style={{
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: 20,
+        padding: 24
+      }}>
+        <h3 style={{
+          fontSize: 20,
+          fontWeight: 700,
+          color: '#fff',
+          margin: '0 0 24px 0',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8
+        }}>
+          ⚖️ Tier Comparison Analysis
+        </h3>
+
+        {/* 비교 차트 */}
+        <div style={{ height: isMobile ? 250 : 300, marginBottom: 24 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={tierComparison} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+              <XAxis 
+                dataKey="tier" 
+                stroke="#999" 
+                fontSize={12}
+                tick={{ fill: '#999' }}
+              />
+              <YAxis 
+                stroke="#999" 
+                fontSize={12}
+                tick={{ fill: '#999' }}
+                tickFormatter={(value) => formatNumber(value)}
+              />
+              <Tooltip 
+                contentStyle={{
+                  background: 'rgba(0,0,0,0.9)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 8,
+                  color: '#fff'
+                }}
+                formatter={(value: any, name: string) => [
+                  formatNumber(value),
+                  name === 'avgStake' ? 'Avg Stake' : 
+                  name === 'totalReward' ? 'Total Reward' : name
+                ]}
+              />
+              <Bar dataKey="avgStake" fill="#4ade80" radius={[2, 2, 0, 0]} />
+              <Bar dataKey="totalReward" fill="#818cf8" radius={[2, 2, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* 비교 상세 카드들 */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+          gap: 16
+        }}>
+          {tierComparison.map((tier, index) => (
+            <div key={index} style={{
+              background: `${tier.color}15`,
+              border: `1px solid ${tier.color}40`,
+              borderRadius: 16,
+              padding: 20
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 16
+              }}>
+                <h4 style={{
+                  fontSize: 16,
+                  fontWeight: 700,
+                  color: tier.color,
+                  margin: 0
+                }}>
+                  {tier.tier}
+                </h4>
+                <div style={{
+                  fontSize: 18,
+                  color: tier.color
+                }}>
+                  {index === 0 ? '👑' : index === 1 ? '🎯' : '🔽'}
+                </div>
+              </div>
+
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8
+              }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <span style={{ fontSize: 12, color: '#999' }}>Users</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>
+                    {tier.users.toLocaleString()}
+                  </span>
+                </div>
+                
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <span style={{ fontSize: 12, color: '#999' }}>Avg Stake</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>
+                    {formatNumber(tier.avgStake)}
+                  </span>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <span style={{ fontSize: 12, color: '#999' }}>Avg Multiplier</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: tier.color }}>
+                    {tier.avgMultiplier}x
+                  </span>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <span style={{ fontSize: 12, color: '#999' }}>Total Reward</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>
+                    {formatNumber(tier.totalReward)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  // Activity 탭 컨텐츠
+  const renderActivity = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* 실시간 활동 피드 */}
+      <div style={{
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: 20,
+        padding: 24
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 24
+        }}>
+          <h3 style={{
+            fontSize: 20,
+            fontWeight: 700,
+            color: '#fff',
+            margin: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8
+          }}>
+            ⚡ Live Activity Feed
+          </h3>
+          <div style={{
+            fontSize: 12,
+            background: 'rgba(74,222,128,0.2)',
+            color: '#4ade80',
+            padding: '4px 8px',
+            borderRadius: 6,
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4
+          }}>
+            <div style={{
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              background: '#4ade80',
+              animation: 'pulse 2s infinite'
+            }} />
+            Live
+          </div>
+        </div>
+
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 12,
+          maxHeight: 400,
+          overflowY: 'auto'
+        }}>
+          {activityFeed.map((activity, index) => {
+            const getActivityIcon = (type: string) => {
+              switch(type) {
+                case 'rank_up': return '📈';
+                case 'rank_down': return '📉';
+                case 'new_staker': return '🆕';
+                case 'big_stake': return '💎';
+                case 'grade_up': return '⬆️';
+                case 'unstake': return '📤';
+                default: return '⚡';
+              }
+            };
+
+            const getActivityColor = (type: string) => {
+              switch(type) {
+                case 'rank_up': return '#4ade80';
+                case 'rank_down': return '#ef4444';
+                case 'new_staker': return '#818cf8';
+                case 'big_stake': return '#f472b6';
+                case 'grade_up': return '#fb923c';
+                case 'unstake': return '#64748b';
+                default: return '#999';
+              }
+            };
+
+            const getActivityText = (activity: any) => {
+              switch(activity.type) {
+                case 'rank_up':
+                  return `moved up from #${activity.from} to #${activity.to}`;
+                case 'rank_down':
+                  return `dropped from #${activity.from} to #${activity.to}`;
+                case 'new_staker':
+                  return `staked ${formatNumber(activity.amount)} STAKE`;
+                case 'big_stake':
+                  return `made a big stake of ${formatNumber(activity.amount)} STAKE`;
+                case 'grade_up':
+                  return `upgraded from ${activity.from} to ${activity.to}`;
+                case 'unstake':
+                  return `unstaked ${formatNumber(activity.amount)} STAKE`;
+                default:
+                  return 'performed an action';
+              }
+            };
+
+            return (
+              <div key={index} style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '12px 16px',
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.05)',
+                borderRadius: 12,
+                transition: 'all 0.2s'
+              }}>
+                <div style={{
+                  fontSize: 20,
+                  marginRight: 12
+                }}>
+                  {getActivityIcon(activity.type)}
+                </div>
+
+                <div style={{ flex: 1 }}>
+                  <div style={{
+                    fontSize: isMobile ? 13 : 14,
+                    color: '#fff',
+                    marginBottom: 2
+                  }}>
+                    <span style={{
+                      fontFamily: 'monospace',
+                      color: getActivityColor(activity.type),
+                      fontWeight: 600
+                    }}>
+                      {activity.user}
+                    </span>
+                    {' '}
+                    <span style={{ color: '#ccc' }}>
+                      {getActivityText(activity)}
+                    </span>
+                  </div>
+                  <div style={{
+                    fontSize: 11,
+                    color: '#666'
+                  }}>
+                    {activity.time}
+                  </div>
+                </div>
+
+                <div style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: getActivityColor(activity.type),
+                  opacity: 0.7
+                }} />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+
+  // 현재 탭에 따른 컨텐츠 렌더링
+  const renderTabContent = () => {
+    switch(activeTab) {
+      case 'overview': return renderOverview();
+      case 'trends': return renderTrends();
+      case 'grades': return renderGrades();
+      case 'rewards': return renderRewards();
+      case 'comparison': return renderComparison();
+      case 'activity': return renderActivity();
+      default: return renderOverview();
+    }
+  };
+
+  return (
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      gap: 24, 
+      maxWidth: 1400, 
+      margin: '0 auto',
+      padding: isMobile ? '0' : '0 20px'
+    }}>
+      {/* 페이지 헤더 */}
+      <div style={{ 
+        textAlign: 'center',
+        marginBottom: 16
+      }}>
+        <h1 style={{ 
+          fontSize: isMobile ? 24 : 32, 
+          fontWeight: 900, 
+          color: '#fff', 
+          margin: '0 0 8px 0',
+          background: 'linear-gradient(135deg, #4ade80, #22c55e)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent'
+        }}>
+          📊 Advanced Analytics
+        </h1>
+        <p style={{
+          fontSize: isMobile ? 14 : 16,
+          color: '#999',
+          margin: 0
+        }}>
+          Deep insights into the STAKE ecosystem
+        </p>
+      </div>
+
+      {/* 탭 네비게이션 */}
+      {renderTabs()}
+
+      {/* 탭 컨텐츠 */}
+      {renderTabContent()}
     </div>
   );
 }
