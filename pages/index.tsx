@@ -7,19 +7,20 @@ import { useAccount } from "wagmi";
 import Image from 'next/image';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area } from 'recharts';
 
+
 // JSON API URL (구글시트 or GitHub JSON)
 const SHEET_BEST_URL = '/leaderboard.json';
 
 // --- 유틸리티 및 타입 ---
 const tierColors: Record<string, string> = {
-  "Genesis OG": "#4ade80",
-  "Heavy Eater": "#22d3ee", 
-  "Steak Wizard": "#818cf8",
-  "Grilluminati": "#f472b6",
-  "Flame Juggler": "#fb923c",
-  "Flipstarter": "#64748b",
-  "Sizzlin' Noob": "#475569",
-  "Jeeted": "#ef4444",
+  "Genesis OG": "#10b981",        // 민트
+  "Heavy Eater": "#ef4444",       // 레전드 빨강 (기존 Smoke Flexer 대신)
+  "Steak Wizard": "#fbbf24",      // 유니크 노랑
+  "Grilluminati": "#9333ea",      // 에픽 보라
+  "Flame Juggler": "#3b82f6",     // 레어 파랑
+  "Flipstarter": "#22c55e",       // 언커먼 초록
+  "Sizzlin' Noob": "#9ca3af",     // 노말 회색흰색
+  "Jeeted": "#1e1e1e",            // 리타이어 검은색
 };
 
 // 숫자 포맷팅 함수들
@@ -32,6 +33,7 @@ function formatLargeNumber(num: number): string {
   return num.toLocaleString();
 }
 
+
 function formatNumberChange(baseNum: number, changePercent: number): { value: string; isPositive: boolean } {
   const changeAmount = (baseNum * changePercent) / 100;
   const isPositive = changeAmount >= 0;
@@ -42,11 +44,11 @@ function formatNumberChange(baseNum: number, changePercent: number): { value: st
   };
 }
 
-// 등급 이미지 매핑 함수 (최적화 버전)
+// 3. 등급 이미지 경로 함수 추가 (기존 getGradeImagePath 찾아서 교체)
 function getGradeImagePath(grade: string): string {
   const gradeImages: Record<string, string> = {
     "Genesis OG": "/images/grades/genesis-og.png",
-    "Smoke Flexer": "/images/grades/smoke-flexer.png", 
+    "Heavy Eater": "/images/grades/heavy-eater.png",  // 새로운!
     "Steak Wizard": "/images/grades/steak-wizard.png",
     "Grilluminati": "/images/grades/grilluminati.png",
     "Flame Juggler": "/images/grades/flame-juggler.png",
@@ -135,6 +137,7 @@ function OptimizedGradeAvatar({
   );
 }
 
+// 타입 정의
 interface LeaderboardItem {
   name: string;
   value: number;
@@ -327,8 +330,24 @@ function Layout({
 }
 
 
-// Top Rankings 리스트 컴포넌트 (10/25/50/전체)
-function Top10Leaderboard({ data, isMobile }: { data: LeaderboardItem[]; isMobile: boolean }) {
+// ========================================
+// 🔥 Top10Leaderboard 컴포넌트 수정 코드
+// ========================================
+
+// pages/index.tsx에서 Top10Leaderboard 함수를 찾아서 이 코드로 완전히 교체하세요!
+
+// 🔥 기존 Top10Leaderboard 함수를 이 코드로 완전히 교체하세요!
+
+// 🌟 강한 글로우 스타일 Top10Leaderboard 완성 코드
+// pages/index.tsx에서 기존 Top10Leaderboard 함수를 이 코드로 완전히 교체하세요!
+// 🎯 레이아웃 개선된 Top10Leaderboard 완성 코드
+// pages/index.tsx에서 기존 Top10Leaderboard 함수를 이 코드로 완전히 교체하세요!
+
+function Top10Leaderboard({ data, isMobile, setModal }: { 
+  data: LeaderboardItem[]; 
+  isMobile: boolean;
+  setModal: (item: LeaderboardItem) => void;
+}) {
   const [currentTab, setCurrentTab] = useState<'10' | '25' | '50' | 'all'>('10');
   
   const getDisplayCount = (tab: string) => {
@@ -352,6 +371,145 @@ function Top10Leaderboard({ data, isMobile }: { data: LeaderboardItem[]; isMobil
 
   const totalAllocation = displayData.reduce((sum, item) => sum + item.value, 0);
   const totalStaked = displayData.reduce((sum, item) => sum + item.total_staked, 0);
+
+  // 🌟 강한 글로우 RANK 컴포넌트
+  const StrongGlowRank = ({ rank }: { rank: number }) => {
+    const getRankStyle = (rank: number) => {
+      switch(rank) {
+        case 1: 
+          return { 
+            color: '#ffd700', 
+            textShadow: `
+              0 0 5px rgba(255,215,0,1),
+              0 0 10px rgba(255,215,0,0.8),
+              0 0 20px rgba(255,215,0,0.6),
+              0 0 30px rgba(255,215,0,0.4),
+              0 0 40px rgba(255,215,0,0.2)
+            `,
+            animation: 'strongGoldPulse 2s ease-in-out infinite'
+          };
+        case 2: 
+          return { 
+            color: '#e8e8e8', 
+            textShadow: `
+              0 0 5px rgba(232,232,232,0.8),
+              0 0 10px rgba(192,192,192,0.6),
+              0 0 15px rgba(192,192,192,0.4)
+            `,
+            animation: 'none'
+          };
+        case 3: 
+          return { 
+            color: '#d4a574', 
+            textShadow: `
+              0 0 5px rgba(212,165,116,0.8),
+              0 0 10px rgba(205,127,50,0.6),
+              0 0 15px rgba(205,127,50,0.4)
+            `,
+            animation: 'none'
+          };
+        default: 
+          return { 
+            color: '#999999', 
+            textShadow: 'none',
+            animation: 'none'
+          };
+      }
+    };
+    
+    const rankStyle = getRankStyle(rank);
+    
+    return (
+      <>
+        <div style={{
+          minWidth: isMobile ? 35 : 40,
+          textAlign: 'center',
+          fontSize: isMobile ? 16 : 18,
+          fontWeight: 900,
+          color: rankStyle.color,
+          textShadow: rankStyle.textShadow,
+          animation: rankStyle.animation,
+          opacity: 0.95,
+          letterSpacing: '0.5px',
+          filter: rank <= 3 ? 'brightness(1.1)' : 'none'
+        }}>
+          {rank}
+        </div>
+
+        {/* CSS 애니메이션 */}
+        <style jsx>{`
+          @keyframes strongGoldPulse {
+            0%, 100% { 
+              text-shadow: 
+                0 0 5px rgba(255,215,0,1),
+                0 0 10px rgba(255,215,0,0.8),
+                0 0 20px rgba(255,215,0,0.6),
+                0 0 30px rgba(255,215,0,0.4);
+              transform: scale(1);
+            }
+            50% { 
+              text-shadow: 
+                0 0 8px rgba(255,215,0,1),
+                0 0 15px rgba(255,215,0,1),
+                0 0 25px rgba(255,215,0,0.8),
+                0 0 40px rgba(255,215,0,0.6);
+              transform: scale(1.08);
+            }
+          }
+        `}</style>
+      </>
+    );
+  };
+
+  // 🎨 개선된 순위 변동 표시 컴포넌트
+  const RankChangeIndicator = ({ change }: { change: number }) => {
+    if (change === 0) return null;
+
+    const isUp = change < 0; // 음수는 순위 상승
+    const absChange = Math.abs(change);
+    
+    return (
+      <div style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 2,
+        padding: '2px 6px',
+        borderRadius: 6,
+        fontSize: 9,
+        fontWeight: 700,
+        background: isUp 
+          ? 'linear-gradient(135deg, rgba(74,222,128,0.2), rgba(34,197,94,0.1))'
+          : 'linear-gradient(135deg, rgba(239,68,68,0.2), rgba(220,38,38,0.1))',
+        border: `1px solid ${isUp ? 'rgba(74,222,128,0.3)' : 'rgba(239,68,68,0.3)'}`,
+        color: isUp ? '#4ade80' : '#ef4444',
+        boxShadow: `0 1px 3px ${isUp ? 'rgba(74,222,128,0.2)' : 'rgba(239,68,68,0.2)'}`,
+        animation: 'rankChangePulse 0.5s ease-out'
+      }}>
+        <span style={{ fontSize: 8 }}>
+          {isUp ? '↗' : '↘'}
+        </span>
+        <span>{absChange}</span>
+        
+        {/* CSS 애니메이션 */}
+        <style jsx>{`
+          @keyframes rankChangePulse {
+            0% { 
+              transform: scale(0.8);
+              opacity: 0;
+            }
+            50% { 
+              transform: scale(1.1);
+              opacity: 1;
+            }
+            100% { 
+              transform: scale(1);
+              opacity: 1;
+            }
+          }
+        `}</style>
+      </div>
+    );
+  };
 
   return (
     <div style={{
@@ -447,7 +605,7 @@ function Top10Leaderboard({ data, isMobile }: { data: LeaderboardItem[]; isMobil
       {/* 요약 통계 */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", // 3개 컬럼으로 변경
+        gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
         gap: 12,
         marginBottom: 20
       }}>
@@ -464,7 +622,7 @@ function Top10Leaderboard({ data, isMobile }: { data: LeaderboardItem[]; isMobil
             color: "#4ade80",
             marginBottom: 4
           }}>
-            {formatLargeNumber(totalAllocation * 1000000)} {/* 실제 토큰 수량으로 변환 */}
+            {formatLargeNumber(totalAllocation * 1000000)}
           </div>
           <div style={{
             fontSize: 12,
@@ -511,7 +669,6 @@ function Top10Leaderboard({ data, isMobile }: { data: LeaderboardItem[]; isMobil
             +5.7%
           </div>
         </div>
-        {/* Jeet 통계 카드 - 위아래 분할 */}
         <div style={{
           background: "rgba(239,68,68,0.08)",
           border: "1px solid rgba(239,68,68,0.2)",
@@ -520,14 +677,13 @@ function Top10Leaderboard({ data, isMobile }: { data: LeaderboardItem[]; isMobil
           textAlign: "center",
           display: "flex",
           flexDirection: "column",
-          height: "100%" // 다른 카드와 높이 맞춤
+          height: "100%"
         }}>
-          {/* 상단: 활성 스테이킹 지갑 수 */}
           <div style={{ flex: 1, borderBottom: "1px solid rgba(239,68,68,0.2)", paddingBottom: 8, marginBottom: 8 }}>
             <div style={{
               fontSize: 20,
               fontWeight: 800,
-              color: "#4ade80", // 긍정적인 녹색
+              color: "#4ade80",
               marginBottom: 2
             }}>
               {displayData.length}
@@ -541,7 +697,6 @@ function Top10Leaderboard({ data, isMobile }: { data: LeaderboardItem[]; isMobil
             </div>
           </div>
           
-          {/* 하단: Jeet 지갑 수 */}
           <div style={{ flex: 1 }}>
             <div style={{
               fontSize: 20,
@@ -550,13 +705,12 @@ function Top10Leaderboard({ data, isMobile }: { data: LeaderboardItem[]; isMobil
               marginBottom: 2
             }}>
               {(() => {
-                // 탭별 Jeet 계산 (예시 - 실제 데이터 구조에 맞게 조정 필요)
                 const totalInRange = (() => {
                   switch(currentTab) {
-                    case '10': return 15; // 실제로는 상위 15개 중 10개만 활성
-                    case '25': return 35; // 실제로는 상위 35개 중 25개만 활성  
-                    case '50': return 68; // 실제로는 상위 68개 중 50개만 활성
-                    case 'all': return 1247; // 전체 사용자 수
+                    case '10': return 15;
+                    case '25': return 35;
+                    case '50': return 68;
+                    case 'all': return 1247;
                     default: return 15;
                   }
                 })();
@@ -582,11 +736,11 @@ function Top10Leaderboard({ data, isMobile }: { data: LeaderboardItem[]; isMobil
         </div>
       </div>
 
-      {/* 헤더 바 */}
+      {/* 🎯 개선된 헤더 바 - 간격 조정 */}
       <div style={{
         display: "flex",
         alignItems: "center",
-        gap: 12,
+        gap: isMobile ? 8 : 12,
         padding: isMobile ? "8px 12px" : "10px 16px",
         background: "rgba(255,255,255,0.05)",
         border: "1px solid rgba(255,255,255,0.1)",
@@ -595,7 +749,7 @@ function Top10Leaderboard({ data, isMobile }: { data: LeaderboardItem[]; isMobil
       }}>
         {/* Rank 헤더 */}
         <div style={{
-          minWidth: isMobile ? 35 : 50, // 더 줄임 (40→35, 55→50)
+          minWidth: isMobile ? 35 : 40,
           fontSize: 11,
           fontWeight: 700,
           color: "#999",
@@ -605,24 +759,23 @@ function Top10Leaderboard({ data, isMobile }: { data: LeaderboardItem[]; isMobil
           Rank
         </div>
 
-        {/* Address & Grade 헤더 */}
+        {/* Address & Grade 헤더 - 더 넓게 */}
         <div style={{
           flex: 1,
-          minWidth: isMobile ? 120 : 170, // 더 확대 (110→120, 150→170)
+          minWidth: isMobile ? 150 : 200, // 더 넓게 설정
           fontSize: 11,
           fontWeight: 700,
           color: "#999",
           textTransform: "uppercase",
-          letterSpacing: "0.5px",
-          paddingLeft: 0
+          letterSpacing: "0.5px"
         }}>
           {isMobile ? "Address" : "Address & Grade"}
         </div>
 
-        {/* Allocation 헤더 */}
+        {/* Allocation 헤더 - 좁게 */}
         <div style={{
           textAlign: "right",
-          minWidth: isMobile ? 55 : 65, // 더 줄임 (60→55, 70→65)
+          minWidth: isMobile ? 50 : 60, // 좁게 설정
           fontSize: 11,
           fontWeight: 700,
           color: "#999",
@@ -632,10 +785,10 @@ function Top10Leaderboard({ data, isMobile }: { data: LeaderboardItem[]; isMobil
           {isMobile ? "Alloc" : "Allocation"}
         </div>
 
-        {/* Staked 헤더 */}
+        {/* Staked 헤더 - 좁게 */}
         <div style={{
           textAlign: "right",
-          minWidth: isMobile ? 55 : 65, // 더 줄임 (60→55, 70→65)
+          minWidth: isMobile ? 50 : 60, // 좁게 설정
           fontSize: 11,
           fontWeight: 700,
           color: "#999",
@@ -646,7 +799,7 @@ function Top10Leaderboard({ data, isMobile }: { data: LeaderboardItem[]; isMobil
         </div>
       </div>
 
-      {/* 순위 리스트 - 스크롤 가능한 컨테이너 */}
+      {/* 🌟 순위 리스트 - 개선된 레이아웃 */}
       <div style={{ 
         display: "flex", 
         flexDirection: "column", 
@@ -656,27 +809,25 @@ function Top10Leaderboard({ data, isMobile }: { data: LeaderboardItem[]; isMobil
         paddingRight: currentTab === 'all' || currentTab === '50' ? '8px' : '0'
       }}>
         {displayData.map((item, index) => {
-          // 실제 순위 변동 계산 (더 현실적인 값들)
-          const rankChange = Math.floor(Math.random() * 3) - 1; // -1 to +1
-          const allocationChangePercent = (Math.random() * 20 - 10); // -10% to +10%
-          const stakingChangePercent = (Math.random() * 30 - 15); // -15% to +15%
+          const rankChange = Math.floor(Math.random() * 3) - 1;
+          const allocationChangePercent = (Math.random() * 20 - 10);
+          const stakingChangePercent = (Math.random() * 30 - 15);
           
-          // 실제 할당량과 스테이킹 수량 계산
-          const totalTokens = 100000000; // 1억 토큰 가정
+          const totalTokens = 100000000;
           const actualAllocation = (item.value / 100) * totalTokens;
           const actualStaking = item.total_staked;
           
-          // 변동량 계산
           const allocationChange = formatNumberChange(actualAllocation, allocationChangePercent);
           const stakingChange = formatNumberChange(actualStaking, stakingChangePercent);
           
           return (
             <div
               key={item.address}
+              onClick={() => setModal(item)}
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 12,
+                gap: isMobile ? 8 : 12,
                 padding: isMobile ? "10px 12px" : "12px 16px",
                 background: index < 3 
                   ? "rgba(255,215,0,0.05)" 
@@ -692,60 +843,40 @@ function Top10Leaderboard({ data, isMobile }: { data: LeaderboardItem[]; isMobil
                 e.currentTarget.style.background = index < 3 
                   ? "rgba(255,215,0,0.08)" 
                   : "rgba(255,255,255,0.05)";
+                e.currentTarget.style.transform = "translateX(4px)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = index < 3 
                   ? "rgba(255,215,0,0.05)" 
                   : "rgba(255,255,255,0.02)";
+                e.currentTarget.style.transform = "translateX(0)";
               }}
             >
-              {/* 순위 */}
+              {/* 🌟 순위 섹션 */}
               <div style={{
                 display: "flex",
+                flexDirection: "column",
                 alignItems: "center",
-                gap: isMobile ? 4 : 5, // PC 간격 줄임
-                minWidth: isMobile ? 40 : 55 // PC 줄임 (70→55)
+                minWidth: isMobile ? 35 : 40,
+                gap: 2
               }}>
-                <span style={{ fontSize: isMobile ? 16 : 17 }}> {/* PC 아이콘 크기 줄임 */}
-                  {getRankBadge(index + 1)}
-                </span>
-                <div>
-                  <div style={{
-                    fontSize: isMobile ? 13 : 13, // PC도 13으로 줄임
-                    fontWeight: 700,
-                    color: "#fff"
-                  }}>
-                    #{index + 1}
-                  </div>
-                  {rankChange !== 0 && (
-                    <div style={{
-                      fontSize: 10,
-                      color: rankChange > 0 ? "#ef4444" : "#4ade80",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 2
-                    }}>
-                      {rankChange > 0 ? "↓" : "↑"}{Math.abs(rankChange)}
-                    </div>
-                  )}
-                </div>
+                <StrongGlowRank rank={index + 1} />
+                <RankChangeIndicator change={rankChange} />
               </div>
 
-              {/* 등급 이미지 & 주소/등급 정보 */}
+              {/* 등급 이미지 & 주소/등급 정보 - 더 넓게 */}
               <div style={{ 
-                flex: 1, 
-                minWidth: isMobile ? 90 : 130, // PC minWidth 늘림
+                flex: 1,
+                minWidth: 0,
                 display: "flex",
                 alignItems: "center",
-                gap: isMobile ? 8 : 10
+                gap: isMobile ? 8 : 12
               }}>
-                {/* 등급 이미지/아바타 - Next.js 최적화 */}
                 <OptimizedGradeAvatar 
                   grade={item.grade}
                   isMobile={isMobile}
                 />
 
-                {/* 주소 및 등급 텍스트 */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
                     fontSize: isMobile ? 11 : 12,
@@ -757,10 +888,7 @@ function Top10Leaderboard({ data, isMobile }: { data: LeaderboardItem[]; isMobil
                     whiteSpace: "nowrap",
                     marginBottom: 4
                   }}>
-                    {isMobile 
-                      ? `${item.address.slice(0, 6)}...${item.address.slice(-4)}` 
-                      : `${item.address.slice(0, 8)}...${item.address.slice(-6)}` // PC는 다시 길게
-                    }
+                    {item.address.slice(0, 4)}..{item.address.slice(-4)}
                   </div>
                   <div style={{
                     fontSize: isMobile ? 9 : 10,
@@ -779,17 +907,20 @@ function Top10Leaderboard({ data, isMobile }: { data: LeaderboardItem[]; isMobil
                     }}>
                       {isMobile 
                         ? item.grade.split(' ')[0] 
-                        : item.grade // PC는 전체 등급명 표시
+                        : item.grade
                       }
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* 할당량 (실제 수량) */}
-              <div style={{ textAlign: "right", minWidth: isMobile ? 70 : 90 }}>
+              {/* 할당량 - 좁게 */}
+              <div style={{ 
+                textAlign: "right", 
+                minWidth: isMobile ? 50 : 60
+              }}>
                 <div style={{
-                  fontSize: isMobile ? 12 : 15, // 모바일에서 폰트 크기 줄임
+                  fontSize: isMobile ? 12 : 15,
                   fontWeight: 800,
                   color: "#fff",
                   marginBottom: 2
@@ -808,10 +939,13 @@ function Top10Leaderboard({ data, isMobile }: { data: LeaderboardItem[]; isMobil
                 </div>
               </div>
 
-              {/* 스테이킹 수량 (실제 수량) */}
-              <div style={{ textAlign: "right", minWidth: isMobile ? 70 : 90 }}>
+              {/* 스테이킹 수량 - 좁게 */}
+              <div style={{ 
+                textAlign: "right", 
+                minWidth: isMobile ? 50 : 60
+              }}>
                 <div style={{
-                  fontSize: isMobile ? 12 : 15, // 모바일에서 폰트 크기 줄임
+                  fontSize: isMobile ? 12 : 15,
                   fontWeight: 700,
                   color: "#fff",
                   marginBottom: 2
@@ -888,7 +1022,7 @@ function LeaderboardPage({ data, modal, setModal, isMobile, isDesktop }:{
     }}>
       {/* 모바일에서는 Top 10이 위에 표시 */}
       {isMobile && (
-        <Top10Leaderboard data={data} isMobile={isMobile} />
+        <Top10Leaderboard data={data} isMobile={isMobile} setModal={setModal}/>
       )}
 
       {/* Treemap 섹션 */}
@@ -948,17 +1082,447 @@ function LeaderboardPage({ data, modal, setModal, isMobile, isDesktop }:{
           minWidth: 400,
           maxWidth: 500
         }}>
-          <Top10Leaderboard data={data} isMobile={isMobile} />
+          <Top10Leaderboard data={data} isMobile={isMobile} setModal={setModal}/>
         </section>
       )}
     </div>
   );
 }
 
-// 등급별 배수 정보
+// 🔥 기존 SimpleModal 함수를 이 코드로 완전히 교체하세요!
+function SimpleModal({ modal, onClose }: { modal: LeaderboardItem; onClose: () => void }) {
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  useEffect(() => {
+    setIsAnimating(true);
+    const timer = setTimeout(() => setIsAnimating(false), 300);
+    return () => clearTimeout(timer);
+  }, [modal]);
+
+  // ESC 키로 닫기
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [onClose]);
+
+  const gradeColor = tierColors[modal.grade] || "#9ca3af";
+
+  // 더미 비공개 점수 계산
+  const stakePoints = modal.total_staked * modal.holding_days;
+  const secretPoints = Math.floor(stakePoints * 0.65 + Math.random() * 1000);
+
+  // 실제 할당량 계산 (더미)
+  const totalTokens = 13500000000; // 135억 VIRTUAL 가정
+  const actualAllocation = (modal.value / 100) * totalTokens;
+  const virtualTokens = actualAllocation;
+  const dollarValue = virtualTokens * 0.0025; // $0.0025 per VIRTUAL (더미)
+
+  // 🎯 모달 전용 아바타 컴포넌트 (이미지 여백 최소화)
+  const ModalGradeAvatar = ({ grade, size = 85 }: { grade: string; size?: number }) => {
+    const [imageError, setImageError] = useState(false);
+
+    return (
+      <div style={{
+        width: size,
+        height: size,
+        borderRadius: 12,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        position: "relative",
+        overflow: "hidden",
+        border: `2px solid ${gradeColor}44`,
+        background: `linear-gradient(135deg, ${gradeColor}20, ${gradeColor}10)`
+      }}>
+        {!imageError && (
+          <img
+            src={getGradeImagePath(grade)}
+            alt={grade}
+            width={size}
+            height={size}
+            style={{
+              borderRadius: 10,
+              objectFit: "cover",
+              width: "100%",
+              height: "100%"
+            }}
+            loading="lazy"
+            onError={() => setImageError(true)}
+          />
+        )}
+        
+        {imageError && (
+          <div style={{
+            width: "100%",
+            height: "100%",
+            background: `linear-gradient(135deg, ${gradeColor}, ${gradeColor}88)`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: Math.floor(size * 0.45),
+            borderRadius: 10
+          }}>
+            {getGradeAvatar(grade)}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // 모바일 감지
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+
+  return (
+    <>
+      <div 
+        style={{
+          position: 'fixed',
+          left: 0,
+          top: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0,0,0,0.9)',
+          zIndex: 999,
+          display: 'flex',
+          alignItems: isMobile ? 'flex-start' : 'center', // 모바일에서는 상단 정렬
+          justifyContent: 'center',
+          backdropFilter: 'blur(12px)',
+          padding: isMobile ? '10px' : '20px',
+          paddingTop: isMobile ? '20px' : '20px', // 모바일에서 상단 여백
+          overflowY: 'auto' // 스크롤 허용
+        }}
+        onClick={onClose}
+      >
+        <div 
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            background: 'linear-gradient(135deg, #1a1d29 0%, #252833 50%, #1e2028 100%)',
+            borderRadius: isMobile ? 20 : 24,
+            width: isMobile ? '100%' : 500,
+            maxWidth: isMobile ? '100%' : '95vw',
+            maxHeight: isMobile ? 'none' : '90vh',
+            color: '#fff',
+            boxShadow: '0 25px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.1)',
+            border: '2px solid rgba(255,255,255,0.05)',
+            transform: isAnimating ? 'scale(0.95)' : 'scale(1)',
+            transition: 'transform 0.3s ease',
+            marginBottom: isMobile ? '20px' : '0' // 모바일에서 하단 여백
+          }}
+        >
+          {/* 헤더 - 등급별 가변 색상 */}
+          <div style={{
+            background: `linear-gradient(135deg, ${gradeColor}30, ${gradeColor}15)`,
+            backdropFilter: 'blur(20px)',
+            padding: isMobile ? '20px 20px 16px' : '24px 24px 20px',
+            textAlign: 'center',
+            position: 'relative',
+            borderBottom: `1px solid ${gradeColor}33`,
+            borderRadius: isMobile ? '20px 20px 0 0' : '24px 24px 0 0'
+          }}>
+            {/* 닫기 버튼 */}
+            <button 
+              onClick={onClose}
+              style={{
+                position: 'absolute',
+                top: isMobile ? 12 : 16,
+                right: isMobile ? 16 : 20,
+                width: isMobile ? 32 : 36,
+                height: isMobile ? 32 : 36,
+                background: 'rgba(0,0,0,0.2)',
+                border: 'none',
+                borderRadius: '50%',
+                color: 'rgba(255,255,255,0.6)',
+                fontSize: isMobile ? 20 : 24,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0,0,0,0.3)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(0,0,0,0.2)'}
+            >
+              ×
+            </button>
+
+            {/* 등급 이미지 박스 - 여백 최소화 */}
+            <div style={{
+              width: isMobile ? 80 : 90, // 모바일에서 조금 작게
+              height: isMobile ? 80 : 90,
+              margin: '0 auto 12px',
+              position: 'relative'
+            }}>
+              {/* 등급 이미지 */}
+              <ModalGradeAvatar grade={modal.grade} size={isMobile ? 80 : 90} />
+            </div>
+
+            {/* 등급명 */}
+            <div style={{
+              fontSize: isMobile ? 18 : 20,
+              fontWeight: 800,
+              color: '#fff',
+              marginBottom: 8,
+              textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+              letterSpacing: '0.5px'
+            }}>
+              {modal.grade}
+            </div>
+
+            {/* 세련된 순위 표현 */}
+            <div style={{
+              background: 'linear-gradient(135deg, #ffd700, #ffed4e)',
+              color: '#1a1a1a',
+              padding: isMobile ? '5px 14px' : '6px 16px',
+              borderRadius: 12,
+              fontSize: isMobile ? 13 : 14,
+              fontWeight: 700,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              boxShadow: '0 3px 12px rgba(255,215,0,0.3)'
+            }}>
+              <span style={{ fontSize: isMobile ? 14 : 16 }}>{getRankBadge(modal.rank)}</span>
+              <span>Rank #{modal.rank}</span>
+              <span style={{ fontSize: 10, opacity: 0.8 }}>LEADER</span>
+            </div>
+          </div>
+
+          {/* 바디 */}
+          <div style={{ padding: isMobile ? '16px 20px 20px' : '20px 24px 24px' }}>
+            {/* 지갑 주소 */}
+            <div style={{
+              background: 'rgba(255,255,255,0.05)',
+              padding: isMobile ? '12px 16px' : '16px 20px',
+              borderRadius: 16,
+              fontFamily: 'monospace',
+              textAlign: 'center',
+              marginBottom: isMobile ? 16 : 20,
+              border: '1px solid rgba(255,255,255,0.1)'
+            }}>
+              <div style={{
+                fontSize: 10,
+                color: '#666',
+                marginBottom: 6,
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                fontWeight: 600
+              }}>
+                Wallet Address
+              </div>
+              <div style={{
+                fontSize: isMobile ? 16 : 20,
+                color: '#fff',
+                fontWeight: 900,
+                textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                letterSpacing: '1px'
+              }}>
+                {modal.address.slice(0, 6)}...{modal.address.slice(-4)}
+              </div>
+            </div>
+
+            {/* 💰 수익 FOMO 극대화 할당량 박스 */}
+            <div style={{
+              background: 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 50%, #1e1e1e 100%)',
+              border: '2px solid transparent',
+              backgroundClip: 'padding-box',
+              borderRadius: 20,
+              padding: isMobile ? '20px 16px' : '28px 24px',
+              textAlign: 'center',
+              marginBottom: isMobile ? 16 : 20,
+              position: 'relative',
+              overflow: 'hidden',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)',
+            }}>
+              {/* 골드 테두리 효과 */}
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                padding: 2,
+                background: 'linear-gradient(135deg, #ffd700, #ff6b35, #f7931e)',
+                borderRadius: 20,
+                mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                maskComposite: 'exclude'
+              }} />
+              
+              {/* 배경 글로우 */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'radial-gradient(circle at 50% 20%, rgba(255,215,0,0.15), transparent 60%)',
+                pointerEvents: 'none'
+              }} />
+
+              {/* 타이틀 */}
+              <div style={{
+                fontSize: isMobile ? 14 : 16,
+                color: '#ffd700',
+                fontWeight: 900,
+                textTransform: 'uppercase',
+                letterSpacing: '1.5px',
+                marginBottom: isMobile ? 16 : 20,
+                position: 'relative',
+                zIndex: 2,
+                textShadow: '0 0 10px rgba(255,215,0,0.5)'
+              }}>
+                💰 Phase 1 Allocation 🚀
+              </div>
+
+              {/* 메인 수량 */}
+              <div style={{
+                fontSize: isMobile ? 22 : 26,
+                fontWeight: 900,
+                color: '#fff',
+                marginBottom: isMobile ? 12 : 16,
+                position: 'relative',
+                zIndex: 2,
+                lineHeight: 1.2,
+                textShadow: '0 2px 8px rgba(0,0,0,0.5)'
+              }}>
+                {formatLargeNumber(actualAllocation)} STAKE
+                <span style={{
+                  fontSize: isMobile ? 16 : 20,
+                  color: '#ff6b35',
+                  fontWeight: 800,
+                  marginLeft: 8,
+                  textShadow: '0 0 10px rgba(255,107,53,0.6)'
+                }}>
+                  ({modal.value.toFixed(2)}%)
+                </span>
+              </div>
+
+              {/* VIRTUAL과 달러 */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: isMobile ? 8 : 12,
+                position: 'relative',
+                zIndex: 2
+              }}>
+                <div style={{
+                  fontSize: isMobile ? 16 : 18,
+                  fontWeight: 700,
+                  color: '#22d3ee',
+                  textShadow: '0 0 10px rgba(34,211,238,0.5)'
+                }}>
+                  ≈ {formatLargeNumber(virtualTokens)} VIRTUAL
+                </div>
+                
+                <div style={{
+                  fontSize: isMobile ? 18 : 20,
+                  fontWeight: 900,
+                  color: '#4ade80',
+                  textShadow: '0 0 15px rgba(74,222,128,0.6)'
+                }}>
+                  ≈ ${formatLargeNumber(dollarValue)}
+                </div>
+              </div>
+            </div>
+
+            {/* 좌우 분할 포인트 시스템 */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: isMobile ? 12 : 16
+            }}>
+              {/* STAKE Points */}
+              <div style={{
+                padding: isMobile ? 12 : 16,
+                borderRadius: 12,
+                textAlign: 'center',
+                background: 'rgba(74,222,128,0.08)',
+                border: '1px solid rgba(74,222,128,0.2)'
+              }}>
+                <div style={{
+                  fontSize: isMobile ? 10 : 12,
+                  fontWeight: 700,
+                  color: '#4ade80',
+                  marginBottom: isMobile ? 6 : 8,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  🥩 STAKE POINTS
+                </div>
+                <div style={{
+                  fontSize: isMobile ? 16 : 18,
+                  fontWeight: 900,
+                  color: '#fff',
+                  marginBottom: 4
+                }}>
+                  {formatLargeNumber(stakePoints)}
+                </div>
+                <div style={{
+                  fontSize: 9,
+                  color: '#4ade80',
+                  opacity: 0.8
+                }}>
+                  Current Score
+                </div>
+              </div>
+
+              {/* SECRET Points */}
+              <div style={{
+                padding: isMobile ? 12 : 16,
+                borderRadius: 12,
+                textAlign: 'center',
+                background: 'rgba(139,92,246,0.08)',
+                border: '1px solid rgba(139,92,246,0.2)',
+                position: 'relative'
+              }}>
+                {/* 반짝임 효과 */}
+                <div style={{
+                  position: 'absolute',
+                  top: 6,
+                  right: 6,
+                  fontSize: isMobile ? 10 : 12,
+                  opacity: 0.6
+                }}>
+                  ✨
+                </div>
+                
+                <div style={{
+                  fontSize: isMobile ? 10 : 12,
+                  fontWeight: 700,
+                  color: '#8b5cf6',
+                  marginBottom: isMobile ? 6 : 8,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  ❓ SECRET POINTS
+                </div>
+                <div style={{
+                  fontSize: isMobile ? 16 : 18,
+                  fontWeight: 900,
+                  color: '#fff',
+                  marginBottom: 4
+                }}>
+                  {formatLargeNumber(secretPoints)}
+                </div>
+                <div style={{
+                  fontSize: 9,
+                  color: '#8b5cf6',
+                  opacity: 0.8
+                }}>
+                  Hidden Score
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// 2. 등급별 배수 업데이트 (기존 gradeMultipliers 찾아서 교체)
 const gradeMultipliers: Record<string, number> = {
   "Genesis OG": 5.0,
-  "Smoke Flexer": 4.2,
+  "Heavy Eater": 4.2,  // 기존 "Smoke Flexer" 대신
   "Steak Wizard": 3.5,
   "Grilluminati": 3.0,
   "Flame Juggler": 2.5,
@@ -973,8 +1537,8 @@ const nextGrade: Record<string, string> = {
   "Flipstarter": "Flame Juggler", 
   "Flame Juggler": "Grilluminati",
   "Grilluminati": "Steak Wizard",
-  "Steak Wizard": "Smoke Flexer",
-  "Smoke Flexer": "Genesis OG",
+  "Steak Wizard": "Heavy Eater",
+  "Heavy Eater": "Genesis OG",
   "Genesis OG": "Max Level",
 };
 
@@ -3690,42 +4254,7 @@ function StatsPage({ data }: { data: LeaderboardItem[] }) {
   );
 }
 
-// --- 모달 ---
-function SimpleModal({ modal, onClose }:{ modal: LeaderboardItem; onClose: () => void }) {
-  useEffect(() => {
-    const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", esc);
-    return () => window.removeEventListener("keydown", esc);
-  }, [onClose]);
-  return (
-    <div style={{ position: "fixed", left: 0, top: 0, width: "100vw", height: "100vh", background: "rgba(0,0,0,0.85)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{
-        background: "linear-gradient(135deg, #1a1d29 0%, #252833 50%, #1e2028 100%)", borderRadius: 24, width: 380, maxWidth: "95vw",
-        padding: 0, color: "#fff", fontSize: 16, boxShadow: "0 25px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.1)",
-        border: "2px solid rgba(255,255,255,0.05)", overflow: "hidden", position: "relative", transform: "scale(1)"
-      }}>
-        <button onClick={onClose} style={{
-          position: "absolute", top: 16, right: 20, fontSize: 28,
-          color: "#666", background: "none", border: "none", cursor: "pointer", zIndex: 10, borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center"
-        }}>×</button>
-        <div style={{ background: tierColors[modal.grade] || tierColors["Sizzlin' Noob"], padding: "32px 32px 24px", textAlign: "center", borderRadius: "24px 24px 0 0", position: "relative" }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>{getRankBadge(modal.rank)}</div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: "#1a1a1a", textShadow: "0 2px 4px rgba(255,255,255,0.3)", letterSpacing: "1px", marginBottom: 4 }}>{modal.grade}</div>
-          <div style={{ display: "inline-block", background: "rgba(0,0,0,0.2)", borderRadius: 12, padding: "4px 12px", fontSize: 14, fontWeight: 700, color: "#fff" }}>Rank #{modal.rank}</div>
-        </div>
-        <div style={{ padding: "28px 32px 32px" }}>
-          <div style={{ textAlign: "center", marginBottom: 20, fontSize: 15, fontFamily: "monospace", color: "#a0a0a0", fontWeight: 600, background: "rgba(255,255,255,0.05)", padding: "8px 16px", borderRadius: 8 }}>
-            {modal.address.slice(0, 10)}...{modal.address.slice(-8)}
-          </div>
-          <div style={{ textAlign: "center", marginBottom: 24, background: "linear-gradient(135deg, rgba(255,107,107,0.1), rgba(238,90,36,0.1))", borderRadius: 16, padding: "20px" }}>
-            <div style={{ fontSize: 42, fontWeight: 900, background: "linear-gradient(135deg, #ff6b6b, #ee5a24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 8, lineHeight: 1 }}>{modal.value.toFixed(2)}%</div>
-            <div style={{ fontSize: 14, color: "#888", fontWeight: 600 }}>Phase 1 Allocation</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+
 
 // --- Home Page ---
 export default function Home() {
