@@ -8,6 +8,7 @@ import { useAccount } from "wagmi";
 import Image from 'next/image';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area } from 'recharts';
 import StakeHowToPage from '../components/StakeHowToPage';
+import CompactTopbar from '../components/CompactTopbar';
 
 // JSON API URL (구글시트 or GitHub JSON)
 const SHEET_BEST_URL = '/leaderboard.json';
@@ -866,15 +867,25 @@ function Sidebar({ isOpen, onClose, wallet, currentPage, onPageChange, isMobile,
 }
 
 // Layout 컴포넌트 수정 - pages/index.tsx에서 기존 Layout 함수를 이것으로 교체하세요
+// 🎯 pages/index.tsx에서 기존 Layout 함수를 이 코드로 완전히 교체하세요!
+
+// 🎯 토글 버튼 완전 제거 + 새 헤더 고정 버전
+
 function Layout({
   children, currentPage, onPageChange, wallet, isMobile, isDesktop
 }:{
-  children: React.ReactNode; currentPage: string; onPageChange: (page: string) => void; wallet: string; isMobile: boolean; isDesktop: boolean;
+  children: React.ReactNode; 
+  currentPage: string; 
+  onPageChange: (page: string) => void; 
+  wallet: string; 
+  isMobile: boolean; 
+  isDesktop: boolean;
 }) {
+  // 기존 상태들 (그대로 유지)
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedPhase, setSelectedPhase] = useState<number | null>(null);
   
-  // 카운트다운 훅 사용
+  // 기존 훅들 (그대로 유지)
   const phase1TimeLeft = useCountdown(PHASE_SCHEDULE.PHASE_1_END);
   const phase2TimeLeft = useCountdown(PHASE_SCHEDULE.PHASE_2_START);
   
@@ -888,85 +899,45 @@ function Layout({
   
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#0a0a0a" }}>
-      <Sidebar isOpen={isDesktop || sidebarOpen} onClose={() => setSidebarOpen(false)} wallet={wallet} currentPage={currentPage} onPageChange={onPageChange} isMobile={isMobile} isDesktop={isDesktop} />
+      {/* 기존 사이드바 (변경 없음) */}
+      <Sidebar 
+        isOpen={isDesktop || sidebarOpen} 
+        onClose={() => setSidebarOpen(false)} 
+        wallet={wallet} 
+        currentPage={currentPage} 
+        onPageChange={onPageChange} 
+        isMobile={isMobile} 
+        isDesktop={isDesktop} 
+      />
       
-      <main style={{ flex: 1, marginLeft: isDesktop ? sidebarWidth : 0, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-        {/* 메인 헤더 - 모바일용 */}
-        {isMobile && (
-          <header style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "16px 20px", background: "rgba(255,255,255,0.03)", 
-            borderBottom: "1px solid rgba(255,255,255,0.1)",
-            position: "sticky", top: 0, zIndex: 100, backdropFilter: "blur(10px)"
-          }}>
-            <button onClick={() => setSidebarOpen(true)} style={{ background: "none", border: "none", color: "#fff", fontSize: 20, cursor: "pointer", padding: 8 }}>☰</button>
-            <h1 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "#fff", background: 'linear-gradient(135deg, #4ade80, #22c55e)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>🥩 STAKE Leaderboard</h1>
-            <ConnectButton
-              accountStatus="address"
-              chainStatus="icon"
-              showBalance={false}
-              label="💰"
-            />
-          </header>
-        )}
+      <main style={{ 
+        flex: 1, 
+        marginLeft: isDesktop ? sidebarWidth : 0, 
+        minHeight: "100vh", 
+        display: "flex", 
+        flexDirection: "column" 
+      }}>
         
-        {/* 페이즈 시스템 헤더 - 중앙 정렬 + 우측 지갑 버튼 */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: isMobile ? '16px' : '20px 32px',
-          background: 'rgba(10,10,10,0.95)',
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
-          position: 'sticky',
-          top: isMobile ? 61 : 0,
-          zIndex: 99,
-          backdropFilter: 'blur(12px)',
-        }}>
-          {/* 중앙 정렬된 페이즈 섹션 */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: isMobile ? 8 : 24,
-            justifyContent: 'center'
-          }}>
-            <PhaseProgressBar 
-              currentPhase={1}
-              totalPhases={6}
-              onPhaseClick={handlePhaseClick}
-              isMobile={isMobile}
-            />
-            <PhaseCountdown 
-              timeLeft={phase1TimeLeft}
-              isMobile={isMobile}
-            />
-          </div>
-          
-          {/* 우측 지갑 연결 버튼 - 데스크탑만 */}
-          {!isMobile && (
-            <div style={{
-              position: 'absolute',
-              right: 32,
-              top: '50%',
-              transform: 'translateY(-50%)'
-            }}>
-              <ConnectButton
-                accountStatus="address"
-                chainStatus="icon"
-                showBalance={false}
-                label="💰 Connect Wallet"
-              />
-            </div>
-          )}
-        </div>
+        {/* 🆕 CompactTopbar만 사용 (토글 없음) */}
+        <CompactTopbar
+          isMobile={isMobile}
+          onMobileMenuToggle={() => setSidebarOpen(!sidebarOpen)}
+          currentPhase={1}
+          totalPhases={6}
+          onPhaseClick={handlePhaseClick}
+        />
         
         {/* 메인 컨텐츠 */}
-        <div style={{ flex: 1, padding: isMobile ? "16px" : "20px 24px" }}>
+        <div style={{ 
+          flex: 1, 
+          padding: isMobile ? "16px" : "20px 24px",
+          marginTop: isMobile ? "72px" : "60px" // 새 헤더 높이만큼 고정 여백
+        }}>
           {children}
         </div>
       </main>
       
-      {/* 커밍순 모달 */}
+      {/* 기존 커밍순 모달 (변경 없음) */}
       <ComingSoonModal 
         isOpen={selectedPhase !== null}
         onClose={() => setSelectedPhase(null)}
