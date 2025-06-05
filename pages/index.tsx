@@ -34,6 +34,140 @@ const tierColors: Record<string, string> = {
   "Jeeted": "#1e1e1e",            // 리타이어 검은색
 };
 
+// 실시간 포인트 변화 훅 (이전값 추적)
+function useRealTimePointsWithHistory(initialPoints: number) {
+  const [points, setPoints] = useState(initialPoints);
+  const [prevPoints, setPrevPoints] = useState(initialPoints);
+  const [isIncreasing, setIsIncreasing] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPoints(prev => {
+        setPrevPoints(prev); // 이전값 저장
+        const change = Math.floor(Math.random() * 1000) + 1;
+        const shouldIncrease = Math.random() > 0.3;
+        setIsIncreasing(shouldIncrease);
+        return shouldIncrease ? prev + change : Math.max(0, prev - change);
+      });
+    }, 2000 + Math.random() * 3000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return { points, prevPoints, isIncreasing };
+}
+
+// 롤링 숫자 컴포넌트
+function RollingNumber({ value, prevValue, fontSize = 10 }: { 
+  value: number; 
+  prevValue: number; 
+  fontSize?: number; 
+}) {
+  const formatNumber = (num: number): string => {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(0) + 'K';
+    return num.toString();
+  };
+
+  const currentStr = formatNumber(value);
+  const prevStr = formatNumber(prevValue || value);
+  
+  // 문자열을 개별 문자로 분할
+  const renderDigit = (char: string, index: number, isChanged: boolean) => {
+    return (
+      <div key={`${index}-${char}`} style={{
+        position: 'relative',
+        display: 'inline-block',
+        overflow: 'hidden',
+        height: `${fontSize}px`,
+        width: char === '.' ? `${fontSize * 0.3}px` : `${fontSize * 0.6}px`,
+        fontSize: `${fontSize}px`,
+        fontFamily: 'monospace',
+        fontWeight: 600
+      }}>
+        <div style={{
+          position: 'absolute',
+          transition: isChanged ? 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
+          transform: isChanged ? `translateY(-${fontSize}px)` : 'translateY(0)',
+          color: '#fff'
+        }}>
+          <div style={{ height: `${fontSize}px`, lineHeight: `${fontSize}px` }}>
+            {prevStr[index] || '0'}
+          </div>
+          <div style={{ height: `${fontSize}px`, lineHeight: `${fontSize}px` }}>
+            {char}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      height: `${fontSize}px`,
+      overflow: 'hidden'
+    }}>
+      {currentStr.split('').map((char, index) => {
+        const isChanged = prevStr[index] !== char;
+        return renderDigit(char, index, isChanged);
+      })}
+    </div>
+  );
+}
+
+// 실시간 포인트 표시 컴포넌트
+function RealTimePoints({ initialPoints, size, isMobile }: { 
+  initialPoints: number; 
+  size: 'large' | 'medium' | 'small' | 'tiny';
+  isMobile: boolean;
+}) {
+  const { points, prevPoints, isIncreasing } = useRealTimePointsWithHistory(initialPoints);
+  
+  if (size === 'tiny') return null;
+  
+  const fontSize = isMobile ? 
+    (size === 'large' ? 9 : size === 'medium' ? 8 : 7) :
+    (size === 'large' ? 11 : size === 'medium' ? 10 : 8);
+
+  return (
+    <div style={{
+      position: 'absolute',
+      bottom: isMobile ? 3 : (size === 'large' ? 40 : size === 'medium' ? 28 : 20),
+      right: isMobile ? 3 : (size === 'large' ? 8 : 6),
+      background: 'rgba(0,0,0,0.8)',
+      borderRadius: isMobile ? 4 : 6,
+      padding: isMobile ? '2px 4px' : (size === 'large' ? '4px 8px' : '3px 6px'),
+      display: 'flex',
+      alignItems: 'center',
+      gap: isMobile ? 2 : 4,
+      backdropFilter: 'blur(4px)',
+      border: '1px solid rgba(255,255,255,0.1)',
+      zIndex: 3,
+      minHeight: `${fontSize + (isMobile ? 4 : 6)}px`
+    }}>
+      {/* 상승/하락 표시 */}
+      <div style={{
+        fontSize: fontSize - 1,
+        color: isIncreasing ? '#4ade80' : '#ef4444',
+        lineHeight: 1,
+        opacity: 0.8
+      }}>
+        {isIncreasing ? '↗' : '↘'}
+      </div>
+      
+      {/* 롤링 숫자 */}
+      <RollingNumber 
+        value={points} 
+        prevValue={prevPoints}
+        fontSize={fontSize}
+      />
+    </div>
+  );
+}
+
+
 // 숫자 포맷팅 함수들
 function formatLargeNumber(num: number): string {
   if (num >= 1000000) {
@@ -335,32 +469,43 @@ function RankIndicator({ rank, size }: { rank: number; size: 'large' | 'medium' 
   return <div style={getRankStyle()} />;
 }
 
-// 미니 차트 컴포넌트 (위치 및 크기 조정)
-function MiniChart({ address, size }: { address: string; size: 'large' | 'medium' | 'small' | 'tiny' }) {
+// MiniChart 컴포넌트 - isMobile props 추가
+function MiniChart({ size, isPositive, isMobile }: { 
+  size: 'large' | 'medium' | 'small' | 'tiny'; 
+  isPositive: boolean;
+  isMobile: boolean;
+}) {
   if (size === 'tiny') return null;
   
-  const chartData = generateChartData(address);
+  const points = Array.from({length: 6}, () => Math.random() * 100);
+  const chartWidth = isMobile ? 
+    (size === 'large' ? 40 : size === 'medium' ? 30 : 20) :
+    (size === 'large' ? 60 : size === 'medium' ? 40 : 24);
+  const chartHeight = isMobile ?
+    (size === 'large' ? 20 : size === 'medium' ? 15 : 10) :
+    (size === 'large' ? 30 : size === 'medium' ? 20 : 12);
   
+  const path = points.map((point, index) => {
+    const x = (index / (points.length - 1)) * chartWidth;
+    const y = chartHeight - (point / 100) * chartHeight;
+    return index === 0 ? `M${x},${y}` : `L${x},${y}`;
+  }).join(' ');
+
   return (
     <div style={{
       position: 'absolute',
-      bottom: 4,
-      left: 4,
+      bottom: isMobile ? 3 : (size === 'large' ? 8 : 4),
+      left: isMobile ? 3 : (size === 'large' ? 8 : 4),
       zIndex: 2,
-      width: 32,
-      height: 16,
-      opacity: 0.8,
+      width: chartWidth,
+      height: chartHeight,
+      opacity: 0.9
     }}>
-      <svg
-        width={32}
-        height={16}
-        viewBox="0 0 32 16"
-        style={{ overflow: 'visible' }}
-      >
+      <svg width={chartWidth} height={chartHeight} viewBox={`0 0 ${chartWidth} ${chartHeight}`}>
         <path
-          d={chartData.path}
-          stroke={chartData.isPositive ? 'rgba(74,222,128,0.9)' : 'rgba(239,68,68,0.9)'}
-          strokeWidth="1.5"
+          d={path}
+          stroke={isPositive ? '#4ade80' : '#ef4444'}
+          strokeWidth="2"
           fill="none"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -404,156 +549,189 @@ function GradeInfo({ grade, size }: { grade: string; size: 'large' | 'medium' | 
   );
 }
 
-// 메인 TreemapBox 컴포넌트 (레이아웃 재구성)
-function TreemapBox({ item, x, y, width, height, onClick }: {
+// TreemapBox 컴포넌트 - 중복 속성 제거 및 타입 수정
+function TreemapBox({ item, x, y, width, height, onClick, isMobile }: {
   item: LeaderboardItem;
   x: number; 
   y: number; 
   width: number; 
   height: number; 
   onClick: () => void;
+  isMobile: boolean;
 }) {
   const [isHovered, setIsHovered] = useState(false);
-  const size = getBoxSize(width, height);
   
-  // 폰트 크기 계산 (더 세련되게)
+  const getBoxSize = () => {
+    const area = width * height;
+    if (area > (isMobile ? 15000 : 25000)) return 'large';
+    if (area > (isMobile ? 8000 : 15000)) return 'medium'; 
+    if (area > (isMobile ? 3000 : 6000)) return 'small';
+    return 'tiny';
+  };
+
+  const size = getBoxSize();
+  const gradeColor = tierColors[item.grade] || '#9ca3af';
+  
+  // 반응형 폰트 크기
   const getFontSizes = () => {
-    switch (size) {
-      case 'large':
-        return { percentage: 20, address: 10 }; // 크기 줄임
-      case 'medium':
-        return { percentage: 16, address: 9 };  // 크기 줄임
-      case 'small':
-        return { percentage: 13, address: 8 };  // 주소 표시
-      case 'tiny':
-        return { percentage: 10, address: 0 };  // 주소 숨김
+    if (isMobile) {
+      switch(size) {
+        case 'large': return { percentage: 20, address: 10 };
+        case 'medium': return { percentage: 16, address: 9 };
+        case 'small': return { percentage: 12, address: 8 };
+        case 'tiny': return { percentage: 10, address: 0 };
+      }
+    } else {
+      switch(size) {
+        case 'large': return { percentage: 28, address: 14 };
+        case 'medium': return { percentage: 20, address: 12 };
+        case 'small': return { percentage: 16, address: 10 };
+        case 'tiny': return { percentage: 12, address: 0 };
+      }
     }
   };
-  
+
   const fonts = getFontSizes();
   
-  // 등급별 테두리 색상
-  const borderColor = gradeColorMap[item.grade] || 'rgba(107,114,128,0.12)';
-  const borderHoverColor = borderColor.replace('0.12', '0.2');
-  
+  // 반응형 주소 표시
+  const getAddressDisplay = () => {
+    if (isMobile) {
+      if (size === 'large') return item.address.slice(0, 8) + '..' + item.address.slice(-4);
+      if (size === 'medium') return item.address.slice(0, 6) + '..' + item.address.slice(-3);
+      if (size === 'small') return item.address.slice(0, 4) + '..';
+      return null;
+    } else {
+      if (size === 'large') return item.address;
+      if (size === 'medium') return item.address.slice(0, 8) + '..' + item.address.slice(-4);
+      if (size === 'small') return item.address.slice(0, 6) + '..' + item.address.slice(-3);
+      return null;
+    }
+  };
+
+  const isPositive = item.change?.startsWith('+') || false;
+
+  // 상위 3등 글로우 효과
+  const getBoxGlow = () => {
+    if (item.rank === 1) {
+      return {
+        boxShadow: '0 0 30px rgba(255,215,0,0.4), inset 0 0 0 2px rgba(255,215,0,0.3)',
+        border: `2px solid rgba(255,215,0,0.5)`
+      };
+    } else if (item.rank === 2) {
+      return {
+        boxShadow: '0 0 25px rgba(192,192,192,0.4), inset 0 0 0 2px rgba(192,192,192,0.3)',
+        border: `2px solid rgba(192,192,192,0.5)`
+      };
+    } else if (item.rank === 3) {
+      return {
+        boxShadow: '0 0 25px rgba(205,127,50,0.4), inset 0 0 0 2px rgba(205,127,50,0.3)',
+        border: `2px solid rgba(205,127,50,0.5)`
+      };
+    } else {
+      return {
+        border: `1px solid ${gradeColor}40`
+      };
+    }
+  };
+
+  const glowStyle = getBoxGlow();
+
   return (
-    <>
-      {/* CSS 애니메이션 */}
-      <style jsx>{`
-        @keyframes goldGlow {
-          0%, 100% { 
-            opacity: 0.85;
-            box-shadow: 0 0 8px rgba(255,215,0,0.4), 0 0 16px rgba(255,215,0,0.2);
-          }
-          50% { 
-            opacity: 1;
-            box-shadow: 0 0 12px rgba(255,215,0,0.6), 0 0 24px rgba(255,215,0,0.3);
-          }
-        }
-        
-        @keyframes silverGlow {
-          0%, 100% { 
-            opacity: 0.85;
-            box-shadow: 0 0 6px rgba(200,200,200,0.4), 0 0 12px rgba(200,200,200,0.2);
-          }
-          50% { 
-            opacity: 1;
-            box-shadow: 0 0 10px rgba(200,200,200,0.6), 0 0 20px rgba(200,200,200,0.3);
-          }
-        }
-        
-        @keyframes bronzeGlow {
-          0%, 100% { 
-            opacity: 0.85;
-            box-shadow: 0 0 6px rgba(205,127,50,0.4), 0 0 12px rgba(205,127,50,0.2);
-          }
-          50% { 
-            opacity: 1;
-            box-shadow: 0 0 10px rgba(205,127,50,0.6), 0 0 20px rgba(205,127,50,0.3);
-          }
-        }
-      `}</style>
-      
-      <div
-        onClick={onClick}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        style={{
-          position: 'absolute',
-          left: x,
-          top: y,
-          width: width - 2,
-          height: height - 2,
-          display: 'flex',
-          flexDirection: 'column',
-          color: '#fff',
-          cursor: 'pointer',
-          transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-          borderRadius: 8,
-          overflow: 'hidden',
-          
-          // 개선된 배경 및 테두리
-          background: isHovered 
-            ? 'rgba(255,255,255,0.06)' 
-            : 'rgba(255,255,255,0.03)',
-          border: `1px solid ${isHovered ? borderHoverColor : borderColor}`,
-          boxShadow: isHovered 
-            ? `0 6px 20px rgba(0,0,0,0.25), inset 0 0 0 1px ${borderHoverColor}` 
-            : `0 2px 8px rgba(0,0,0,0.15), inset 0 0 0 1px ${borderColor}`,
-          transform: isHovered ? 'translateY(-1px)' : 'translateY(0)',
-          backdropFilter: 'blur(1px)',
-        }}
-      >
-        {/* 순위 인디케이터 */}
-        <RankIndicator rank={item.rank} size={size} />
-        
-        {/* 상단: 주소 (닉네임 느낌) */}
-        {fonts.address > 0 && (
-          <div style={{
-            padding: size === 'large' ? '8px 8px 4px' : '6px 6px 3px',
-            fontSize: fonts.address,
-            fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-            fontWeight: 600,
-            color: 'rgba(255,255,255,0.9)',
-            textAlign: 'center',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            letterSpacing: '0.5px',
-            textShadow: '0 1px 2px rgba(0,0,0,0.3)',
-          }}>
-            {item.address.slice(0, 6)}..{item.address.slice(-4)}
-          </div>
-        )}
-        
-        {/* 중앙: 할당량 퍼센트 (덜 강조) */}
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{
+        position: 'absolute',
+        left: x, 
+        top: y,
+        width: width - 2, 
+        height: height - 2,
+        background: `linear-gradient(135deg, ${gradeColor}15, ${gradeColor}08)`,
+        ...glowStyle,
+        borderRadius: isMobile ? 8 : 12,
+        display: 'flex',
+        flexDirection: 'column',
+        color: '#fff',
+        cursor: 'pointer',
+        transition: 'all 0.25s ease',
+        overflow: 'hidden',
+        transform: isHovered ? 'translateY(-1px)' : 'translateY(0)'
+      }}
+    >
+      {/* 순위 표시 */}
+      {size !== 'tiny' && (
         <div style={{
-          flex: 1,
+          position: 'absolute',
+          top: 6,
+          left: 6,
+          minWidth: 24,
+          height: 24,
+          borderRadius: '50%',
+          background: item.rank === 1 ? 'linear-gradient(135deg, #ffd700, #ffc107)' :
+                      item.rank === 2 ? 'linear-gradient(135deg, #e8e8e8, #c0c0c0)' :
+                      item.rank === 3 ? 'linear-gradient(135deg, #cd7f32, #b8860b)' :
+                      'rgba(0,0,0,0.7)',
+          color: item.rank <= 3 ? '#1a1a1a' : '#fff',
+          fontSize: 12,
+          fontWeight: 900,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '0 8px',
+          zIndex: 3,
+          border: '2px solid rgba(255,255,255,0.2)',
+          boxShadow: item.rank === 1 ? '0 0 20px rgba(255,215,0,0.8)' :
+                     item.rank === 2 ? '0 0 15px rgba(200,200,200,0.6)' :
+                     item.rank === 3 ? '0 0 15px rgba(205,127,50,0.6)' : 'none'
         }}>
-          <div style={{
-            fontSize: fonts.percentage,
-            fontWeight: 700, // 900에서 700으로 줄임
-            opacity: 0.85,  // 덜 강조
-            textShadow: '0 2px 4px rgba(0,0,0,0.4)',
-            lineHeight: 1,
-            letterSpacing: '-0.5px',
-            fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-          }}>
-            {item.value.toFixed(1)}%
-          </div>
+          {item.rank}
         </div>
-        
-        {/* 미니 차트 */}
-        <MiniChart address={item.address} size={size} />
-        
-        {/* 등급 정보 */}
-        <GradeInfo grade={item.grade} size={size} />
+      )}
+
+      {/* 주소 표시 */}
+      {fonts.address > 0 && (
+        <div style={{
+          padding: isMobile ? '4px 6px' : '8px',
+          fontSize: fonts.address,
+          fontFamily: 'monospace',
+          fontWeight: 600,
+          color: 'rgba(255,255,255,0.9)',
+          textAlign: 'center',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          paddingLeft: size !== 'tiny' ? (isMobile ? '20px' : '36px') : (isMobile ? '6px' : '8px')
+        }}>
+          {getAddressDisplay()}
+        </div>
+      )}
+
+      {/* 중앙 퍼센트 */}
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: isMobile ? '0 4px' : '0 8px'
+      }}>
+        <div style={{
+          fontSize: fonts.percentage,
+          fontWeight: 900,
+          color: '#fff',
+          textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+          lineHeight: 1,
+          letterSpacing: '-0.5px'
+        }}>
+          {item.value.toFixed(1)}%
+        </div>
       </div>
-    </>
+
+      {/* 미니 차트 (왼쪽 하단) */}
+      <MiniChart size={size} isPositive={isPositive} isMobile={isMobile} />
+      
+      {/* 실시간 포인트 (오른쪽 하단) */}
+      <RealTimePoints initialPoints={item.score} size={size} isMobile={isMobile} />
+    </div>
   );
 }
 
@@ -1449,21 +1627,22 @@ function LeaderboardPage({ data, modal, setModal, isMobile, isDesktop }:{
             margin: "0 auto" 
           }}>
             {items.map((d, i) => {
-              const item = d.data as LeaderboardItem;
-              const boxWidth = d.x1 - d.x0 - 2;
-              const boxHeight = d.y1 - d.y0 - 2;
-              return (
-                <TreemapBox 
-                  key={i} 
-                  item={item} 
-                  x={d.x0} 
-                  y={d.y0} 
-                  width={boxWidth} 
-                  height={boxHeight} 
-                  onClick={() => setModal(item)} 
-                />
-              );
-            })}
+             const item = d.data as LeaderboardItem;
+             const boxWidth = d.x1 - d.x0 - 2;
+             const boxHeight = d.y1 - d.y0 - 2;
+             return (
+             <TreemapBox 
+               key={i} 
+               item={item} 
+               x={d.x0} 
+               y={d.y0} 
+               width={boxWidth} 
+               height={boxHeight} 
+               onClick={() => setModal(item)}
+               isMobile={isMobile} // 추가
+             />
+           );
+          })}
           </div>
         </div>
       </section>
@@ -5277,3 +5456,9 @@ export default function Home() {
     </Layout>
   );
 }
+
+
+
+
+
+
