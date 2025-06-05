@@ -7,7 +7,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount } from "wagmi";
 import Image from 'next/image';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area } from 'recharts';
-
+import StakeHowToPage from '../components/StakeHowToPage';
 
 // JSON API URL (구글시트 or GitHub JSON)
 const SHEET_BEST_URL = '/leaderboard.json';
@@ -850,6 +850,7 @@ function Sidebar({ isOpen, onClose, wallet, currentPage, onPageChange, isMobile,
           <SidebarItem icon="🏆" text="Leaderboard" isActive={currentPage === "leaderboard"} onClick={() => onPageChange("leaderboard")} collapsed={isCollapsed} />
           <SidebarItem icon="👤" text="My Dashboard" isActive={currentPage === "dashboard"} onClick={() => onPageChange("dashboard")} disabled={!wallet} collapsed={isCollapsed} />
           <SidebarItem icon="📊" text="Statistics" isActive={currentPage === "stats"} onClick={() => onPageChange("stats")} collapsed={isCollapsed} />
+          <SidebarItem icon="📚" text="How To Guide" isActive={currentPage === "howto"} onClick={() => onPageChange("howto")} collapsed={isCollapsed} />
         </div>
         <div style={{ marginTop: "auto", paddingTop: 20, borderTop: "1px solid rgba(255,255,255,0.1)" }}>
           <ConnectButton
@@ -5517,6 +5518,8 @@ export default function Home() {
         return <MyDashboardPage data={data} wallet={wallet || ""} />;
       case "stats":
         return <StatsPage data={data} />;
+      case "howto":  // 👈 이 부분 추가
+        return <StakeHowToPage />;
       case "leaderboard":
       default:
         return <LeaderboardPage 

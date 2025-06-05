@@ -549,7 +549,7 @@ function GradeInfo({ grade, size }: { grade: string; size: 'large' | 'medium' | 
   );
 }
 
-// TreemapBox 컴포넌트 - 중복 속성 제거 및 타입 수정
+// TreemapBox 컴포넌트 - pages/index.tsx에서 기존 TreemapBox 함수를 이것으로 교체하세요
 function TreemapBox({ item, x, y, width, height, onClick, isMobile }: {
   item: LeaderboardItem;
   x: number; 
@@ -576,36 +576,27 @@ function TreemapBox({ item, x, y, width, height, onClick, isMobile }: {
   const getFontSizes = () => {
     if (isMobile) {
       switch(size) {
-        case 'large': return { percentage: 20, address: 10 };
-        case 'medium': return { percentage: 16, address: 9 };
-        case 'small': return { percentage: 12, address: 8 };
-        case 'tiny': return { percentage: 10, address: 0 };
+        case 'large': return { percentage: 20, address: 12, rank: 18 };
+        case 'medium': return { percentage: 16, address: 10, rank: 14 };
+        case 'small': return { percentage: 12, address: 8, rank: 10 };
+        case 'tiny': return { percentage: 10, address: 0, rank: 8 };
       }
     } else {
       switch(size) {
-        case 'large': return { percentage: 28, address: 14 };
-        case 'medium': return { percentage: 20, address: 12 };
-        case 'small': return { percentage: 16, address: 10 };
-        case 'tiny': return { percentage: 12, address: 0 };
+        case 'large': return { percentage: 28, address: 14, rank: 18 };
+        case 'medium': return { percentage: 20, address: 12, rank: 14 };
+        case 'small': return { percentage: 16, address: 10, rank: 10 };
+        case 'tiny': return { percentage: 12, address: 0, rank: 8 };
       }
     }
   };
 
   const fonts = getFontSizes();
   
-  // 반응형 주소 표시
+  // 통일된 주소 표시 (앞4자리..뒤4자리)
   const getAddressDisplay = () => {
-    if (isMobile) {
-      if (size === 'large') return item.address.slice(0, 8) + '..' + item.address.slice(-4);
-      if (size === 'medium') return item.address.slice(0, 6) + '..' + item.address.slice(-3);
-      if (size === 'small') return item.address.slice(0, 4) + '..';
-      return null;
-    } else {
-      if (size === 'large') return item.address;
-      if (size === 'medium') return item.address.slice(0, 8) + '..' + item.address.slice(-4);
-      if (size === 'small') return item.address.slice(0, 6) + '..' + item.address.slice(-3);
-      return null;
-    }
+    if (fonts.address === 0) return null;
+    return item.address.slice(0, 4) + '..' + item.address.slice(-4);
   };
 
   const isPositive = item.change?.startsWith('+') || false;
@@ -634,104 +625,169 @@ function TreemapBox({ item, x, y, width, height, onClick, isMobile }: {
     }
   };
 
+  // 순위 배지 스타일
+  const getRankBadgeStyle = () => {
+    const baseStyle = {
+      position: 'absolute' as const,
+      top: size === 'large' ? 8 : 6,
+      left: size === 'large' ? 8 : 6,
+      borderRadius: '50%',
+      fontWeight: 900,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 3,
+      border: 'none',
+      fontSize: fonts.rank,
+      minWidth: size === 'large' ? 36 : size === 'medium' ? 28 : 20,
+      height: size === 'large' ? 36 : size === 'medium' ? 28 : 20,
+    };
+
+    if (item.rank === 1) {
+      return {
+        ...baseStyle,
+        color: '#ffd700',
+        textShadow: `
+          0 0 8px rgba(255,215,0,1),
+          0 0 16px rgba(255,215,0,0.9),
+          0 0 24px rgba(255,215,0,0.7),
+          0 0 32px rgba(255,215,0,0.5),
+          0 0 40px rgba(255,215,0,0.3)
+        `,
+        animation: 'strongGoldPulse 2s ease-in-out infinite'
+      };
+    } else if (item.rank === 2) {
+      return {
+        ...baseStyle,
+        color: '#e8e8e8',
+        textShadow: `
+          0 0 6px rgba(232,232,232,0.9),
+          0 0 12px rgba(192,192,192,0.7),
+          0 0 18px rgba(192,192,192,0.5)
+        `
+      };
+    } else if (item.rank === 3) {
+      return {
+        ...baseStyle,
+        color: '#d4a574',
+        textShadow: `
+          0 0 6px rgba(212,165,116,0.9),
+          0 0 12px rgba(205,127,50,0.7),
+          0 0 18px rgba(205,127,50,0.5)
+        `
+      };
+    } else {
+      return {
+        ...baseStyle,
+        color: '#999999',
+        textShadow: 'none'
+      };
+    }
+  };
+
   const glowStyle = getBoxGlow();
+  const rankStyle = getRankBadgeStyle();
 
   return (
-    <div
-      onClick={onClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      style={{
-        position: 'absolute',
-        left: x, 
-        top: y,
-        width: width - 2, 
-        height: height - 2,
-        background: `linear-gradient(135deg, ${gradeColor}15, ${gradeColor}08)`,
-        ...glowStyle,
-        borderRadius: isMobile ? 8 : 12,
-        display: 'flex',
-        flexDirection: 'column',
-        color: '#fff',
-        cursor: 'pointer',
-        transition: 'all 0.25s ease',
-        overflow: 'hidden',
-        transform: isHovered ? 'translateY(-1px)' : 'translateY(0)'
-      }}
-    >
-      {/* 순위 표시 */}
-      {size !== 'tiny' && (
-        <div style={{
+    <>
+      {/* CSS 애니메이션 추가 */}
+      <style jsx>{`
+        @keyframes strongGoldPulse {
+          0%, 100% { 
+            text-shadow: 
+              0 0 8px rgba(255,215,0,1),
+              0 0 16px rgba(255,215,0,0.9),
+              0 0 24px rgba(255,215,0,0.7),
+              0 0 32px rgba(255,215,0,0.5);
+            transform: scale(1);
+          }
+          50% { 
+            text-shadow: 
+              0 0 12px rgba(255,215,0,1),
+              0 0 20px rgba(255,215,0,1),
+              0 0 32px rgba(255,215,0,0.9),
+              0 0 48px rgba(255,215,0,0.7);
+            transform: scale(1.1);
+          }
+        }
+      `}</style>
+      
+      <div
+        onClick={onClick}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        style={{
           position: 'absolute',
-          top: 6,
-          left: 6,
-          minWidth: 24,
-          height: 24,
-          borderRadius: '50%',
-          background: item.rank === 1 ? 'linear-gradient(135deg, #ffd700, #ffc107)' :
-                      item.rank === 2 ? 'linear-gradient(135deg, #e8e8e8, #c0c0c0)' :
-                      item.rank === 3 ? 'linear-gradient(135deg, #cd7f32, #b8860b)' :
-                      'rgba(0,0,0,0.7)',
-          color: item.rank <= 3 ? '#1a1a1a' : '#fff',
-          fontSize: 12,
-          fontWeight: 900,
+          left: x, 
+          top: y,
+          width: width - 2, 
+          height: height - 2,
+          background: `linear-gradient(135deg, ${gradeColor}15, ${gradeColor}08)`,
+          ...glowStyle,
+          borderRadius: isMobile ? 8 : 12,
+          display: 'flex',
+          flexDirection: 'column',
+          color: '#fff',
+          cursor: 'pointer',
+          transition: 'all 0.25s ease',
+          overflow: 'hidden',
+          transform: isHovered ? 'translateY(-1px)' : 'translateY(0)'
+        }}
+      >
+        {/* 순위 표시 - 랭킹보드와 동일한 글로우 스타일 */}
+        {size !== 'tiny' && (
+          <div style={rankStyle}>
+            {item.rank}
+          </div>
+        )}
+
+        {/* 주소 표시 - 통일된 형식 */}
+        {fonts.address > 0 && (
+          <div style={{
+            padding: isMobile ? '4px 6px' : '8px',
+            fontSize: fonts.address,
+            fontFamily: 'monospace',
+            fontWeight: 600,
+            color: 'rgba(255,255,255,0.9)',
+            textAlign: 'center',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            paddingLeft: size === 'large' ? (isMobile ? 52 : 52) : 
+                        size === 'medium' ? (isMobile ? 40 : 40) : 
+                        (isMobile ? 32 : 32)
+          }}>
+            {getAddressDisplay()}
+          </div>
+        )}
+
+        {/* 중앙 퍼센트 */}
+        <div style={{
+          flex: 1,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 3,
-          border: '2px solid rgba(255,255,255,0.2)',
-          boxShadow: item.rank === 1 ? '0 0 20px rgba(255,215,0,0.8)' :
-                     item.rank === 2 ? '0 0 15px rgba(200,200,200,0.6)' :
-                     item.rank === 3 ? '0 0 15px rgba(205,127,50,0.6)' : 'none'
+          padding: isMobile ? '0 4px' : '0 8px'
         }}>
-          {item.rank}
+          <div style={{
+            fontSize: fonts.percentage,
+            fontWeight: 900,
+            color: '#fff',
+            textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+            lineHeight: 1,
+            letterSpacing: '-0.5px'
+          }}>
+            {item.value.toFixed(1)}%
+          </div>
         </div>
-      )}
 
-      {/* 주소 표시 */}
-      {fonts.address > 0 && (
-        <div style={{
-          padding: isMobile ? '4px 6px' : '8px',
-          fontSize: fonts.address,
-          fontFamily: 'monospace',
-          fontWeight: 600,
-          color: 'rgba(255,255,255,0.9)',
-          textAlign: 'center',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-          paddingLeft: size !== 'tiny' ? (isMobile ? '20px' : '36px') : (isMobile ? '6px' : '8px')
-        }}>
-          {getAddressDisplay()}
-        </div>
-      )}
-
-      {/* 중앙 퍼센트 */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: isMobile ? '0 4px' : '0 8px'
-      }}>
-        <div style={{
-          fontSize: fonts.percentage,
-          fontWeight: 900,
-          color: '#fff',
-          textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-          lineHeight: 1,
-          letterSpacing: '-0.5px'
-        }}>
-          {item.value.toFixed(1)}%
-        </div>
+        {/* 미니 차트 (왼쪽 하단) */}
+        <MiniChart size={size} isPositive={isPositive} isMobile={isMobile} />
+        
+        {/* 실시간 포인트 (오른쪽 하단) */}
+        <RealTimePoints initialPoints={item.score} size={size} isMobile={isMobile} />
       </div>
-
-      {/* 미니 차트 (왼쪽 하단) */}
-      <MiniChart size={size} isPositive={isPositive} isMobile={isMobile} />
-      
-      {/* 실시간 포인트 (오른쪽 하단) */}
-      <RealTimePoints initialPoints={item.score} size={size} isMobile={isMobile} />
-    </div>
+    </>
   );
 }
 
@@ -808,7 +864,7 @@ function Sidebar({ isOpen, onClose, wallet, currentPage, onPageChange, isMobile,
   );
 }
 
-// 6. Layout 컴포넌트 수정 (기존 Layout 함수를 찾아서 수정)
+// Layout 컴포넌트 수정 - pages/index.tsx에서 기존 Layout 함수를 이것으로 교체하세요
 function Layout({
   children, currentPage, onPageChange, wallet, isMobile, isDesktop
 }:{
@@ -834,7 +890,7 @@ function Layout({
       <Sidebar isOpen={isDesktop || sidebarOpen} onClose={() => setSidebarOpen(false)} wallet={wallet} currentPage={currentPage} onPageChange={onPageChange} isMobile={isMobile} isDesktop={isDesktop} />
       
       <main style={{ flex: 1, marginLeft: isDesktop ? sidebarWidth : 0, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-        {/* 메인 헤더 */}
+        {/* 메인 헤더 - 모바일용 */}
         {isMobile && (
           <header style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -844,41 +900,63 @@ function Layout({
           }}>
             <button onClick={() => setSidebarOpen(true)} style={{ background: "none", border: "none", color: "#fff", fontSize: 20, cursor: "pointer", padding: 8 }}>☰</button>
             <h1 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "#fff", background: 'linear-gradient(135deg, #4ade80, #22c55e)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>🥩 STAKE Leaderboard</h1>
-            <div style={{
-              fontSize: 12, background: 'rgba(74,222,128,0.2)', color: '#4ade80',
-              padding: '6px 12px', borderRadius: 20, fontWeight: 600,
-              border: '1px solid rgba(74,222,128,0.3)'
-            }}>
-              Connect
-            </div>
+            <ConnectButton
+              accountStatus="address"
+              chainStatus="icon"
+              showBalance={false}
+              label="💰"
+            />
           </header>
         )}
         
-        {/* 페이즈 시스템 (스티키) */}
+        {/* 페이즈 시스템 헤더 - 중앙 정렬 + 우측 지갑 버튼 */}
         <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           padding: isMobile ? '16px' : '20px 32px',
           background: 'rgba(10,10,10,0.95)',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
-          display: 'flex',
-          flexDirection: isMobile ? 'column' : 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: isMobile ? 8 : 24,
           position: 'sticky',
           top: isMobile ? 61 : 0,
           zIndex: 99,
-          backdropFilter: 'blur(12px)'
+          backdropFilter: 'blur(12px)',
         }}>
-          <PhaseProgressBar 
-            currentPhase={1}
-            totalPhases={6}
-            onPhaseClick={handlePhaseClick}
-            isMobile={isMobile}
-          />
-          <PhaseCountdown 
-            timeLeft={phase1TimeLeft}
-            isMobile={isMobile}
-          />
+          {/* 중앙 정렬된 페이즈 섹션 */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: isMobile ? 8 : 24,
+            justifyContent: 'center'
+          }}>
+            <PhaseProgressBar 
+              currentPhase={1}
+              totalPhases={6}
+              onPhaseClick={handlePhaseClick}
+              isMobile={isMobile}
+            />
+            <PhaseCountdown 
+              timeLeft={phase1TimeLeft}
+              isMobile={isMobile}
+            />
+          </div>
+          
+          {/* 우측 지갑 연결 버튼 - 데스크탑만 */}
+          {!isMobile && (
+            <div style={{
+              position: 'absolute',
+              right: 32,
+              top: '50%',
+              transform: 'translateY(-50%)'
+            }}>
+              <ConnectButton
+                accountStatus="address"
+                chainStatus="icon"
+                showBalance={false}
+                label="💰 Connect Wallet"
+              />
+            </div>
+          )}
         </div>
         
         {/* 메인 컨텐츠 */}
@@ -1569,7 +1647,7 @@ function Top10Leaderboard({ data, isMobile, setModal }: {
   );
 }
 
-// 업데이트된 LeaderboardPage 컴포넌트
+// LeaderboardPage 컴포넌트 수정 - pages/index.tsx에서 기존 LeaderboardPage 함수를 이것으로 교체하세요
 function LeaderboardPage({ data, modal, setModal, isMobile, isDesktop }:{
   data: LeaderboardItem[]; 
   modal: LeaderboardItem | null; 
@@ -1577,11 +1655,19 @@ function LeaderboardPage({ data, modal, setModal, isMobile, isDesktop }:{
   isMobile: boolean; 
   isDesktop: boolean;
 }) {
-  const sorted = [...data].sort((a, b) => b.value - a.value);
-  const topData = sorted.slice(0, 20);
-// 🚀 이렇게 변경:
-  const treemapWidth = isMobile ? 380 : isDesktop ? 750 : 620;  // 25% 증가
-  const treemapHeight = isMobile ? 450 : isDesktop ? 625 : 560; // 25% 증가
+  // 활성 유저만 필터링하고 순위 재정렬
+  const activeUsers = data
+    .filter(item => item.grade !== "Jeeted" && item.total_staked > 0) // Jeeted 제외
+    .sort((a, b) => b.total_staked - a.total_staked) // 스테이킹 수량으로 정렬
+    .map((item, index) => ({
+      ...item,
+      rank: index + 1 // 새로운 순위 부여
+    }));
+
+  const topData = activeUsers.slice(0, 20); // 상위 20명만
+  
+  const treemapWidth = isMobile ? 380 : isDesktop ? 750 : 620;
+  const treemapHeight = isMobile ? 450 : isDesktop ? 625 : 560;
   const items = useTreemapLayout(topData, treemapWidth, treemapHeight);
 
   return (
@@ -1593,7 +1679,7 @@ function LeaderboardPage({ data, modal, setModal, isMobile, isDesktop }:{
     }}>
       {/* 모바일에서는 Top 10이 위에 표시 */}
       {isMobile && (
-        <Top10Leaderboard data={data} isMobile={isMobile} setModal={setModal}/>
+        <Top10Leaderboard data={activeUsers} isMobile={isMobile} setModal={setModal}/>
       )}
 
       {/* Treemap 섹션 */}
@@ -1627,22 +1713,22 @@ function LeaderboardPage({ data, modal, setModal, isMobile, isDesktop }:{
             margin: "0 auto" 
           }}>
             {items.map((d, i) => {
-             const item = d.data as LeaderboardItem;
-             const boxWidth = d.x1 - d.x0 - 2;
-             const boxHeight = d.y1 - d.y0 - 2;
-             return (
-             <TreemapBox 
-               key={i} 
-               item={item} 
-               x={d.x0} 
-               y={d.y0} 
-               width={boxWidth} 
-               height={boxHeight} 
-               onClick={() => setModal(item)}
-               isMobile={isMobile} // 추가
-             />
-           );
-          })}
+              const item = d.data as LeaderboardItem;
+              const boxWidth = d.x1 - d.x0 - 2;
+              const boxHeight = d.y1 - d.y0 - 2;
+              return (
+                <TreemapBox 
+                  key={i} 
+                  item={item} 
+                  x={d.x0} 
+                  y={d.y0} 
+                  width={boxWidth} 
+                  height={boxHeight} 
+                  onClick={() => setModal(item)}
+                  isMobile={isMobile}
+                />
+              );
+            })}
           </div>
         </div>
       </section>
@@ -1654,7 +1740,7 @@ function LeaderboardPage({ data, modal, setModal, isMobile, isDesktop }:{
           minWidth: 400,
           maxWidth: 500
         }}>
-          <Top10Leaderboard data={data} isMobile={isMobile} setModal={setModal}/>
+          <Top10Leaderboard data={activeUsers} isMobile={isMobile} setModal={setModal}/>
         </section>
       )}
     </div>
