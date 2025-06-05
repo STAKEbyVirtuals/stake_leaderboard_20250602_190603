@@ -32,7 +32,7 @@ Ready to begin your evolution?`,
         bgColor: 'from-gray-900/30 to-slate-900/30',
         borderColor: 'border-gray-500/40'
       },
-      action: 'Enter the STAKE World',
+      action: 'So when you gonna start?',
       tips: [
         'Learn what STAKE tokens are',
         'Understand the 7-tier system',
@@ -67,7 +67,7 @@ Small start, big dreams possible!`,
         bgColor: 'from-gray-100/10 to-white/10',
         borderColor: 'border-white/40'
       },
-      action: 'Make Your First Stake',
+      action: 'At least doing something? Got it!',
       tips: [
         'Connect wallet and buy STAKE tokens',
         'Start with Entry level (up to 200K)',
@@ -102,7 +102,7 @@ Patience is starting to pay off!`,
         bgColor: 'from-green-900/30 to-emerald-900/30',
         borderColor: 'border-green-500/40'
       },
-      action: 'Build Consistency',
+      action: '1 week? Not bad kid, got it!',
       tips: [
         'Achieved x1.1 multiplier (+10% bonus)',
         'Learned the value of patience',
@@ -137,7 +137,7 @@ The flames no longer burn you!`,
         bgColor: 'from-blue-900/30 to-indigo-900/30',
         borderColor: 'border-blue-500/40'
       },
-      action: 'Master the Flames',
+      action: 'Fire juggling pro now, got it!',
       tips: [
         'Achieved x1.25 multiplier (+25% power)',
         'Mid level staking (200K-1M tokens)',
@@ -172,7 +172,7 @@ You now see the bigger picture!`,
         bgColor: 'from-purple-900/30 to-violet-900/30',
         borderColor: 'border-purple-500/40'
       },
-      action: 'Think Strategically',
+      action: 'Now I know the meta, got it!',
       tips: [
         'Achieved x1.4 multiplier (+40% advantage)',
         'Survived 1 month - strategic milestone',
@@ -207,7 +207,7 @@ You now shape the game itself!`,
         bgColor: 'from-yellow-900/30 to-amber-900/30',
         borderColor: 'border-yellow-500/40'
       },
-      action: 'Transcend the Game',
+      action: 'Now I am the rulebook, got it!',
       tips: [
         'Achieved x1.6 multiplier (+60% mastery)',
         'High level staking (1M-10M tokens)',
@@ -242,7 +242,7 @@ You rule the traditional tier system!`,
         bgColor: 'from-red-900/30 to-rose-900/30',
         borderColor: 'border-red-500/40'
       },
-      action: 'Rule the Grill',
+      action: 'Now I rule the grill, got it!',
       tips: [
         'Achieved x1.8 multiplier (+80% power)',
         'Special level staking (10M+ tokens)',
@@ -277,7 +277,7 @@ Time mastery = Ultimate rewards!`,
         bgColor: 'from-emerald-900/30 to-teal-900/30',
         borderColor: 'border-emerald-500/40'
       },
-      action: 'Embrace Your Legend',
+      action: 'Now I am legend, got it!',
       tips: [
         'Maximum x2.0 multiplier power',
         'Two paths: Early entry OR phase survival',
@@ -444,202 +444,228 @@ Time mastery = Ultimate rewards!`,
 
       {/* Small Investor Path Modal */}
       {showSmallInvestorPath && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gradient-to-br from-gray-900 to-black border-2 border-emerald-500/50 rounded-3xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-8">
-              <div className="flex justify-between items-center mb-8">
-                <h2 className="text-4xl font-black text-emerald-400">🌱 Small Investor Dream Path</h2>
-                <button
-                  onClick={() => setShowSmallInvestorPath(false)}
-                  className="text-4xl text-gray-400 hover:text-white transition-colors"
-                >
-                  ×
-                </button>
-              </div>
-
-              <div className="grid lg:grid-cols-2 gap-8">
-                <div>
-                  <h3 className="text-2xl font-bold text-white mb-6">🎯 The Journey: 200K → Heavy Eater</h3>
-                  <div className="space-y-4">
-                    {smallInvestorScenario.phases.map((phase, index) => (
-                      <div key={index} className="bg-gray-800/50 rounded-xl p-6 border border-emerald-500/30">
-                        <div className="flex justify-between items-center mb-3">
-                          <span className="text-xl font-bold text-emerald-400">Phase {phase.phase}</span>
-                          <span className="text-lg font-bold text-white">{phase.tier}</span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <span className="text-gray-400">Allocation:</span>
-                            <div className="text-white font-bold">{phase.allocation.toLocaleString()}</div>
-                          </div>
-                          <div>
-                            <span className="text-gray-400">Cumulative:</span>
-                            <div className="text-emerald-400 font-bold">{phase.cumulative.toLocaleString()}</div>
-                          </div>
-                          <div>
-                            <span className="text-gray-400">Tier:</span>
-                            <div className="text-white font-bold">{phase.tier}</div>
-                          </div>
-                          <div>
-                            <span className="text-gray-400">Multiplier:</span>
-                            <div className="text-orange-400 font-bold">{phase.multiplier}</div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+        <>
+          {/* 모달 배경 - 하단 네비게이션 영역 제외 */}
+          <div 
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-40"
+            style={{ paddingBottom: '100px' }}
+            onClick={() => setShowSmallInvestorPath(false)}
+          />
+          {/* 모달 컨텐츠 */}
+          <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ paddingBottom: '100px', pointerEvents: 'none' }}>
+            <div 
+              className="bg-gradient-to-br from-gray-900 to-black border-2 border-emerald-500/50 rounded-3xl max-w-6xl w-full max-h-[90vh] overflow-y-auto"
+              style={{ pointerEvents: 'auto' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-8">
+                <div className="flex justify-between items-center mb-8">
+                  <h2 className="text-4xl font-black text-emerald-400">🌱 Small Investor Dream Path</h2>
+                  <button
+                    onClick={() => setShowSmallInvestorPath(false)}
+                    className="text-4xl text-gray-400 hover:text-white transition-colors"
+                  >
+                    ×
+                  </button>
                 </div>
 
-                <div>
-                  <h3 className="text-2xl font-bold text-white mb-6">🏆 Final Achievement</h3>
-                  <div className="bg-gradient-to-br from-emerald-900/50 to-green-900/50 border-2 border-emerald-500/50 rounded-2xl p-8">
-                    <div className="text-center mb-6">
-                      <div className="text-6xl mb-4">🥩→🌌</div>
-                      <h4 className="text-3xl font-black text-emerald-400 mb-2">GENESIS OG</h4>
-                      <p className="text-xl text-white">From Small Start to Legend</p>
-                    </div>
-                    
+                <div className="grid lg:grid-cols-2 gap-8">
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-6">🎯 The Journey: 200K → Heavy Eater</h3>
                     <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-300">Initial Staking:</span>
-                        <span className="text-white font-bold">200K STAKE</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-300">Total Accumulated:</span>
-                        <span className="text-emerald-400 font-bold">835K STAKE</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-300">Final Staking Power:</span>
-                        <span className="text-emerald-400 font-bold">1,035K STAKE</span>
-                      </div>
-                      <div className="flex justify-between items-center border-t border-emerald-500/30 pt-4">
-                        <span className="text-gray-300">Final Multiplier:</span>
-                        <span className="text-yellow-400 font-black text-2xl">x2.0</span>
-                      </div>
+                      {smallInvestorScenario.phases.map((phase, index) => (
+                        <div key={index} className="bg-gray-800/50 rounded-xl p-6 border border-emerald-500/30">
+                          <div className="flex justify-between items-center mb-3">
+                            <span className="text-xl font-bold text-emerald-400">Phase {phase.phase}</span>
+                            <span className="text-lg font-bold text-white">{phase.tier}</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="text-gray-400">Allocation:</span>
+                              <div className="text-white font-bold">{phase.allocation.toLocaleString()}</div>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Cumulative:</span>
+                              <div className="text-emerald-400 font-bold">{phase.cumulative.toLocaleString()}</div>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Tier:</span>
+                              <div className="text-white font-bold">{phase.tier}</div>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Multiplier:</span>
+                              <div className="text-orange-400 font-bold">{phase.multiplier}</div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
-                  <div className="mt-8 bg-orange-900/30 border border-orange-500/30 rounded-xl p-6">
-                    <h4 className="text-lg font-bold text-orange-400 mb-3">💡 Key Insights</h4>
-                    <ul className="space-y-2 text-sm text-gray-300">
-                      <li>• Small investors can reach elite status through patience</li>
-                      <li>• Each phase survival increases tier automatically</li>
-                      <li>• 6-phase journey: 4x initial investment growth</li>
-                      <li>• Final result: Special-level rewards with Genesis multiplier</li>
-                    </ul>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-6">🏆 Final Achievement</h3>
+                    <div className="bg-gradient-to-br from-emerald-900/50 to-green-900/50 border-2 border-emerald-500/50 rounded-2xl p-8">
+                      <div className="text-center mb-6">
+                        <div className="text-6xl mb-4">🥩→🌌</div>
+                        <h4 className="text-3xl font-black text-emerald-400 mb-2">GENESIS OG</h4>
+                        <p className="text-xl text-white">From Small Start to Legend</p>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-300">Initial Staking:</span>
+                          <span className="text-white font-bold">200K STAKE</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-300">Total Accumulated:</span>
+                          <span className="text-emerald-400 font-bold">835K STAKE</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-300">Final Staking Power:</span>
+                          <span className="text-emerald-400 font-bold">1,035K STAKE</span>
+                        </div>
+                        <div className="flex justify-between items-center border-t border-emerald-500/30 pt-4">
+                          <span className="text-gray-300">Final Multiplier:</span>
+                          <span className="text-yellow-400 font-black text-2xl">x2.0</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-8 bg-orange-900/30 border border-orange-500/30 rounded-xl p-6">
+                      <h4 className="text-lg font-bold text-orange-400 mb-3">💡 Key Insights</h4>
+                      <ul className="space-y-2 text-sm text-gray-300">
+                        <li>• Small investors can reach elite status through patience</li>
+                        <li>• Each phase survival increases tier automatically</li>
+                        <li>• 6-phase journey: 4x initial investment growth</li>
+                        <li>• Final result: Special-level rewards with Genesis multiplier</li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Phase Strategy Modal */}
       {showPhaseStrategy && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gradient-to-br from-gray-900 to-black border-2 border-orange-500/50 rounded-3xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-8">
-              <div className="flex justify-between items-center mb-8">
-                <h2 className="text-4xl font-black text-orange-400">📈 Phase Transition Strategy</h2>
-                <button
-                  onClick={() => setShowPhaseStrategy(false)}
-                  className="text-4xl text-gray-400 hover:text-white transition-colors"
-                >
-                  ×
-                </button>
-              </div>
-
-              <div className="grid lg:grid-cols-2 gap-8">
-                <div>
-                  <h3 className="text-2xl font-bold text-white mb-6">🎯 Two Strategic Choices</h3>
-                  
-                  <div className="space-y-6">
-                    <div className="bg-red-900/30 border border-red-500/30 rounded-xl p-6">
-                      <h4 className="text-xl font-bold text-red-400 mb-4">🔘 Immediate Claim</h4>
-                      <div className="space-y-3 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-300">Result:</span>
-                          <span className="text-white">Instant token reward</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-300">Tier Status:</span>
-                          <span className="text-red-400">Reset to Virgen</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-300">Next Phase:</span>
-                          <span className="text-red-400">Cannot participate</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-300">Best For:</span>
-                          <span className="text-white">Quick profit seekers</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-emerald-900/30 border border-emerald-500/30 rounded-xl p-6">
-                      <h4 className="text-xl font-bold text-emerald-400 mb-4">🔘 Continue Staking</h4>
-                      <div className="space-y-3 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-300">Result:</span>
-                          <span className="text-white">Allocation added to stake</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-300">Tier Status:</span>
-                          <span className="text-emerald-400">Upgrade +1 tier</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-300">Next Phase:</span>
-                          <span className="text-emerald-400">Higher tier entry</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-300">Best For:</span>
-                          <span className="text-white">Long-term maximizers</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+        <>
+          {/* 모달 배경 - 하단 네비게이션 영역 제외 */}
+          <div 
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-40"
+            style={{ paddingBottom: '100px' }}
+            onClick={() => setShowPhaseStrategy(false)}
+          />
+          {/* 모달 컨텐츠 */}
+          <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ paddingBottom: '100px', pointerEvents: 'none' }}>
+            <div 
+              className="bg-gradient-to-br from-gray-900 to-black border-2 border-orange-500/50 rounded-3xl max-w-6xl w-full max-h-[90vh] overflow-y-auto"
+              style={{ pointerEvents: 'auto' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-8">
+                <div className="flex justify-between items-center mb-8">
+                  <h2 className="text-4xl font-black text-orange-400">📈 Phase Transition Strategy</h2>
+                  <button
+                    onClick={() => setShowPhaseStrategy(false)}
+                    className="text-4xl text-gray-400 hover:text-white transition-colors"
+                  >
+                    ×
+                  </button>
                 </div>
 
-                <div>
-                  <h3 className="text-2xl font-bold text-white mb-6">🏆 Phase Progression Rewards</h3>
-                  
-                  <div className="space-y-3">
-                    {phaseProgression.map((phase, index) => (
-                      <div 
-                        key={index}
-                        className="flex items-center justify-between bg-gray-800/50 rounded-lg p-4 border border-gray-600/30"
-                      >
-                        <div className="flex items-center gap-4">
-                          <span className="text-lg font-bold text-orange-400">{phase.phase}</span>
-                          <span className="text-white">{phase.tier}</span>
+                <div className="grid lg:grid-cols-2 gap-8">
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-6">🎯 Two Strategic Choices</h3>
+                    
+                    <div className="space-y-6">
+                      <div className="bg-red-900/30 border border-red-500/30 rounded-xl p-6">
+                        <h4 className="text-xl font-bold text-red-400 mb-4">🔘 Immediate Claim</h4>
+                        <div className="space-y-3 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-300">Result:</span>
+                            <span className="text-white">Instant token reward</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-300">Tier Status:</span>
+                            <span className="text-red-400">Reset to Virgen</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-300">Next Phase:</span>
+                            <span className="text-red-400">Cannot participate</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-300">Best For:</span>
+                            <span className="text-white">Quick profit seekers</span>
+                          </div>
                         </div>
-                        <span 
-                          className="font-bold px-3 py-1 rounded-full text-sm"
-                          style={{
-                            backgroundColor: index === phaseProgression.length - 1 ? '#10b98120' : '#eab30820',
-                            color: index === phaseProgression.length - 1 ? '#10b981' : '#eab308'
-                          }}
-                        >
-                          {phase.multiplier}
-                        </span>
                       </div>
-                    ))}
+
+                      <div className="bg-emerald-900/30 border border-emerald-500/30 rounded-xl p-6">
+                        <h4 className="text-xl font-bold text-emerald-400 mb-4">🔘 Continue Staking</h4>
+                        <div className="space-y-3 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-300">Result:</span>
+                            <span className="text-white">Allocation added to stake</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-300">Tier Status:</span>
+                            <span className="text-emerald-400">Upgrade +1 tier</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-300">Next Phase:</span>
+                            <span className="text-emerald-400">Higher tier entry</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-300">Best For:</span>
+                            <span className="text-white">Long-term maximizers</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="mt-8 bg-purple-900/30 border border-purple-500/30 rounded-xl p-6">
-                    <h4 className="text-lg font-bold text-purple-400 mb-3">⚡ Special Upgrade Path</h4>
-                    <div className="text-sm text-gray-300 space-y-2">
-                      <p><strong className="text-white">Heavy Eater</strong> → Phase transition → <strong className="text-emerald-400">Genesis OG</strong></p>
-                      <p>This is the <span className="text-emerald-400">new path to Genesis</span> for non-launch participants!</p>
-                      <p>Patience and phase survival = Ultimate tier access</p>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-6">🏆 Phase Progression Rewards</h3>
+                    
+                    <div className="space-y-3">
+                      {phaseProgression.map((phase, index) => (
+                        <div 
+                          key={index}
+                          className="flex items-center justify-between bg-gray-800/50 rounded-lg p-4 border border-gray-600/30"
+                        >
+                          <div className="flex items-center gap-4">
+                            <span className="text-lg font-bold text-orange-400">{phase.phase}</span>
+                            <span className="text-white">{phase.tier}</span>
+                          </div>
+                          <span 
+                            className="font-bold px-3 py-1 rounded-full text-sm"
+                            style={{
+                              backgroundColor: index === phaseProgression.length - 1 ? '#10b98120' : '#eab30820',
+                              color: index === phaseProgression.length - 1 ? '#10b981' : '#eab308'
+                            }}
+                          >
+                            {phase.multiplier}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-8 bg-purple-900/30 border border-purple-500/30 rounded-xl p-6">
+                      <h4 className="text-lg font-bold text-purple-400 mb-3">⚡ Special Upgrade Path</h4>
+                      <div className="text-sm text-gray-300 space-y-2">
+                        <p><strong className="text-white">Heavy Eater</strong> → Phase transition → <strong className="text-emerald-400">Genesis OG</strong></p>
+                        <p>This is the <span className="text-emerald-400">new path to Genesis</span> for non-launch participants!</p>
+                        <p>Patience and phase survival = Ultimate tier access</p>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Staking Levels Section */}
@@ -721,8 +747,8 @@ Time mastery = Ultimate rewards!`,
                         </div>
                         
                         {/* Text Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-6">
-                          <div className="text-center">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-4 md:p-6">
+                          <div className="text-center px-2 md:px-0">
                             <h3 className="text-2xl md:text-3xl font-black text-white mb-2 drop-shadow-2xl">
                               {step.title}
                             </h3>
@@ -795,17 +821,17 @@ Time mastery = Ultimate rewards!`,
                     
                     {/* Story Quote */}
                     <div className="relative">
-                      <div className="bg-black/50 rounded-2xl p-8 border border-gray-700/50 relative overflow-hidden">
+                      <div className="bg-black/50 rounded-2xl p-6 md:p-8 border border-gray-700/50 relative overflow-hidden">
                         <div 
-                          className="absolute top-4 left-6 text-5xl opacity-20"
+                          className="absolute top-4 left-4 md:left-6 text-4xl md:text-5xl opacity-20"
                           style={{ color: step.symbolColor }}
                         >"</div>
                         <div 
-                          className="absolute bottom-4 right-6 text-5xl opacity-20"
+                          className="absolute bottom-4 right-4 md:right-6 text-4xl md:text-5xl opacity-20"
                           style={{ color: step.symbolColor }}
                         >"</div>
                         
-                        <p className="text-xl md:text-2xl font-bold text-center leading-relaxed relative z-10 px-8">
+                        <p className="text-lg md:text-2xl font-bold text-center leading-relaxed relative z-10 px-4 md:px-8">
                           {step.story}
                         </p>
                       </div>
@@ -865,7 +891,7 @@ Time mastery = Ultimate rewards!`,
                       className={`
                         w-full py-4 px-8 rounded-2xl font-bold text-lg transition-all duration-300 relative overflow-hidden
                         ${index === currentStep && !completedSteps.has(index)
-                          ? 'text-white shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95'
+                          ? 'text-black shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95'
                           : completedSteps.has(index)
                           ? 'bg-green-500/20 text-green-400 border-2 border-green-500/50 cursor-not-allowed'
                           : 'bg-gray-700/50 text-gray-500 cursor-not-allowed border-2 border-gray-600/30'
@@ -886,7 +912,7 @@ Time mastery = Ultimate rewards!`,
                       }}
                     >
                       {completedSteps.has(index) ? '✅ Tier Mastered' : 
-                       index === currentStep ? `🚀 ${step.action}` : 
+                       index === currentStep ? step.action : 
                        '🔒 Complete Previous Tiers'}
                     </button>
                   </div>
