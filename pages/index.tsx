@@ -186,43 +186,381 @@ function getGradeAvatar(grade: string) {
   return avatars[grade] || "❓";
 }
 
-// --- 메인 Treemap 박스 ---
+// TreemapBox 컴포넌트 - pages/index.tsx에서 기존 TreemapBox 함수를 이것으로 교체하세요!
+
+// 박스 크기 계산 유틸리티
+function getBoxSize(width: number, height: number): 'large' | 'medium' | 'small' | 'tiny' {
+  const area = width * height;
+  if (area > 15000) return 'large';
+  if (area > 8000) return 'medium';
+  if (area > 3000) return 'small';
+  return 'tiny';
+}
+
+// 등급별 색상 매핑
+const gradeColorMap: Record<string, string> = {
+  "Genesis OG": "rgba(74,222,128,0.15)",
+  "Heavy Eater": "rgba(239,68,68,0.15)",
+  "Steak Wizard": "rgba(251,191,36,0.15)",
+  "Grilluminati": "rgba(147,51,234,0.15)",
+  "Flame Juggler": "rgba(59,130,246,0.15)",
+  "Flipstarter": "rgba(34,197,94,0.15)",
+  "Sizzlin' Noob": "rgba(107,114,128,0.15)",
+  "Jeeted": "rgba(107,114,128,0.15)",
+};
+
+const gradeTextColor: Record<string, string> = {
+  "Genesis OG": "#4ade80",
+  "Heavy Eater": "#ef4444",
+  "Steak Wizard": "#fbbf24",
+  "Grilluminati": "#9333ea",
+  "Flame Juggler": "#3b82f6",
+  "Flipstarter": "#22c55e",
+  "Sizzlin' Noob": "#9ca3af",
+  "Jeeted": "#6b7280",
+};
+
+// 더미 차트 데이터 생성
+function generateChartData(seed: string): { path: string; isPositive: boolean } {
+  // 주소 기반으로 일관된 랜덤 데이터 생성
+  const hash = seed.split('').reduce((a, b) => {
+    a = ((a << 5) - a) + b.charCodeAt(0);
+    return a & a;
+  }, 0);
+  
+  const points: number[] = [];
+  let currentValue = 50; // 중간값에서 시작
+  
+  for (let i = 0; i < 8; i++) {
+    const randomValue = ((hash + i * 1234) % 100) / 100;
+    const change = (randomValue - 0.5) * 30; // -15 ~ +15 변화
+    currentValue = Math.max(10, Math.min(90, currentValue + change));
+    points.push(currentValue);
+  }
+  
+  // 전체적인 트렌드 판단
+  const trend = points[points.length - 1] - points[0];
+  const isPositive = trend > 0;
+  
+  return { path: generateSVGPath(points), isPositive };
+}
+
+// SVG 패스 생성
+function generateSVGPath(points: number[], width: number = 100, height: number = 100): string {
+  if (points.length === 0) return '';
+  
+  const stepX = width / (points.length - 1);
+  const minY = Math.min(...points);
+  const maxY = Math.max(...points);
+  const range = maxY - minY || 1;
+  
+  const pathPoints = points.map((point, index) => {
+    const x = index * stepX;
+    const y = height - ((point - minY) / range) * height * 0.8 - height * 0.1;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  
+  return `M${pathPoints.join(' L')}`;
+}
+
+// 순위 인디케이터 컴포넌트
+function RankIndicator({ rank, size }: { rank: number; size: 'large' | 'medium' | 'small' | 'tiny' }) {
+  if (size === 'tiny') return null;
+  
+  const getRankStyle = () => {
+    const baseStyle = {
+      position: 'absolute' as const,
+      top: 0,
+      left: 0,
+      width: 16,
+      height: 16,
+      borderRadius: '0 0 10px 0',
+      opacity: 0.9,
+    };
+    
+    if (rank === 1) {
+      return {
+        ...baseStyle,
+        background: 'linear-gradient(135deg, #ffd700, #ffed4e, #ffc107)',
+        boxShadow: `
+          0 0 8px rgba(255,215,0,0.6),
+          0 0 16px rgba(255,215,0,0.4),
+          0 0 24px rgba(255,215,0,0.2)
+        `,
+        animation: 'goldSparkle 1.5s ease-in-out infinite',
+      };
+    } else if (rank === 2) {
+      return {
+        ...baseStyle,
+        background: 'linear-gradient(135deg, #e8e8e8, #c0c0c0, #a8a8a8)',
+        boxShadow: `
+          0 0 6px rgba(200,200,200,0.5),
+          0 0 12px rgba(200,200,200,0.3),
+          0 0 18px rgba(200,200,200,0.15)
+        `,
+        animation: 'silverSparkle 1.8s ease-in-out infinite',
+      };
+    } else if (rank === 3) {
+      return {
+        ...baseStyle,
+        background: 'linear-gradient(135deg, #cd7f32, #b8860b, #a0522d)',
+        boxShadow: `
+          0 0 6px rgba(205,127,50,0.5),
+          0 0 12px rgba(205,127,50,0.3),
+          0 0 18px rgba(205,127,50,0.15)
+        `,
+        animation: 'bronzeSparkle 2s ease-in-out infinite',
+      };
+    } else {
+      return {
+        ...baseStyle,
+        background: 'linear-gradient(135deg, rgba(107,114,128,0.6), rgba(75,85,99,0.4))',
+        boxShadow: '0 0 4px rgba(107,114,128,0.3)',
+      };
+    }
+  };
+  
+  return <div style={getRankStyle()} />;
+}
+
+// 미니 차트 컴포넌트
+function MiniChart({ address, size }: { address: string; size: 'large' | 'medium' | 'small' | 'tiny' }) {
+  if (size === 'tiny') return null;
+  
+  const chartData = generateChartData(address);
+  
+  const dimensions = {
+    large: { width: 48, height: 24 },
+    medium: { width: 36, height: 18 },
+    small: { width: 28, height: 14 },
+    tiny: { width: 0, height: 0 },
+  };
+  
+  const { width, height } = dimensions[size];
+  
+  return (
+    <div style={{
+      position: 'absolute',
+      bottom: 4,
+      left: 4,
+      zIndex: 2,
+      width,
+      height,
+    }}>
+      <svg
+        width={width}
+        height={height}
+        viewBox={`0 0 ${width} ${height}`}
+        style={{ overflow: 'hidden' }}
+      >
+        <path
+          d={chartData.path}
+          stroke={chartData.isPositive ? 'rgba(74,222,128,0.8)' : 'rgba(239,68,68,0.8)'}
+          strokeWidth="2"
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
+  );
+}
+
+// 등급 정보 컴포넌트
+function GradeInfo({ grade, size }: { grade: string; size: 'large' | 'medium' | 'small' | 'tiny' }) {
+  if (size === 'small' || size === 'tiny') return null;
+  
+  const fontSize = size === 'large' ? 9 : 8;
+  
+  return (
+    <div style={{
+      position: 'absolute',
+      bottom: 4,
+      right: 6,
+      background: 'rgba(0,0,0,0.4)',
+      padding: '2px 6px',
+      borderRadius: 4,
+      backdropFilter: 'blur(4px)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      fontSize,
+      color: gradeTextColor[grade] || '#9ca3af',
+      zIndex: 2,
+    }}>
+      {size === 'large' ? grade : grade.split(' ')[0]}
+    </div>
+  );
+}
+
+// 메인 TreemapBox 컴포넌트
 function TreemapBox({ item, x, y, width, height, onClick }: {
   item: LeaderboardItem;
-  x: number; y: number; width: number; height: number; onClick: () => void;
+  x: number; 
+  y: number; 
+  width: number; 
+  height: number; 
+  onClick: () => void;
 }) {
   const [isHovered, setIsHovered] = useState(false);
-  const area = width * height;
-  const isLarge = area > 15000, isMedium = area > 8000, isSmall = area > 3000;
-  const rankSize = isLarge ? 14 : isMedium ? 12 : isSmall ? 10 : 9;
-  const percentSize = isLarge ? 28 : isMedium ? 22 : isSmall ? 18 : 14;
-  const chartHeight = isLarge ? 40 : isMedium ? 30 : 20;
-  const bgColors: Record<number, string> = {
-    1: "#4ade80", 2: "#22d3ee", 3: "#818cf8", 4: "#f472b6", 5: "#fb923c",
+  const size = getBoxSize(width, height);
+  
+  // 폰트 크기 계산
+  const getFontSizes = () => {
+    switch (size) {
+      case 'large':
+        return { percentage: 24, address: 11 };
+      case 'medium':
+        return { percentage: 18, address: 9 };
+      case 'small':
+        return { percentage: 14, address: 0 }; // 주소 숨김
+      case 'tiny':
+        return { percentage: 11, address: 0 }; // 주소 숨김
+    }
   };
-  const getBackgroundColor = (rank: number) => (rank <= 5 ? bgColors[rank] : rank <= 10 ? "#64748b" : "#475569");
+  
+  const fonts = getFontSizes();
+  
+  // 등급별 테두리 색상
+  const borderColor = gradeColorMap[item.grade] || 'rgba(107,114,128,0.15)';
+  const borderHoverColor = borderColor.replace('0.15', '0.25');
+  
   return (
-    <div
-      onClick={onClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      style={{
-        position: "absolute", left: x, top: y, width: width - 2, height: height - 2,
-        background: getBackgroundColor(item.rank), cursor: "pointer", display: "flex", flexDirection: "column",
-        color: "#fff", transition: "all 0.2s", transform: isHovered ? "scale(0.98)" : "scale(1)",
-        opacity: isHovered ? 0.9 : 1, overflow: "hidden", padding: isSmall ? "8px" : "4px"
-      }}
-    >
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
-        {(isMedium || isLarge) && <div style={{ fontSize: rankSize, fontWeight: 600, opacity: 0.8, marginBottom: 4 }}>#{item.rank}</div>}
-        <div style={{ fontSize: percentSize, fontWeight: 800, lineHeight: 1, marginBottom: 4 }}>{item.value.toFixed(1)}%</div>
-        {isMedium && (
-          <div style={{ fontSize: rankSize - 2, opacity: 0.7, fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "90%" }}>
-            {item.name}
+    <>
+      {/* CSS 애니메이션 (한 번만 정의) */}
+      <style jsx>{`
+        @keyframes goldSparkle {
+          0%, 100% { 
+            opacity: 0.9;
+            box-shadow: 
+              0 0 8px rgba(255,215,0,0.6),
+              0 0 16px rgba(255,215,0,0.4),
+              0 0 24px rgba(255,215,0,0.2);
+          }
+          50% { 
+            opacity: 1;
+            box-shadow: 
+              0 0 12px rgba(255,215,0,0.8),
+              0 0 24px rgba(255,215,0,0.6),
+              0 0 36px rgba(255,215,0,0.4);
+            transform: scale(1.05);
+          }
+        }
+        
+        @keyframes silverSparkle {
+          0%, 100% { 
+            opacity: 0.9;
+            box-shadow: 
+              0 0 6px rgba(200,200,200,0.5),
+              0 0 12px rgba(200,200,200,0.3),
+              0 0 18px rgba(200,200,200,0.15);
+          }
+          50% { 
+            opacity: 1;
+            box-shadow: 
+              0 0 10px rgba(200,200,200,0.7),
+              0 0 20px rgba(200,200,200,0.5),
+              0 0 30px rgba(200,200,200,0.3);
+            transform: scale(1.03);
+          }
+        }
+        
+        @keyframes bronzeSparkle {
+          0%, 100% { 
+            opacity: 0.9;
+            box-shadow: 
+              0 0 6px rgba(205,127,50,0.5),
+              0 0 12px rgba(205,127,50,0.3),
+              0 0 18px rgba(205,127,50,0.15);
+          }
+          50% { 
+            opacity: 1;
+            box-shadow: 
+              0 0 10px rgba(205,127,50,0.7),
+              0 0 20px rgba(205,127,50,0.5),
+              0 0 30px rgba(205,127,50,0.3);
+            transform: scale(1.03);
+          }
+        }
+      `}</style>
+      
+      <div
+        onClick={onClick}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        style={{
+          position: 'absolute',
+          left: x,
+          top: y,
+          width: width - 2,
+          height: height - 2,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          textAlign: 'center',
+          color: '#fff',
+          cursor: 'pointer',
+          transition: 'all 0.3s ease',
+          fontWeight: 700,
+          borderRadius: 8,
+          overflow: 'hidden',
+          backdropFilter: 'blur(2px)',
+          
+          // 통일된 차분한 배경
+          background: isHovered ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.04)',
+          border: `1px solid ${isHovered ? borderHoverColor : borderColor}`,
+          boxShadow: isHovered 
+            ? `0 8px 25px rgba(0,0,0,0.3), inset 0 0 0 1px ${borderHoverColor}` 
+            : `inset 0 0 0 1px ${borderColor}`,
+          transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
+        }}
+      >
+        {/* 순위 인디케이터 */}
+        <RankIndicator rank={item.rank} size={size} />
+        
+        {/* 메인 컨텐츠 */}
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+          zIndex: 2,
+        }}>
+          {/* 퍼센트 */}
+          <div style={{
+            fontSize: fonts.percentage,
+            fontWeight: 900,
+            marginBottom: 2,
+            textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+            lineHeight: 1,
+          }}>
+            {item.value.toFixed(1)}%
           </div>
-        )}
+          
+          {/* 주소 (크기에 따라 표시/숨김) */}
+          {fonts.address > 0 && (
+            <div style={{
+              fontSize: fonts.address,
+              opacity: 0.8,
+              fontFamily: 'monospace',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              maxWidth: '90%',
+            }}>
+              {item.address.slice(0, 4)}..{item.address.slice(-4)}
+            </div>
+          )}
+        </div>
+        
+        {/* 미니 차트 */}
+        <MiniChart address={item.address} size={size} />
+        
+        {/* 등급 정보 */}
+        <GradeInfo grade={item.grade} size={size} />
       </div>
-    </div>
+    </>
   );
 }
 
