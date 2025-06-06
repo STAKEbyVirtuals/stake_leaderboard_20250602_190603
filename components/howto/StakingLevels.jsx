@@ -4,16 +4,16 @@ import { STAKING_LEVELS } from '../../data/tierData';
 
 const StakingLevels = () => {
   return (
-    <div className="space-y-8">
-      <h2 className="text-4xl font-black text-center text-white mb-12">
+    <div className="space-y-6 sm:space-y-8 px-1 sm:px-0">
+      <h2 className="text-2xl sm:text-4xl font-black text-center text-white mb-8 sm:mb-12 px-2">
         💰 Staking Amount Levels
       </h2>
       
-      <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 max-w-4xl mx-auto px-1 sm:px-0">
         {STAKING_LEVELS.map((level, index) => (
           <div
             key={index}
-            className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 border border-gray-600/30 rounded-xl p-8 text-center hover:border-emerald-500/50 transition-all duration-300"
+            className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 border border-gray-600/30 rounded-xl p-6 sm:p-8 text-center hover:border-emerald-500/50 transition-all duration-300"
           >
             <div className="text-4xl mb-4">
               {level.level.split(' ')[0]} {/* 이모지 부분 */}

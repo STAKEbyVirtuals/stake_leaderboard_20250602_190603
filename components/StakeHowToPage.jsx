@@ -22,12 +22,15 @@ const StakeHowToPage = () => {
     setIsVisible(true);
   }, []);
 
-  // 자동 스크롤 함수
+  // 자동 스크롤 함수 (고정 상단바 고려)
   const scrollToContent = () => {
     if (contentRef.current) {
-      contentRef.current.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'start' 
+      const headerHeight = 80; // 상단바 높이 (필요에 따라 조정)
+      const elementPosition = contentRef.current.offsetTop - headerHeight;
+      
+      window.scrollTo({
+        top: elementPosition,
+        behavior: 'smooth'
       });
     }
   };
@@ -115,7 +118,7 @@ const StakeHowToPage = () => {
       </div>
 
       {/* Accordion Navigation */}
-      <div className="max-w-6xl mx-auto px-4 pb-16">
+      <div className="max-w-6xl mx-auto px-2 sm:px-4 pb-16">
         <div className="space-y-2 mb-8">
           {sections.map((section) => (
             <div key={section.id} className="border border-gray-600/30 rounded-lg overflow-hidden">
@@ -127,13 +130,13 @@ const StakeHowToPage = () => {
                     setTimeout(() => scrollToContent(), 100); // 약간의 딜레이 후 스크롤
                   }
                 }}
-                className="w-full flex items-center justify-between p-4 bg-gray-800/30 hover:bg-gray-700/30 transition-all duration-200 text-left"
+                className="w-full flex items-center justify-between p-3 sm:p-4 bg-gray-800/30 hover:bg-gray-700/30 transition-all duration-200 text-left"
               >
                 <div className="flex items-center gap-3">
                   <span className="text-gray-400">
                     {activeSection === section.id ? '▼' : '▶'}
                   </span>
-                  <span className="text-white font-bold">{section.title}</span>
+                  <span className="text-white font-bold text-sm sm:text-base">{section.title}</span>
                   {section.isEvent && (
                     <span className="bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full text-xs font-bold ml-2">
                       EVENT
@@ -144,7 +147,7 @@ const StakeHowToPage = () => {
               </button>
               
               {activeSection === section.id && (
-                <div ref={contentRef} className="border-t border-gray-600/30 bg-gray-900/20 p-6">
+                <div ref={contentRef} className="border-t border-gray-600/30 bg-gray-900/20 p-3 sm:p-6">
                   {renderContent()}
                 </div>
               )}

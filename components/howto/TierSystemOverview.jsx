@@ -4,19 +4,19 @@ import { TIER_SYSTEM } from '../../data/tierData';
 
 const TierSystemOverview = () => {
   return (
-    <div className="space-y-8">
-      <h2 className="text-4xl font-black text-center text-white mb-12">
+    <div className="space-y-6 sm:space-y-8 px-1 sm:px-0">
+      <h2 className="text-2xl sm:text-4xl font-black text-center text-white mb-8 sm:mb-12 px-2">
         ⭐ Complete Tier System Overview
       </h2>
       
-      <div className="space-y-4 max-w-5xl mx-auto">
+      <div className="space-y-3 sm:space-y-4 max-w-5xl mx-auto px-1 sm:px-0">
         {TIER_SYSTEM.map((tier, index) => (
           <div
             key={index}
-            className="bg-gradient-to-r from-gray-800/30 to-gray-900/30 border border-gray-600/30 rounded-xl p-6 hover:border-opacity-60 transition-all duration-300 group"
+            className="bg-gradient-to-r from-gray-800/30 to-gray-900/30 border border-gray-600/30 rounded-xl p-4 sm:p-6 hover:border-opacity-60 transition-all duration-300 group"
             style={{ borderColor: tier.color + '40' }}
           >
-            <div className="grid md:grid-cols-5 gap-4 items-center text-center md:text-left">
+            <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4 items-center text-center md:text-left">
               {/* 티어 이름 & 등급 */}
               <div className="md:col-span-1">
                 <div className="text-xs text-gray-400 mb-1 uppercase tracking-wide">{tier.grade}</div>

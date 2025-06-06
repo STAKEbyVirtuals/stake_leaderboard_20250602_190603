@@ -951,7 +951,14 @@ function Layout({
   const sidebarWidth = isDesktop ? 240 : 0;
   
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#0a0a0a" }}>
+    <div style={{ 
+      display: "flex", 
+      minHeight: "100vh", 
+      background: "#0a0a0a",
+      width: "100vw",
+      maxWidth: "100vw",
+      overflow: "hidden"
+    }}>
       {/* 기존 사이드바 (변경 없음) */}
       <Sidebar 
         isOpen={isDesktop || sidebarOpen} 
@@ -968,7 +975,10 @@ function Layout({
         marginLeft: isDesktop ? sidebarWidth : 0, 
         minHeight: "100vh", 
         display: "flex", 
-        flexDirection: "column" 
+        flexDirection: "column",
+        width: isMobile ? "100vw" : "auto",
+        maxWidth: isMobile ? "100vw" : "none",
+        overflow: isMobile ? "hidden" : "visible"
       }}>
         
         {/* 🆕 CompactTopbar만 사용 (토글 없음) */}
@@ -983,8 +993,11 @@ function Layout({
         {/* 메인 컨텐츠 */}
         <div style={{ 
           flex: 1, 
-          padding: isMobile ? "16px" : "20px 24px",
-          marginTop: isMobile ? "72px" : "60px" // 새 헤더 높이만큼 고정 여백
+          padding: isMobile ? "8px" : "20px 24px",
+          marginTop: isMobile ? "72px" : "60px",
+          width: isMobile ? "100%" : "auto",
+          maxWidth: isMobile ? "100vw" : "none",
+          boxSizing: "border-box"
         }}>
           {children}
         </div>
@@ -1007,14 +1020,6 @@ function Layout({
 // 🔥 Top10Leaderboard 컴포넌트 수정 코드
 // ========================================
 
-// pages/index.tsx에서 Top10Leaderboard 함수를 찾아서 이 코드로 완전히 교체하세요!
-
-// 🔥 기존 Top10Leaderboard 함수를 이 코드로 완전히 교체하세요!
-
-// 🌟 강한 글로우 스타일 Top10Leaderboard 완성 코드
-// pages/index.tsx에서 기존 Top10Leaderboard 함수를 이 코드로 완전히 교체하세요!
-// 🎯 레이아웃 개선된 Top10Leaderboard 완성 코드
-// pages/index.tsx에서 기존 Top10Leaderboard 함수를 이 코드로 완전히 교체하세요!
 
 function Top10Leaderboard({ data, isMobile, setModal }: { 
   data: LeaderboardItem[]; 
@@ -1190,7 +1195,11 @@ function Top10Leaderboard({ data, isMobile, setModal }: {
       borderRadius: 16,
       padding: 20,
       border: "1px solid rgba(255,255,255,0.1)",
-      height: "fit-content"
+      height: "fit-content",
+      width: "100%",
+      maxWidth: "100%",
+      overflow: "hidden",
+      boxSizing: "border-box"
     }}>
       {/* 헤더 */}
       <div style={{
@@ -1691,8 +1700,8 @@ function LeaderboardPage({ data, modal, setModal, isMobile, isDesktop }:{
 
   const topData = activeUsers.slice(0, 20); // 상위 20명만
   
-  const treemapWidth = isMobile ? 380 : isDesktop ? 750 : 620;
-  const treemapHeight = isMobile ? 450 : isDesktop ? 625 : 560;
+  const treemapWidth = isMobile ? 350 : isDesktop ? 750 : 620;
+  const treemapHeight = isMobile ? 280 : isDesktop ? 625 : 560;
   const items = useTreemapLayout(topData, treemapWidth, treemapHeight);
 
   return (
@@ -1710,7 +1719,8 @@ function LeaderboardPage({ data, modal, setModal, isMobile, isDesktop }:{
       {/* Treemap 섹션 */}
       <section style={{ 
         flex: isMobile ? "none" : isDesktop ? "0 0 auto" : "1", 
-        minWidth: 0 
+        minWidth: 0,
+        paddingBottom: isMobile ? "50px" : "0" 
       }}>
         <div style={{ 
           background: "rgba(255,255,255,0.03)", 

@@ -30,14 +30,14 @@ const EvolutionJourney = () => {
   const progressPercentage = ((completedSteps.size) / EVOLUTION_STEPS.length) * 100;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8 px-1 sm:px-0">
       {/* Event Header */}
-      <div className="bg-gradient-to-br from-orange-900/30 to-red-900/30 border-4 border-orange-500/50 rounded-3xl p-8 text-center">
+      <div className="bg-gradient-to-br from-orange-900/30 to-red-900/30 border-4 border-orange-500/50 rounded-2xl sm:rounded-3xl p-4 sm:p-8 text-center">
         <div className="text-6xl mb-4">🎁</div>
-        <h2 className="text-4xl font-black text-orange-400 mb-4">
+        <h2 className="text-2xl sm:text-4xl font-black text-orange-400 mb-4">
           Special Event: Evolution Challenge
         </h2>
-        <p className="text-xl text-gray-300 mb-6 max-w-3xl mx-auto">
+        <p className="text-lg sm:text-xl text-gray-300 mb-6 max-w-3xl mx-auto px-2">
           Complete all 8 tier steps, share your achievement on X, and earn <span className="text-orange-400 font-bold">50,000 STAKE tokens!</span>
         </p>
         
@@ -104,7 +104,7 @@ const EvolutionJourney = () => {
                 transition-all duration-700
               `}>
                 
-                <div className="grid lg:grid-cols-2 gap-8 p-8">
+                <div className="grid lg:grid-cols-2 gap-4 sm:gap-8 p-4 sm:p-8">
                   {/* Character Visual */}
                   <div className="flex flex-col items-center">
                     <div className={`

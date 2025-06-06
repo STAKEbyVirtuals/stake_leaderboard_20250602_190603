@@ -4,22 +4,22 @@ import { HYBRID_TIER_SYSTEM } from '../../data/tierData';
 
 const HybridSystem = () => {
   return (
-    <div className="space-y-8">
-      <h2 className="text-3xl font-bold text-white mb-8">Hybrid Tier Upgrade System</h2>
+    <div className="space-y-6 sm:space-y-8 px-1 sm:px-0">
+      <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6 sm:mb-8 px-2">Hybrid Tier Upgrade System</h2>
       
-      <div className="bg-gradient-to-br from-blue-900/30 to-indigo-900/30 border-4 border-blue-500/50 rounded-3xl p-8 mb-12">
+      <div className="bg-gradient-to-br from-blue-900/30 to-indigo-900/30 border-4 border-blue-500/50 rounded-2xl sm:rounded-3xl p-4 sm:p-8 mb-8 sm:mb-12">
         <div className="text-center mb-8">
           <div className="text-6xl mb-4">⚡</div>
-          <h3 className="text-3xl font-black text-blue-400 mb-4">
+          <h3 className="text-2xl sm:text-3xl font-black text-blue-400 mb-4">
             Two Paths to Tier Advancement
           </h3>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+          <p className="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto px-2">
             Upgrade your tier through traditional requirements OR phase completion rewards. 
             Whichever path is faster applies first!
           </p>
         </div>
         
-        <div className="grid lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 px-1 sm:px-0">
           {/* Natural upgrade path */}
           <div className="bg-gray-800/30 border-2 border-green-500/30 rounded-2xl p-8">
             <h4 className="text-2xl font-bold text-green-400 mb-6 text-center">
