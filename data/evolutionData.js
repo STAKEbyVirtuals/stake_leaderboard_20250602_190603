@@ -1,7 +1,6 @@
-// src/data/stake/evolutionSteps.js
-// 8단계 STAKE 진화 시스템 데이터
+// data/evolutionData.js - 진화 여정 관련 모든 데이터
 
-export const evolutionSteps = [
+export const EVOLUTION_STEPS = [
   {
     id: 'virgen',
     title: 'VIRGEN',
@@ -115,15 +114,15 @@ Patience is starting to pay off!`,
     story: "Now I'm properly engaged. I've learned to handle the flames.",
     description: 'Mid-level staker who survived 2 weeks. Became a true player through consistent dedication.',
     infoBlock: {
-      title: 'The Growing Power Phase',
-      content: `**2 Weeks Survival Milestone**
+      title: 'Mid-Level Mastery',
+      content: `**Flame Handling Skills Unlocked**
 
-1. **Condition**: Mid level (200K-1M) + 2 weeks holding
-2. **x1.25 Multiplier**: +25% scoring power boost
-3. **Market Resilience**: Survived volatility cycles
-4. **Next Goal**: 1 month holding → Grilluminati
+1. **Condition**: Mid level (200K-1M) + 2 weeks
+2. **x1.25 Multiplier**: +25% scoring power
+3. **Achievement**: True player status
+4. **Next Goal**: 1 month → Grilluminati
 
-You're no longer just testing the waters!`,
+The flames no longer burn you!`,
       bgColor: 'from-blue-900/30 to-indigo-900/30',
       borderColor: 'border-blue-500/40'
     },
@@ -150,15 +149,15 @@ You're no longer just testing the waters!`,
     story: "Points are taken by those who calculate. I understand the rules of the game.",
     description: 'Strategic thinker who survived 1 month. Moves with logic, not emotion.',
     infoBlock: {
-      title: 'Strategic Mastery Achieved',
-      content: `**1 Month Strategic Milestone**
+      title: 'Strategic Mastery Unlocked',
+      content: `**The Game Meta Revealed**
 
-1. **Condition**: Mid level + 1 month strategic holding
-2. **x1.4 Multiplier**: +40% strategic advantage
-3. **Meta Understanding**: Beyond emotion-driven decisions
-4. **Next Goal**: High level (1M+) + 2 months → Stake Wizard
+1. **Condition**: Mid level + 1 month holding
+2. **x1.4 Multiplier**: +40% scoring advantage  
+3. **Skill**: Strategic thinking over emotions
+4. **Next Goal**: High level + 2 months → Stake Wizard
 
-Logic over impulse = consistent gains!`,
+You now see the bigger picture!`,
       bgColor: 'from-purple-900/30 to-violet-900/30',
       borderColor: 'border-purple-500/40'
     },
@@ -185,15 +184,15 @@ Logic over impulse = consistent gains!`,
     story: "Those who design rules transcend them. Now I'm in the position of making the game.",
     description: 'High-level master who survived 2 months. Transcendent who creates strategies beyond interpreting meta.',
     infoBlock: {
-      title: 'Rule Creation Mastery',
-      content: `**2 Months High-Level Mastery**
+      title: 'Wizard Powers Awakened',
+      content: `**Rule Creator Status Achieved**
 
-1. **Condition**: High level (1M-10M) + 2 months mastery
-2. **x1.6 Multiplier**: +60% rule-creation power
-3. **Beyond Meta**: Creating strategies, not following them
-4. **Next Goal**: Special level (10M+) + 3 months → Heavy Eater
+1. **Condition**: High level (1M-10M) + 2 months
+2. **x1.6 Multiplier**: +60% scoring mastery
+3. **Power**: Creating new strategies
+4. **Next Goal**: Special level + 3 months → Heavy Eater
 
-You don't follow rules, you make them!`,
+You now shape the game itself!`,
       bgColor: 'from-yellow-900/30 to-amber-900/30',
       borderColor: 'border-yellow-500/40'
     },
@@ -220,15 +219,15 @@ You don't follow rules, you make them!`,
     story: "Those who endure eat everything. Now I am the ruler of the grill.",
     description: 'Ultimate champion with Special level staking for 3+ months. The apex of the traditional tier system.',
     infoBlock: {
-      title: 'Ultimate Championship Status',
-      content: `**3+ Months Special Level Mastery**
+      title: 'Ultimate Dominance Achieved',
+      content: `**Legendary Status Unlocked**
 
-1. **Condition**: Special level (10M+) + 3+ months endurance
-2. **x1.8 Multiplier**: +80% ultimate domination power
-3. **Grill Ruler**: Apex of traditional tier system
-4. **Final Evolution**: Phase survival → Genesis OG potential
+1. **Condition**: Special level (10M+) + 3 months
+2. **x1.8 Multiplier**: +80% legendary power
+3. **Status**: Traditional system apex
+4. **Special**: Phase transition → Genesis OG possible!
 
-You've conquered the traditional progression!`,
+You rule the traditional tier system!`,
       bgColor: 'from-red-900/30 to-rose-900/30',
       borderColor: 'border-red-500/40'
     },
@@ -255,15 +254,15 @@ You've conquered the traditional progression!`,
     story: "Early or Never. A being that transcends time, itself a myth.",
     description: 'Mythical being who either participated from launch day OR achieved Heavy Eater and survived phase transitions.',
     infoBlock: {
-      title: 'Mythical Legend Status',
-      content: `**Time Transcendent Achievement**
+      title: 'Mythical Genesis Powers',
+      content: `**Two Paths to Legend**
 
-1. **Dual Path**: Launch day participation OR Heavy Eater + Phase survival
-2. **x2.0 Multiplier**: Maximum possible scoring power
-3. **Living History**: Permanent witness of STAKE evolution
-4. **Eternal Status**: This is the final evolution tier
+1. **Original Path**: Launch day participant + no jeet
+2. **New Path**: Heavy Eater → Phase transition
+3. **x2.0 Multiplier**: Maximum scoring power
+4. **Status**: Mythical ecosystem legend
 
-You have transcended time itself!`,
+Time mastery = Ultimate rewards!`,
       bgColor: 'from-emerald-900/30 to-teal-900/30',
       borderColor: 'border-emerald-500/40'
     },
@@ -282,31 +281,4 @@ You have transcended time itself!`,
     multiplier: 'x2.0',
     requirement: 'Launch day OR Heavy Eater + Phase survival'
   }
-];
-
-// 색상 매핑 유틸리티
-export const getAccentColorClasses = (color) => {
-  const colorMap = {
-    gray: { text: 'text-gray-400', bg: 'bg-gray-500', ring: 'ring-gray-500' },
-    white: { text: 'text-white', bg: 'bg-white', ring: 'ring-white' },
-    green: { text: 'text-green-400', bg: 'bg-green-500', ring: 'ring-green-500' },
-    blue: { text: 'text-blue-400', bg: 'bg-blue-500', ring: 'ring-blue-500' },
-    purple: { text: 'text-purple-400', bg: 'bg-purple-500', ring: 'ring-purple-500' },
-    yellow: { text: 'text-yellow-400', bg: 'bg-yellow-500', ring: 'ring-yellow-500' },
-    red: { text: 'text-red-400', bg: 'bg-red-500', ring: 'ring-red-500' },
-    emerald: { text: 'text-emerald-400', bg: 'bg-emerald-500', ring: 'ring-emerald-500' }
-  };
-  return colorMap[color] || colorMap.gray;
-};
-
-// 티어 시스템 요약 (간단한 조회용)
-export const tierSystem = [
-  { name: 'VIRGEN', condition: 'Not participating', benefit: 'Unlimited potential', multiplier: 'x0', color: '#6b7280', grade: 'None' },
-  { name: 'Sizzlin\' Noob', condition: 'Entry level staking', benefit: 'Basic participation', multiplier: 'x1.0', color: '#ffffff', grade: 'Normal' },
-  { name: 'Flipstarter', condition: 'Entry + 1 week', benefit: 'Consistency bonus', multiplier: 'x1.1', color: '#22c55e', grade: 'Uncommon' },
-  { name: 'Flame Juggler', condition: 'Mid + 2 weeks', benefit: 'Growing power', multiplier: 'x1.25', color: '#3b82f6', grade: 'Rare' },
-  { name: 'Grilluminati', condition: 'Mid + 1 month', benefit: 'Strategic advantage', multiplier: 'x1.4', color: '#8b5cf6', grade: 'Epic' },
-  { name: 'Stake Wizard', condition: 'High + 2 months', benefit: 'Rule creation', multiplier: 'x1.6', color: '#eab308', grade: 'Unique' },
-  { name: 'Heavy Eater', condition: 'Special + 3 months', benefit: 'Ultimate domination', multiplier: 'x1.8', color: '#ef4444', grade: 'Legendary' },
-  { name: 'Genesis OG', condition: 'Launch day OR Phase survival', benefit: 'Mythical legend', multiplier: 'x2.0', color: '#10b981', grade: 'Genesis' }
 ];
