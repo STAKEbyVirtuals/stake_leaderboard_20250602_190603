@@ -1,16 +1,143 @@
 import React, { useState, useEffect } from 'react';
 
 const StakeHowToPage = () => {
+  const [activeSection, setActiveSection] = useState('evolution');
   const [currentStep, setCurrentStep] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
   const [completedSteps, setCompletedSteps] = useState(new Set());
-  const [showPhaseStrategy, setShowPhaseStrategy] = useState(false);
-  const [showSmallInvestorPath, setShowSmallInvestorPath] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
 
+  // Complete project timeline data
+  const COMPLETE_TIMELINE = {
+    phases: [
+      { 
+        phase: 1, 
+        staking: '2025-05-27 ~ 2025-06-27', 
+        snapshot: '2025-06-27 10:00 UTC',
+        status: 'current'
+      },
+      { 
+        phase: 2, 
+        staking: '2025-06-27 ~ 2025-07-27', 
+        snapshot: '2025-07-27 10:00 UTC',
+        status: 'upcoming' 
+      },
+      { 
+        phase: 3, 
+        staking: '2025-07-27 ~ 2025-08-27', 
+        snapshot: '2025-08-27 10:00 UTC',
+        status: 'upcoming' 
+      },
+      { 
+        phase: 4, 
+        staking: '2025-08-27 ~ 2025-09-27', 
+        snapshot: '2025-09-27 10:00 UTC',
+        status: 'upcoming' 
+      },
+      { 
+        phase: 5, 
+        staking: '2025-09-27 ~ 2025-10-27', 
+        snapshot: '2025-10-27 10:00 UTC',
+        status: 'upcoming' 
+      },
+      { 
+        phase: 6, 
+        staking: '2025-10-27 ~ 2025-11-27', 
+        snapshot: '2025-11-27 10:00 UTC',
+        status: 'upcoming' 
+      }
+    ],
+    vesting: [
+      { phase: 1, unlock: '2025-12-07', distribution: '2025-12-10', newTokens: '41.67M', cumulative: '41.67M', percentage: '16.67%' },
+      { phase: 2, unlock: '2026-01-07', distribution: '2026-01-10', newTokens: '41.67M', cumulative: '83.33M', percentage: '33.33%' },
+      { phase: 3, unlock: '2026-02-07', distribution: '2026-02-10', newTokens: '41.67M', cumulative: '125.00M', percentage: '50.00%' },
+      { phase: 4, unlock: '2026-03-07', distribution: '2026-03-10', newTokens: '41.67M', cumulative: '166.67M', percentage: '66.67%' },
+      { phase: 5, unlock: '2026-04-07', distribution: '2026-04-10', newTokens: '41.67M', cumulative: '208.33M', percentage: '83.33%' },
+      { phase: 6, unlock: '2026-05-07', distribution: '2026-05-10', newTokens: '41.67M', cumulative: '250.00M', percentage: '100%' }
+    ]
+  };
+
+  // Phase participation rules
+  const PHASE_PARTICIPATION_RULES = [
+    {
+      rule: "Join Button Required",
+      description: "You must click the 'Join Phase' button at the start of each phase.",
+      icon: "Click",
+      importance: "critical"
+    },
+    {
+      rule: "No Auto Participation",
+      description: "Previous phase participation does NOT automatically join you to the next phase.",
+      icon: "Manual",
+      importance: "critical"
+    },
+    {
+      rule: "No Join = No Points",
+      description: "If you don't click join, your staking won't accumulate any points.",
+      icon: "Warning",
+      importance: "critical"
+    },
+    {
+      rule: "Late Join Penalty",
+      description: "Joining mid-phase means you lose all points from the beginning of that phase.",
+      icon: "Time",
+      importance: "warning"
+    }
+  ];
+
+  // Hybrid tier upgrade system
+  const HYBRID_TIER_SYSTEM = {
+    naturalUpgrade: [
+      { from: "Sizzlin' Noob", to: "Flipstarter", condition: "Entry level + 1 week" },
+      { from: "Flipstarter", to: "Flame Juggler", condition: "Mid level + 2 weeks" },
+      { from: "Flame Juggler", to: "Grilluminati", condition: "Mid level + 1 month" },
+      { from: "Grilluminati", to: "Stake Wizard", condition: "High level + 2 months" },
+      { from: "Stake Wizard", to: "Heavy Eater", condition: "Special level + 3 months" },
+      { from: "Heavy Eater", to: "Genesis OG", condition: "Launch day OR Phase survival" }
+    ],
+    phaseUpgrade: {
+      requirements: [
+        "Join within 24 hours of phase start",
+        "Make at least 1 additional staking transaction during the phase",
+        "Maintain stake without any unstaking (even partial) until phase end"
+      ],
+      result: "Automatic +1 tier upgrade",
+      note: "Whichever upgrade path is faster applies first"
+    }
+  };
+
+  // Updated claim strategies
+  const CLAIM_STRATEGIES = [
+    {
+      strategy: "Immediate Claim",
+      timing: "At each phase end",
+      type: "warning",
+      points: ["Grade reset to Virgen", "Cannot join next phase", "Miss long-term rewards", "Lose tier progression"],
+      result: "Becomes Jeeted",
+      color: "red"
+    },
+    {
+      strategy: "Continue Staking",
+      timing: "Hold until next phase",
+      type: "benefits",
+      points: ["Automatic tier upgrade", "Higher multiplier rewards", "Cumulative bonus growth", "Path to elite status"],
+      result: "Achieve Higher Tiers",
+      color: "green"
+    },
+    {
+      strategy: "Genesis OG Journey",
+      timing: "Complete all phases",
+      type: "benefits",
+      points: ["Maximum x2.0 multiplier", "Legendary status forever", "Ultimate reward potential", "Part of STAKE history"],
+      result: "Genesis OG Achievement",
+      color: "emerald"
+    }
+  ];
+
+  // Evolution steps for the event
   const evolutionSteps = [
     {
       id: 'virgen',
@@ -295,45 +422,60 @@ Time mastery = Ultimate rewards!`,
   ];
 
   const tierSystem = [
-    { tier: '🐸', name: 'VIRGEN', condition: 'Not participating', benefit: 'Unlimited potential', multiplier: 'x0', color: '#6b7280', grade: 'None' },
-    { tier: '🆕', name: 'Sizzlin\' Noob', condition: 'Entry level staking', benefit: 'Basic participation', multiplier: 'x1.0', color: '#ffffff', grade: 'Normal' },
-    { tier: '🔁', name: 'Flipstarter', condition: 'Entry + 1 week', benefit: 'Consistency bonus', multiplier: 'x1.1', color: '#22c55e', grade: 'Uncommon' },
-    { tier: '🔥', name: 'Flame Juggler', condition: 'Mid + 2 weeks', benefit: 'Growing power', multiplier: 'x1.25', color: '#3b82f6', grade: 'Rare' },
-    { tier: '🧠', name: 'Grilluminati', condition: 'Mid + 1 month', benefit: 'Strategic advantage', multiplier: 'x1.4', color: '#8b5cf6', grade: 'Epic' },
-    { tier: '🧙‍♂️', name: 'Stake Wizard', condition: 'High + 2 months', benefit: 'Rule creation', multiplier: 'x1.6', color: '#eab308', grade: 'Unique' },
-    { tier: '🥩', name: 'Heavy Eater', condition: 'Special + 3 months', benefit: 'Ultimate domination', multiplier: 'x1.8', color: '#ef4444', grade: 'Legendary' },
-    { tier: '🌌', name: 'Genesis OG', condition: 'Launch day OR Phase survival', benefit: 'Mythical legend', multiplier: 'x2.0', color: '#10b981', grade: 'Genesis' }
+    { name: 'VIRGEN', condition: 'Not participating', benefit: 'Unlimited potential', multiplier: 'x0', color: '#6b7280', grade: 'None' },
+    { name: 'Sizzlin\' Noob', condition: 'Entry level staking', benefit: 'Basic participation', multiplier: 'x1.0', color: '#ffffff', grade: 'Normal' },
+    { name: 'Flipstarter', condition: 'Entry + 1 week', benefit: 'Consistency bonus', multiplier: 'x1.1', color: '#22c55e', grade: 'Uncommon' },
+    { name: 'Flame Juggler', condition: 'Mid + 2 weeks', benefit: 'Growing power', multiplier: 'x1.25', color: '#3b82f6', grade: 'Rare' },
+    { name: 'Grilluminati', condition: 'Mid + 1 month', benefit: 'Strategic advantage', multiplier: 'x1.4', color: '#8b5cf6', grade: 'Epic' },
+    { name: 'Stake Wizard', condition: 'High + 2 months', benefit: 'Rule creation', multiplier: 'x1.6', color: '#eab308', grade: 'Unique' },
+    { name: 'Heavy Eater', condition: 'Special + 3 months', benefit: 'Ultimate domination', multiplier: 'x1.8', color: '#ef4444', grade: 'Legendary' },
+    { name: 'Genesis OG', condition: 'Launch day OR Phase survival', benefit: 'Mythical legend', multiplier: 'x2.0', color: '#10b981', grade: 'Genesis' }
   ];
 
   const stakingLevels = [
-    { level: '🔹 Entry', range: 'Up to 200K STAKE', description: 'Perfect for beginners' },
-    { level: '🔸 Mid', range: '200K - 1M STAKE', description: 'Serious participants' },
-    { level: '🔶 High', range: '1M - 10M STAKE', description: 'Dedicated investors' },
-    { level: '💎 Special', range: '10M+ STAKE', description: 'Elite whale tier' }
+    { level: 'Entry', range: 'Up to 200K STAKE', description: 'Perfect for beginners' },
+    { level: 'Mid', range: '200K - 1M STAKE', description: 'Serious participants' },
+    { level: 'High', range: '1M - 10M STAKE', description: 'Dedicated investors' },
+    { level: 'Special', range: '10M+ STAKE', description: 'Elite whale tier' }
   ];
 
-  const phaseProgression = [
-    { phase: 'Phase 1', tier: 'Sizzlin\' Noob', multiplier: 'x1.0' },
-    { phase: 'Phase 2', tier: 'Flipstarter', multiplier: 'x1.1' },
-    { phase: 'Phase 3', tier: 'Flame Juggler', multiplier: 'x1.25' },
-    { phase: 'Phase 4', tier: 'Grilluminati', multiplier: 'x1.4' },
-    { phase: 'Phase 5', tier: 'Stake Wizard', multiplier: 'x1.6' },
-    { phase: 'Phase 6', tier: 'Heavy Eater', multiplier: 'x1.8' },
-    { phase: 'Claim', tier: 'Genesis OG', multiplier: 'x2.0' }
+  const sections = [
+    {
+      id: 'evolution',
+      title: '🔥 Evolution Journey - Complete 8 Tiers & Earn 50K STAKE!',
+      isEvent: true
+    },
+    {
+      id: 'hybrid',
+      title: 'Hybrid Tier System - Two Paths to Advancement',
+      isEvent: false
+    },
+    {
+      id: 'timeline',
+      title: 'Project Timeline - 6 Phases & Token Distribution',
+      isEvent: false
+    },
+    {
+      id: 'participation',
+      title: 'Phase Participation - Manual Join Requirements',
+      isEvent: false
+    },
+    {
+      id: 'strategies',
+      title: 'Claim Strategies - When to Hold vs When to Cash Out',
+      isEvent: false
+    },
+    {
+      id: 'levels',
+      title: 'Staking Levels - Entry to Special Tier Guide',
+      isEvent: false
+    },
+    {
+      id: 'nft',
+      title: 'NFT & Future Utility - Your Permanent Legacy',
+      isEvent: false
+    }
   ];
-
-  const smallInvestorScenario = {
-    initial: { amount: 200000, tokens: 'Entry Level (200K)' },
-    phases: [
-      { phase: 1, allocation: 100000, cumulative: 100000, tier: 'Sizzlin\' Noob', multiplier: 'x1.0' },
-      { phase: 2, allocation: 110000, cumulative: 210000, tier: 'Flipstarter', multiplier: 'x1.1' },
-      { phase: 3, allocation: 125000, cumulative: 335000, tier: 'Flame Juggler', multiplier: 'x1.25' },
-      { phase: 4, allocation: 140000, cumulative: 475000, tier: 'Grilluminati', multiplier: 'x1.4' },
-      { phase: 5, allocation: 160000, cumulative: 635000, tier: 'Stake Wizard', multiplier: 'x1.6' },
-      { phase: 6, allocation: 200000, cumulative: 835000, tier: 'Heavy Eater', multiplier: 'x1.8' }
-    ],
-    final: { totalStaking: 1035000, finalTier: 'Genesis OG', finalMultiplier: 'x2.0' }
-  };
 
   const handleStepComplete = (stepIndex) => {
     setCompletedSteps(prev => new Set([...prev, stepIndex]));
@@ -342,401 +484,83 @@ Time mastery = Ultimate rewards!`,
     }
   };
 
-  const progressPercentage = ((currentStep + 1) / evolutionSteps.length) * 100;
+  const handleShareOnX = () => {
+    const tweetText = encodeURIComponent(
+      `🔥 I just completed the STAKE Evolution Challenge! 🚀\n\n` +
+      `✅ Mastered all 8 tiers from VIRGEN to GENESIS OG\n` +
+      `💰 Earned 50,000 STAKE tokens!\n\n` +
+      `Join the evolution: [Your-Link-Here]\n\n` +
+      `#STAKEEvolution #Web3Gaming #STAKEProtocol`
+    );
+    
+    const tweetUrl = `https://twitter.com/intent/tweet?text=${tweetText}`;
+    window.open(tweetUrl, '_blank');
+  };
+
+  const progressPercentage = ((completedSteps.size) / evolutionSteps.length) * 100;
 
   const getAccentColorClasses = (color) => {
     const colorMap = {
-      gray: { text: 'text-gray-400', bg: 'bg-gray-500', ring: 'ring-gray-500', hover: 'hover:bg-gray-600' },
-      white: { text: 'text-white', bg: 'bg-white', ring: 'ring-white', hover: 'hover:bg-gray-100' },
-      green: { text: 'text-green-400', bg: 'bg-green-500', ring: 'ring-green-500', hover: 'hover:bg-green-600' },
-      blue: { text: 'text-blue-400', bg: 'bg-blue-500', ring: 'ring-blue-500', hover: 'hover:bg-blue-600' },
-      purple: { text: 'text-purple-400', bg: 'bg-purple-500', ring: 'ring-purple-500', hover: 'hover:bg-purple-600' },
-      yellow: { text: 'text-yellow-400', bg: 'bg-yellow-500', ring: 'ring-yellow-500', hover: 'hover:bg-yellow-600' },
-      red: { text: 'text-red-400', bg: 'bg-red-500', ring: 'ring-red-500', hover: 'hover:bg-red-600' },
-      emerald: { text: 'text-emerald-400', bg: 'bg-emerald-500', ring: 'ring-emerald-500', hover: 'hover:bg-emerald-600' }
+      gray: { text: 'text-gray-400', bg: 'bg-gray-500', ring: 'ring-gray-500' },
+      white: { text: 'text-white', bg: 'bg-white', ring: 'ring-white' },
+      green: { text: 'text-green-400', bg: 'bg-green-500', ring: 'ring-green-500' },
+      blue: { text: 'text-blue-400', bg: 'bg-blue-500', ring: 'ring-blue-500' },
+      purple: { text: 'text-purple-400', bg: 'bg-purple-500', ring: 'ring-purple-500' },
+      yellow: { text: 'text-yellow-400', bg: 'bg-yellow-500', ring: 'ring-yellow-500' },
+      red: { text: 'text-red-400', bg: 'bg-red-500', ring: 'ring-red-500' },
+      emerald: { text: 'text-emerald-400', bg: 'bg-emerald-500', ring: 'ring-emerald-500' }
     };
     return colorMap[color] || colorMap.gray;
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white overflow-hidden">
-      {/* Hero Section */}
-      <div className="relative px-4 py-16 text-center">
-        <div className={`transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-          <h1 className="text-6xl md:text-8xl font-black mb-8 bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 bg-clip-text text-transparent">
-            🔥 VIRGEN → LEGEND
-          </h1>
-          <p className="text-2xl md:text-3xl text-gray-300 mb-6 max-w-4xl mx-auto leading-relaxed">
-            From <span className="text-red-400 font-bold">200K Entry</span> to <span className="text-emerald-400 font-bold">Genesis OG</span> - Everyone can reach the top!
-          </p>
-          <p className="text-lg md:text-xl text-gray-400 mb-12 max-w-3xl mx-auto">
-            <strong>Revolutionary System:</strong> Small investors can reach <strong>Heavy Eater status</strong> through 6-phase journey
-          </p>
-          
-          {/* Enhanced Progress Bar */}
-          <div className="max-w-2xl mx-auto mb-16">
-            <div className="flex justify-between text-lg text-gray-400 mb-4">
-              <span className="font-bold">🐸 VIRGEN</span>
-              <span className="font-bold text-orange-400">{Math.round(progressPercentage)}% Evolution</span>
-              <span className="font-bold">🌌 LEGEND</span>
-            </div>
-            <div className="w-full bg-gray-800 rounded-full h-5 shadow-inner">
-              <div 
-                className="bg-gradient-to-r from-gray-500 via-orange-500 to-emerald-500 h-5 rounded-full transition-all duration-1000 shadow-lg"
-                style={{ width: `${progressPercentage}%` }}
-              />
-            </div>
+  // Evolution Journey Content
+  const renderEvolutionJourney = () => (
+    <div className="space-y-8">
+      {/* Event Header */}
+      <div className="bg-gradient-to-br from-orange-900/30 to-red-900/30 border-4 border-orange-500/50 rounded-3xl p-8 text-center">
+        <div className="text-6xl mb-4">🎁</div>
+        <h2 className="text-4xl font-black text-orange-400 mb-4">
+          Special Event: Evolution Challenge
+        </h2>
+        <p className="text-xl text-gray-300 mb-6 max-w-3xl mx-auto">
+          Complete all 8 tier steps, share your achievement on X, and earn <span className="text-orange-400 font-bold">50,000 STAKE tokens!</span>
+        </p>
+        
+        {/* Progress Tracker */}
+        <div className="max-w-2xl mx-auto mb-8">
+          <div className="flex justify-between text-lg text-gray-400 mb-4">
+            <span className="font-bold">Progress</span>
+            <span className="font-bold text-orange-400">{completedSteps.size}/8 Completed</span>
+            <span className="font-bold">50K STAKE</span>
           </div>
-
-          {/* Key Innovation Callouts */}
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-12">
-            <div className="bg-gradient-to-r from-emerald-900/30 to-green-900/30 border border-emerald-500/30 rounded-xl p-6">
-              <div className="text-3xl mb-3">🚀</div>
-              <h3 className="text-xl font-bold text-emerald-400 mb-2">Small Investor Dream</h3>
-              <p className="text-gray-300">200K entry → 6 phases → Heavy Eater level rewards</p>
-            </div>
-            <div className="bg-gradient-to-r from-orange-900/30 to-red-900/30 border border-orange-500/30 rounded-xl p-6">
-              <div className="text-3xl mb-3">⚡</div>
-              <h3 className="text-xl font-bold text-orange-400 mb-2">Phase Tier Boost</h3>
-              <p className="text-gray-300">Each phase survival = automatic tier upgrade</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Key Features Section */}
-      <div className="px-4 pb-16">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-black text-center text-white mb-12">
-            🎯 Revolutionary Features
-          </h2>
-          
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
-            <button
-              onClick={() => setShowSmallInvestorPath(!showSmallInvestorPath)}
-              className="bg-gradient-to-br from-emerald-900/40 to-green-900/40 border-2 border-emerald-500/50 rounded-2xl p-8 hover:scale-105 transition-all duration-300 text-left"
-            >
-              <div className="text-4xl mb-4">🌱</div>
-              <h3 className="text-2xl font-bold text-emerald-400 mb-4">Small Investor Path</h3>
-              <p className="text-gray-300 mb-4">See how 200K entry can reach Heavy Eater through 6-phase journey</p>
-              <div className="text-emerald-400 font-bold">Click to explore →</div>
-            </button>
-
-            <button
-              onClick={() => setShowPhaseStrategy(!showPhaseStrategy)}
-              className="bg-gradient-to-br from-orange-900/40 to-red-900/40 border-2 border-orange-500/50 rounded-2xl p-8 hover:scale-105 transition-all duration-300 text-left"
-            >
-              <div className="text-4xl mb-4">📈</div>
-              <h3 className="text-2xl font-bold text-orange-400 mb-4">Phase Strategy</h3>
-              <p className="text-gray-300 mb-4">Learn when to claim vs. when to continue staking</p>
-              <div className="text-orange-400 font-bold">Click to learn →</div>
-            </button>
-
-            <div className="bg-gradient-to-br from-purple-900/40 to-violet-900/40 border-2 border-purple-500/50 rounded-2xl p-8">
-              <div className="text-4xl mb-4">🧮</div>
-              <h3 className="text-2xl font-bold text-purple-400 mb-4">Staking Calculator</h3>
-              <p className="text-gray-300 mb-4">Calculate your potential rewards based on amount and phases</p>
-              <div className="text-purple-400 font-bold">Coming soon →</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Small Investor Path Modal */}
-      {showSmallInvestorPath && (
-        <>
-          <div 
-            className="fixed inset-0 bg-black/90 backdrop-blur-sm"
-            style={{ 
-              zIndex: 200,
-              paddingTop: typeof window !== 'undefined' && window.innerWidth < 768 ? '80px' : '70px',
-              paddingBottom: '20px'
-            }}
-            onClick={() => setShowSmallInvestorPath(false)}
-          />
-          
-          <div 
-            className="fixed inset-0 flex items-start justify-center p-4 overflow-y-auto"
-            style={{ 
-              zIndex: 201,
-              paddingTop: typeof window !== 'undefined' && window.innerWidth < 768 ? '90px' : '80px',
-              paddingBottom: '30px',
-              pointerEvents: 'none'
-            }}
-          >
+          <div className="w-full bg-gray-800 rounded-full h-6 shadow-inner">
             <div 
-              className="bg-gradient-to-br from-gray-900 to-black border-2 border-emerald-500/50 rounded-3xl max-w-6xl w-full max-h-none overflow-y-auto"
-              style={{ 
-                pointerEvents: 'auto',
-                maxHeight: typeof window !== 'undefined' && window.innerWidth < 768 ? 'calc(100vh - 120px)' : 'calc(100vh - 110px)'
-              }}
-              onClick={(e) => e.stopPropagation()}
+              className="bg-gradient-to-r from-orange-500 to-red-500 h-6 rounded-full transition-all duration-1000 shadow-lg flex items-center justify-center"
+              style={{ width: `${progressPercentage}%` }}
             >
-              <div className="p-8">
-                <div className="flex justify-between items-start mb-8">
-                  <h2 className="text-4xl font-black text-emerald-400">🌱 Small Investor Dream Path</h2>
-                  <button
-                    onClick={() => setShowSmallInvestorPath(false)}
-                    className="text-4xl text-gray-400 hover:text-white transition-colors flex-shrink-0 ml-4"
-                    style={{
-                      minWidth: '44px',
-                      minHeight: '44px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
-
-                <div className="grid lg:grid-cols-2 gap-8">
-                  <div>
-                    <h3 className="text-2xl font-bold text-white mb-6">🎯 The Journey: 200K → Heavy Eater</h3>
-                    <div className="space-y-4">
-                      {smallInvestorScenario.phases.map((phase, index) => (
-                        <div key={index} className="bg-gray-800/50 rounded-xl p-6 border border-emerald-500/30">
-                          <div className="flex justify-between items-center mb-3">
-                            <span className="text-xl font-bold text-emerald-400">Phase {phase.phase}</span>
-                            <span className="text-lg font-bold text-white">{phase.tier}</span>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <span className="text-gray-400">Allocation:</span>
-                              <div className="text-white font-bold">{phase.allocation.toLocaleString()}</div>
-                            </div>
-                            <div>
-                              <span className="text-gray-400">Cumulative:</span>
-                              <div className="text-emerald-400 font-bold">{phase.cumulative.toLocaleString()}</div>
-                            </div>
-                            <div>
-                              <span className="text-gray-400">Tier:</span>
-                              <div className="text-white font-bold">{phase.tier}</div>
-                            </div>
-                            <div>
-                              <span className="text-gray-400">Multiplier:</span>
-                              <div className="text-orange-400 font-bold">{phase.multiplier}</div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-2xl font-bold text-white mb-6">🏆 Final Achievement</h3>
-                    <div className="bg-gradient-to-br from-emerald-900/50 to-green-900/50 border-2 border-emerald-500/50 rounded-2xl p-8">
-                      <div className="text-center mb-6">
-                        <div className="text-6xl mb-4">🥩→🌌</div>
-                        <h4 className="text-3xl font-black text-emerald-400 mb-2">GENESIS OG</h4>
-                        <p className="text-xl text-white">From Small Start to Legend</p>
-                      </div>
-                      
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-300">Initial Staking:</span>
-                          <span className="text-white font-bold">200K STAKE</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-300">Total Accumulated:</span>
-                          <span className="text-emerald-400 font-bold">835K STAKE</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-300">Final Staking Power:</span>
-                          <span className="text-emerald-400 font-bold">1,035K STAKE</span>
-                        </div>
-                        <div className="flex justify-between items-center border-t border-emerald-500/30 pt-4">
-                          <span className="text-gray-300">Final Multiplier:</span>
-                          <span className="text-yellow-400 font-black text-2xl">x2.0</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-8 bg-orange-900/30 border border-orange-500/30 rounded-xl p-6">
-                      <h4 className="text-lg font-bold text-orange-400 mb-3">💡 Key Insights</h4>
-                      <ul className="space-y-2 text-sm text-gray-300">
-                        <li>• Small investors can reach elite status through patience</li>
-                        <li>• Each phase survival increases tier automatically</li>
-                        <li>• 6-phase journey: 4x initial investment growth</li>
-                        <li>• Final result: Special-level rewards with Genesis multiplier</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              {progressPercentage > 10 && (
+                <span className="text-white font-bold text-sm">{Math.round(progressPercentage)}%</span>
+              )}
             </div>
-          </div>
-        </>
-      )}
-
-      {/* Phase Strategy Modal */}
-      {showPhaseStrategy && (
-        <>
-          <div 
-            className="fixed inset-0 bg-black/90 backdrop-blur-sm"
-            style={{ 
-              zIndex: 200,
-              paddingTop: typeof window !== 'undefined' && window.innerWidth < 768 ? '80px' : '70px',
-              paddingBottom: '20px'
-            }}
-            onClick={() => setShowPhaseStrategy(false)}
-          />
-          
-          <div 
-            className="fixed inset-0 flex items-start justify-center p-4 overflow-y-auto"
-            style={{ 
-              zIndex: 201,
-              paddingTop: typeof window !== 'undefined' && window.innerWidth < 768 ? '90px' : '80px',
-              paddingBottom: '30px',
-              pointerEvents: 'none'
-            }}
-          >
-            <div 
-              className="bg-gradient-to-br from-gray-900 to-black border-2 border-orange-500/50 rounded-3xl max-w-6xl w-full max-h-none overflow-y-auto"
-              style={{ 
-                pointerEvents: 'auto',
-                maxHeight: typeof window !== 'undefined' && window.innerWidth < 768 ? 'calc(100vh - 120px)' : 'calc(100vh - 110px)'
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="p-8">
-                <div className="flex justify-between items-start mb-8">
-                  <h2 className="text-4xl font-black text-orange-400">📈 Phase Transition Strategy</h2>
-                  <button
-                    onClick={() => setShowPhaseStrategy(false)}
-                    className="text-4xl text-gray-400 hover:text-white transition-colors flex-shrink-0 ml-4"
-                    style={{
-                      minWidth: '44px',
-                      minHeight: '44px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
-
-                <div className="grid lg:grid-cols-2 gap-8">
-                  <div>
-                    <h3 className="text-2xl font-bold text-white mb-6">🎯 Two Strategic Choices</h3>
-                    
-                    <div className="space-y-6">
-                      <div className="bg-red-900/30 border border-red-500/30 rounded-xl p-6">
-                        <h4 className="text-xl font-bold text-red-400 mb-4">🔘 Immediate Claim</h4>
-                        <div className="space-y-3 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-gray-300">Result:</span>
-                            <span className="text-white">Instant token reward</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-300">Tier Status:</span>
-                            <span className="text-red-400">Reset to Virgen</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-300">Next Phase:</span>
-                            <span className="text-red-400">Cannot participate</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-300">Best For:</span>
-                            <span className="text-white">Quick profit seekers</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="bg-emerald-900/30 border border-emerald-500/30 rounded-xl p-6">
-                        <h4 className="text-xl font-bold text-emerald-400 mb-4">🔘 Continue Staking</h4>
-                        <div className="space-y-3 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-gray-300">Result:</span>
-                            <span className="text-white">Allocation added to stake</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-300">Tier Status:</span>
-                            <span className="text-emerald-400">Upgrade +1 tier</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-300">Next Phase:</span>
-                            <span className="text-emerald-400">Higher tier entry</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-300">Best For:</span>
-                            <span className="text-white">Long-term maximizers</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-2xl font-bold text-white mb-6">🏆 Phase Progression Rewards</h3>
-                    
-                    <div className="space-y-3">
-                      {phaseProgression.map((phase, index) => (
-                        <div 
-                          key={index}
-                          className="flex items-center justify-between bg-gray-800/50 rounded-lg p-4 border border-gray-600/30"
-                        >
-                          <div className="flex items-center gap-4">
-                            <span className="text-lg font-bold text-orange-400">{phase.phase}</span>
-                            <span className="text-white">{phase.tier}</span>
-                          </div>
-                          <span 
-                            className="font-bold px-3 py-1 rounded-full text-sm"
-                            style={{
-                              backgroundColor: index === phaseProgression.length - 1 ? '#10b98120' : '#eab30820',
-                              color: index === phaseProgression.length - 1 ? '#10b981' : '#eab308'
-                            }}
-                          >
-                            {phase.multiplier}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="mt-8 bg-purple-900/30 border border-purple-500/30 rounded-xl p-6">
-                      <h4 className="text-lg font-bold text-purple-400 mb-3">⚡ Special Upgrade Path</h4>
-                      <div className="text-sm text-gray-300 space-y-2">
-                        <p><strong className="text-white">Heavy Eater</strong> → Phase transition → <strong className="text-emerald-400">Genesis OG</strong></p>
-                        <p>This is the <span className="text-emerald-400">new path to Genesis</span> for non-launch participants!</p>
-                        <p>Patience and phase survival = Ultimate tier access</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Staking Levels Section */}
-      <div className="px-4 pb-16">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-black text-center text-white mb-12">
-            💰 Staking Amount Levels
-          </h2>
-          
-          <div className="grid md:grid-cols-4 gap-6">
-            {stakingLevels.map((level, index) => (
-              <div
-                key={index}
-                className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 border border-gray-600/30 rounded-xl p-6 text-center hover:scale-105 transition-all duration-300"
-              >
-                <div className="text-3xl mb-4">{level.level.split(' ')[0]}</div>
-                <h4 className="text-lg font-bold text-white mb-2">{level.level.split(' ')[1]}</h4>
-                <p className="text-emerald-400 font-bold mb-3">{level.range}</p>
-                <p className="text-sm text-gray-400">{level.description}</p>
-              </div>
-            ))}
           </div>
         </div>
+
+        {completedSteps.size === evolutionSteps.length && (
+          <button 
+            onClick={handleShareOnX}
+            className="bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-4 px-8 rounded-2xl text-xl hover:scale-105 transition-all duration-300 shadow-lg"
+          >
+            🐦 Share on X & Claim 50K STAKE!
+          </button>
+        )}
       </div>
 
       {/* Evolution Steps */}
-      <div className="px-4 pb-16 space-y-12">
+      <div className="space-y-12">
         {evolutionSteps.map((step, index) => {
           const accentColors = getAccentColorClasses(step.accentColor);
+          const isCompleted = completedSteps.has(index);
+          const isActive = index === currentStep;
           const isSpecial = step.id === 'genesis-og';
           
           return (
@@ -744,8 +568,7 @@ Time mastery = Ultimate rewards!`,
               key={step.id}
               className={`
                 max-w-7xl mx-auto transition-all duration-1000 transform
-                ${index <= currentStep ? 'opacity-100 translate-y-0' : 'opacity-30 translate-y-12'}
-                ${index === currentStep ? 'scale-[1.02]' : 'scale-100'}
+                ${isCompleted ? 'opacity-100 scale-100' : isActive ? 'opacity-100 scale-100' : 'opacity-60 scale-95'}
                 ${isSpecial ? 'border-4 border-emerald-500/50 rounded-3xl p-4' : ''}
               `}
             >
@@ -760,58 +583,54 @@ Time mastery = Ultimate rewards!`,
               <div className={`
                 bg-gradient-to-br ${step.bgGradient} backdrop-blur-xl
                 border-2 ${step.borderColor} rounded-3xl overflow-hidden
-                ${index === currentStep ? `ring-4 ${accentColors.ring}/30 shadow-2xl` : ''}
+                ${isActive ? `ring-4 ${accentColors.ring}/30 shadow-2xl` : ''}
+                ${isCompleted ? 'ring-4 ring-green-500/50 shadow-2xl shadow-green-500/20' : ''}
                 ${isSpecial ? 'ring-4 ring-emerald-500/50 shadow-2xl shadow-emerald-500/20' : ''}
                 transition-all duration-700
               `}>
                 
-                {/* Character Section */}
                 <div className="grid lg:grid-cols-2 gap-8 p-8">
-                  
                   {/* Character Visual */}
                   <div className="flex flex-col items-center">
                     <div className={`
                       relative w-full max-w-md aspect-square rounded-3xl overflow-hidden mb-6
-                      ${completedSteps.has(index) ? 'ring-4 ring-green-500 shadow-2xl shadow-green-500/30' : `ring-2 ${accentColors.ring}/50`}
+                      ${isCompleted ? 'ring-4 ring-green-500 shadow-2xl shadow-green-500/30' : `ring-2 ${accentColors.ring}/50`}
                       ${isSpecial ? 'ring-4 ring-emerald-500 shadow-2xl shadow-emerald-500/30' : ''}
                       transition-all duration-500
                     `}>
-                      {/* Character Image Container */}
                       <div className={`w-full h-full bg-gradient-to-br ${step.bgGradient} relative overflow-hidden`}>
-                        <div 
-                          className="w-full h-full bg-cover bg-center"
-                          style={{ 
-                            backgroundImage: `url('/images/character/${step.id}.png')`,
-                            backgroundColor: step.symbolColor + '20'
-                          }}
-                        >
-                          <div className="w-full h-full bg-gradient-to-br from-transparent via-white/5 to-transparent"></div>
-                        </div>
+                        {/* Character image/emoji with overlay text */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                         
-                        {/* Text Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-4 md:p-6">
-                          <div className="text-center px-2 md:px-0">
-                            <h3 className="text-2xl md:text-3xl font-black text-white mb-2 drop-shadow-2xl">
-                              {step.title}
-                            </h3>
-                            <p className="text-sm text-gray-200 opacity-90 mb-2 drop-shadow-lg">
-                              {step.characterName}
-                            </p>
-                            <div className="text-xs text-gray-300 bg-black/40 rounded-full px-3 py-1 backdrop-blur-sm">
-                              {step.keywords}
-                            </div>
+                        {/* Character emoji */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="text-8xl" style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))' }}>
+                            {step.id === 'virgen' ? '🐸' :
+                             step.id === 'sizzlin-noob' ? '🆕' :
+                             step.id === 'flipstarter' ? '🔁' :
+                             step.id === 'flame-juggler' ? '🔥' :
+                             step.id === 'grilluminati' ? '🧠' :
+                             step.id === 'stake-wizard' ? '🧙‍♂️' :
+                             step.id === 'heavy-eater' ? '🥩' :
+                             '🌌'}
                           </div>
                         </div>
 
-                        {/* 🎯 왼쪽 상단 원형 숫자 완전 제거 - 이 부분을 주석처리 또는 삭제 */}
-                        {/* Evolution Number - REMOVED */}
-
-                        {/* 🎯 오른쪽 상단 티어 정보 박스 - 20% 축소 */}
-                        <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-black/70 rounded-lg backdrop-blur-sm"
-                             style={{
-                               padding: typeof window !== 'undefined' && window.innerWidth < 768 ? '8px' : '12px', // 모바일: 8px, 데스크톱: 12px (원래 15px에서 축소)
-                               transform: typeof window !== 'undefined' && window.innerWidth < 768 ? 'scale(0.8)' : 'scale(1)' // 모바일에서 추가로 20% 축소
-                             }}>
+                        {/* Text overlay at bottom */}
+                        <div className="absolute bottom-0 left-0 right-0 p-6 text-center text-white">
+                          <h3 className="text-2xl md:text-3xl font-black mb-2 drop-shadow-2xl">
+                            {step.title}
+                          </h3>
+                          <p className="text-sm text-gray-200 opacity-90 mb-2 drop-shadow-lg">
+                            {step.characterName}
+                          </p>
+                          <div className="text-xs text-gray-300 bg-black/40 rounded-full px-3 py-1 backdrop-blur-sm inline-block">
+                            {step.keywords}
+                          </div>
+                        </div>
+                          
+                        {/* Tier info overlay - top right */}
+                        <div className="absolute top-4 right-4 bg-black/70 rounded-lg backdrop-blur-sm p-3">
                           <div className="text-center">
                             <div className="text-xs text-gray-400 mb-1">Tier</div>
                             <div className="text-sm font-bold" style={{ color: step.symbolColor }}>
@@ -824,8 +643,8 @@ Time mastery = Ultimate rewards!`,
                           </div>
                         </div>
 
-                        {/* Status Overlay */}
-                        {completedSteps.has(index) && (
+                        {/* Completion overlay */}
+                        {isCompleted && (
                           <div className="absolute inset-0 bg-green-500/20 flex items-center justify-center backdrop-blur-sm">
                             <div className="text-6xl animate-pulse drop-shadow-2xl">✅</div>
                           </div>
@@ -836,47 +655,37 @@ Time mastery = Ultimate rewards!`,
                     {/* Status Badge */}
                     <div className={`
                       px-8 py-3 rounded-full text-sm font-bold border-2 transition-all duration-300
-                      ${completedSteps.has(index) 
+                      ${isCompleted 
                         ? 'bg-green-500/20 text-green-400 border-green-500/50' 
-                        : index === currentStep
-                        ? `bg-opacity-20 border-opacity-50 animate-pulse`
+                        : isActive
+                        ? 'bg-opacity-20 border-opacity-50 animate-pulse'
                         : 'bg-gray-500/20 text-gray-400 border-gray-500/50'}
                     `}
                     style={{
-                      backgroundColor: index === currentStep ? step.symbolColor + '20' : undefined,
-                      borderColor: index === currentStep ? step.symbolColor + '80' : undefined,
-                      color: index === currentStep ? step.symbolColor : undefined
+                      backgroundColor: isActive && !isCompleted ? step.symbolColor + '20' : undefined,
+                      borderColor: isActive && !isCompleted ? step.symbolColor + '80' : undefined,
+                      color: isActive && !isCompleted ? step.symbolColor : undefined
                     }}>
-                      {completedSteps.has(index) ? '✓ TIER UNLOCKED' : 
-                       index === currentStep ? '🔥 CURRENT TIER' : 
+                      {isCompleted ? '✅ TIER UNLOCKED' : 
+                       isActive ? '🔥 CURRENT TIER' : 
                        '🔒 LOCKED'}
                     </div>
                   </div>
 
                   {/* Content Section */}
-                  <div className="flex flex-col justify-center space-y-8">
-                    
+                  <div className="flex flex-col justify-center space-y-6">
                     {/* Story Quote */}
                     <div className="relative">
-                      <div className="bg-black/50 rounded-2xl p-6 md:p-8 border border-gray-700/50 relative overflow-hidden">
-                        <div 
-                          className="absolute top-4 left-4 md:left-6 text-4xl md:text-5xl opacity-20"
-                          style={{ color: step.symbolColor }}
-                        >"</div>
-                        <div 
-                          className="absolute bottom-4 right-4 md:right-6 text-4xl md:text-5xl opacity-20"
-                          style={{ color: step.symbolColor }}
-                        >"</div>
-                        
-                        <p className="text-lg md:text-2xl font-bold text-center leading-relaxed relative z-10 px-4 md:px-8">
-                          {step.story}
+                      <div className="bg-black/50 rounded-2xl p-6 border border-gray-700/50 relative overflow-hidden">
+                        <p className="text-xl font-bold text-center leading-relaxed relative z-10">
+                          "{step.story}"
                         </p>
                       </div>
                     </div>
 
                     {/* Tier Requirements */}
                     <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-600/30">
-                      <h4 className="text-lg font-bold text-white mb-4">🎯 Tier Requirements</h4>
+                      <h4 className="text-lg font-bold text-white mb-4">Tier Requirements</h4>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="text-gray-400">Condition:</span>
@@ -894,27 +703,19 @@ Time mastery = Ultimate rewards!`,
                     </div>
 
                     {/* Description */}
-                    <div>
-                      <p className="text-lg text-gray-300 leading-relaxed">
-                        {step.description}
-                      </p>
-                    </div>
+                    <p className="text-lg text-gray-300 leading-relaxed">
+                      {step.description}
+                    </p>
 
                     {/* Tips */}
                     <div>
-                      <h4 
-                        className="text-lg font-bold mb-4 flex items-center gap-3"
-                        style={{ color: step.symbolColor }}
-                      >
-                        <span>💡</span> Key Strategies
+                      <h4 className="text-lg font-bold mb-4 flex items-center gap-3" style={{ color: step.symbolColor }}>
+                        💡 Key Strategies
                       </h4>
                       <div className="space-y-3">
                         {step.tips.map((tip, tipIndex) => (
                           <div key={tipIndex} className="flex items-start gap-3 group">
-                            <span 
-                              className="text-sm mt-1 group-hover:scale-125 transition-transform"
-                              style={{ color: step.symbolColor }}
-                            >▶</span>
+                            <span className="text-sm mt-1 group-hover:scale-125 transition-transform" style={{ color: step.symbolColor }}>▶</span>
                             <span className="text-sm text-gray-300 group-hover:text-white transition-colors">{tip}</span>
                           </div>
                         ))}
@@ -924,37 +725,27 @@ Time mastery = Ultimate rewards!`,
                     {/* Action Button */}
                     <button
                       onClick={() => handleStepComplete(index)}
-                      disabled={index > currentStep || completedSteps.has(index)}
+                      disabled={index > currentStep || isCompleted}
                       className={`
                         w-full py-4 px-8 rounded-2xl font-bold text-lg transition-all duration-300 relative overflow-hidden
-                        ${index === currentStep && !completedSteps.has(index)
+                        ${index === currentStep && !isCompleted
                           ? 'text-black shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95'
-                          : completedSteps.has(index)
+                          : isCompleted
                           ? 'bg-green-500/20 text-green-400 border-2 border-green-500/50 cursor-not-allowed'
                           : 'bg-gray-700/50 text-gray-500 cursor-not-allowed border-2 border-gray-600/30'
                         }
                       `}
                       style={{
-                        backgroundColor: index === currentStep && !completedSteps.has(index) ? step.symbolColor : undefined
-                      }}
-                      onMouseEnter={(e) => {
-                        if (index === currentStep && !completedSteps.has(index)) {
-                          e.target.style.backgroundColor = step.symbolColor + 'cc';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (index === currentStep && !completedSteps.has(index)) {
-                          e.target.style.backgroundColor = step.symbolColor;
-                        }
+                        backgroundColor: index === currentStep && !isCompleted ? step.symbolColor : undefined
                       }}
                     >
-                      {completedSteps.has(index) ? '✅ Tier Mastered' : 
+                      {isCompleted ? '✅ Tier Mastered' : 
                        index === currentStep ? step.action : 
                        '🔒 Complete Previous Tiers'}
                     </button>
                   </div>
                 </div>
-
+                
                 {/* Info Block */}
                 {step.infoBlock && (
                   <div className="mx-8 mb-8">
@@ -977,115 +768,340 @@ Time mastery = Ultimate rewards!`,
         })}
       </div>
 
-      {/* Complete Tier System Overview */}
-      <div className="px-4 pb-16">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-black text-center text-white mb-12">
-            Complete Tier System Overview
-          </h2>
-          
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {tierSystem.map((tier, index) => (
-              <div
-                key={tier.name}
-                className={`
-                  backdrop-blur-lg border rounded-xl p-6 transition-all duration-300
-                  hover:scale-105 hover:shadow-xl
-                  ${tier.grade === 'Genesis' ? 'ring-2 ring-emerald-500/50' : ''}
-                  ${tier.grade === 'Legendary' ? 'ring-2 ring-red-500/50' : ''}
-                  ${tier.grade === 'Unique' ? 'ring-2 ring-yellow-500/50' : ''}
-                  ${tier.grade === 'Epic' ? 'ring-2 ring-purple-500/50' : ''}
-                `}
-                style={{
-                  backgroundColor: tier.color + '15',
-                  borderColor: tier.color + '40'
-                }}
-              >
-                <div className="text-center">
-                  <div className="text-4xl mb-3">{tier.tier}</div>
-                  <h4 className="font-bold text-white mb-2">{tier.name}</h4>
-                  <div 
-                    className="text-xs font-bold px-2 py-1 rounded-full mb-3"
-                    style={{
-                      backgroundColor: tier.color + '20',
-                      color: tier.color,
-                      border: `1px solid ${tier.color}40`
-                    }}
-                  >
-                    {tier.grade}
-                  </div>
-                  <div className="text-sm text-gray-400 mb-3">{tier.condition}</div>
-                  <div className="text-sm text-gray-300 mb-3">{tier.benefit}</div>
-                  <div 
-                    className="text-lg font-black px-3 py-1 rounded-full"
-                    style={{
-                      backgroundColor: tier.color + '20',
-                      color: tier.color
-                    }}
-                  >
-                    {tier.multiplier}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* Completion Celebration */}
       {completedSteps.size === evolutionSteps.length && (
-        <div className="px-4 pb-16">
-          <div className="max-w-4xl mx-auto text-center bg-gradient-to-br from-emerald-900/30 via-teal-900/20 to-emerald-900/30 backdrop-blur-xl border-4 border-emerald-500/40 rounded-3xl p-16 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-emerald-500/10 animate-pulse"></div>
+        <div className="max-w-4xl mx-auto text-center bg-gradient-to-br from-emerald-900/30 via-teal-900/20 to-emerald-900/30 backdrop-blur-xl border-4 border-emerald-500/40 rounded-3xl p-16 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-emerald-500/10 animate-pulse"></div>
+          
+          <div className="relative z-10">
+            <div className="text-9xl mb-8 animate-bounce">🏆</div>
+            <h2 className="text-5xl md:text-6xl font-black text-transparent bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-400 bg-clip-text mb-8">
+              EVOLUTION COMPLETE!
+            </h2>
+            <p className="text-2xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
+              You've mastered all 8 tiers! Now share your achievement on X to claim your <span className="text-orange-400 font-bold">50,000 STAKE</span> reward!
+            </p>
             
-            <div className="relative z-10">
-              <div className="text-9xl mb-8 animate-bounce">🏆</div>
-              <h2 className="text-5xl md:text-6xl font-black text-transparent bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-400 bg-clip-text mb-8">
-                TIER MASTERY COMPLETE!
-              </h2>
-              <p className="text-2xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
-                You now understand the complete journey from <span className="text-red-400 font-bold">VIRGEN to GENESIS OG</span>. 
-                <br/>Time to write your own legend on the leaderboard!
-              </p>
-              
-              <div className="grid md:grid-cols-2 gap-8">
-                <button className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold py-6 px-10 rounded-2xl hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-emerald-500/30 text-xl">
-                  <span className="flex items-center justify-center gap-4">
-                    <span className="text-2xl">🚀</span>
-                    <span>Start Your Journey</span>
-                  </span>
-                </button>
-                <button className="bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-6 px-10 rounded-2xl hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-orange-500/30 text-xl">
-                  <span className="flex items-center justify-center gap-4">
-                    <span className="text-2xl">🥩</span>
-                    <span>Join Leaderboard</span>
-                  </span>
-                </button>
-              </div>
-            </div>
+            <button 
+              onClick={handleShareOnX}
+              className="bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-6 px-12 rounded-2xl hover:scale-105 transition-all duration-300 shadow-lg text-2xl"
+            >
+              🐦 Share Achievement & Claim Reward
+            </button>
           </div>
         </div>
       )}
+    </div>
+  );
 
-      {/* Navigation */}
-      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
-        <div className="flex space-x-2 bg-black/90 backdrop-blur-xl rounded-full p-3 border border-gray-700/50 shadow-2xl">
-          {evolutionSteps.map((step, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentStep(index)}
-              className={`
-                w-4 h-4 rounded-full transition-all duration-300 relative
-                ${index <= currentStep ? '' : 'bg-gray-600'}
-                ${index === currentStep ? 'scale-150 ring-4 ring-white/30' : 'scale-100'}
-                ${completedSteps.has(index) ? 'bg-green-500 ring-2 ring-green-400/50' : ''}
-                hover:scale-125 cursor-pointer
-              `}
-              style={{
-                backgroundColor: index <= currentStep && !completedSteps.has(index) ? step.symbolColor : undefined
-              }}
-              title={`${index + 1}. ${step.title}`}
-            />
+  // Hybrid System Content
+  const renderHybridSystem = () => (
+    <div className="space-y-8">
+      <h2 className="text-3xl font-bold text-white mb-8">Hybrid Tier Upgrade System</h2>
+      
+      <div className="bg-gradient-to-br from-blue-900/30 to-indigo-900/30 border-4 border-blue-500/50 rounded-3xl p-8 mb-12">
+        <div className="text-center mb-8">
+          <div className="text-6xl mb-4">⚡</div>
+          <h3 className="text-3xl font-black text-blue-400 mb-4">
+            Two Paths to Tier Advancement
+          </h3>
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+            Upgrade your tier through traditional requirements OR phase completion rewards. 
+            Whichever path is faster applies first!
+          </p>
+        </div>
+        
+        <div className="grid lg:grid-cols-2 gap-8">
+          {/* Natural upgrade path */}
+          <div className="bg-gray-800/30 border-2 border-green-500/30 rounded-2xl p-8">
+            <h4 className="text-2xl font-bold text-green-400 mb-6 text-center">
+              Path A: Natural Progression
+            </h4>
+            
+            <div className="space-y-4">
+              {HYBRID_TIER_SYSTEM.naturalUpgrade.map((upgrade, index) => (
+                <div key={index} className="bg-green-900/20 border border-green-500/30 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-white font-bold text-sm">{upgrade.from}</span>
+                    <span className="text-green-400">→</span>
+                    <span className="text-green-400 font-bold text-sm">{upgrade.to}</span>
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    {upgrade.condition}
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="mt-6 p-4 bg-green-500/10 border border-green-500/30 rounded-xl">
+              <h5 className="text-sm font-bold text-green-400 mb-2">How it works:</h5>
+              <p className="text-xs text-gray-300">
+                Traditional requirements based on staking amount and holding period. 
+                The longer you hold and the more you stake, the faster you advance.
+              </p>
+            </div>
+          </div>
+          
+          {/* Phase upgrade path */}
+          <div className="bg-gray-800/30 border-2 border-purple-500/30 rounded-2xl p-8">
+            <h4 className="text-2xl font-bold text-purple-400 mb-6 text-center">
+              Path B: Phase Completion Rewards
+            </h4>
+            
+            <div className="space-y-4 mb-6">
+              <div className="bg-purple-900/20 border border-purple-500/30 rounded-xl p-4">
+                <h5 className="text-white font-bold text-sm mb-3">Requirements (ALL must be met):</h5>
+                <div className="space-y-2">
+                  {HYBRID_TIER_SYSTEM.phaseUpgrade.requirements.map((req, index) => (
+                    <div key={index} className="flex items-start gap-2">
+                      <span className="text-purple-400 text-xs mt-1">•</span>
+                      <span className="text-xs text-gray-300">{req}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4 text-center">
+                <h5 className="text-purple-400 font-bold text-sm mb-1">Result:</h5>
+                <span className="text-white font-bold">{HYBRID_TIER_SYSTEM.phaseUpgrade.result}</span>
+              </div>
+            </div>
+            
+            <div className="p-4 bg-purple-500/10 border border-purple-500/30 rounded-xl">
+              <h5 className="text-sm font-bold text-purple-400 mb-2">How it works:</h5>
+              <p className="text-xs text-gray-300">
+                Complete a full phase with perfect conditions to get an automatic tier boost. 
+                Great for late joiners to catch up quickly!
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="mt-8 p-6 bg-blue-500/10 border border-blue-500/30 rounded-xl text-center">
+          <h5 className="text-xl font-bold text-blue-400 mb-3">
+            Fastest Path Wins
+          </h5>
+          <p className="text-gray-300 leading-relaxed">
+            {HYBRID_TIER_SYSTEM.phaseUpgrade.note}
+          </p>
+        </div>
+      </div>
+
+      {/* Phase upgrade requirements detail */}
+      <div className="bg-gradient-to-br from-red-900/20 to-orange-900/20 border-2 border-red-500/30 rounded-3xl p-8">
+        <h3 className="text-2xl font-bold text-center text-red-400 mb-8">
+          Phase Upgrade Requirements (Detailed)
+        </h3>
+        
+        <div className="grid md:grid-cols-3 gap-6">
+          <div className="bg-gray-800/30 border border-red-500/20 rounded-xl p-6">
+            <h4 className="text-lg font-bold text-red-400 mb-4">
+              1. Early Bird (24h)
+            </h4>
+            <div className="space-y-2 text-sm">
+              <div className="text-gray-300">• Join within 24 hours of phase start</div>
+              <div className="text-gray-300">• No exceptions for late entry</div>
+              <div className="text-gray-300">• Timestamp recorded on blockchain</div>
+            </div>
+          </div>
+          
+          <div className="bg-gray-800/30 border border-orange-500/20 rounded-xl p-6">
+            <h4 className="text-lg font-bold text-orange-400 mb-4">
+              2. Active Staking
+            </h4>
+            <div className="space-y-2 text-sm">
+              <div className="text-gray-300">• At least 1 additional staking transaction</div>
+              <div className="text-gray-300">• Must happen during the phase period</div>
+              <div className="text-gray-300">• Any amount counts (even small amounts)</div>
+            </div>
+          </div>
+          
+          <div className="bg-gray-800/30 border border-yellow-500/20 rounded-xl p-6">
+            <h4 className="text-lg font-bold text-yellow-400 mb-4">
+              3. Diamond Hands
+            </h4>
+            <div className="space-y-2 text-sm">
+              <div className="text-gray-300">• No unstaking until phase ends</div>
+              <div className="text-gray-300">• Even partial unstaking disqualifies</div>
+              <div className="text-gray-300">• Hold strong until snapshot</div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="mt-8 p-6 bg-red-500/10 border border-red-500/30 rounded-xl">
+          <h5 className="text-lg font-bold text-red-400 mb-3">Important Notes</h5>
+          <div className="grid md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-gray-400">Qualification Check:</span>
+              <div className="text-white">Automated verification at phase end</div>
+            </div>
+            <div>
+              <span className="text-gray-400">Failure Penalty:</span>
+              <div className="text-white">No tier upgrade, regular rules apply</div>
+            </div>
+            <div>
+              <span className="text-gray-400">Multiple Phases:</span>
+              <div className="text-white">Each phase is independent</div>
+            </div>
+            <div>
+              <span className="text-gray-400">Maximum Benefit:</span>
+              <div className="text-white">+1 tier per successful phase</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Other section renders would go here...
+  const renderTimeline = () => (
+    <div className="space-y-8">
+      <h2 className="text-3xl font-bold text-white mb-8">Project Timeline</h2>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {COMPLETE_TIMELINE.phases.map((phase) => (
+          <div
+            key={phase.phase}
+            className={`rounded-2xl p-6 border-2 ${
+              phase.status === 'current' 
+                ? 'bg-emerald-900/30 border-emerald-500/50' 
+                : 'bg-gray-800/30 border-gray-600/30'
+            }`}
+          >
+            <div className="text-2xl font-black mb-4">Phase {phase.phase}</div>
+            <div className="space-y-2 text-sm">
+              <div>
+                <span className="text-gray-400">Period:</span>
+                <div className="text-white font-bold">{phase.staking}</div>
+              </div>
+              <div>
+                <span className="text-gray-400">Snapshot:</span>
+                <div className="text-white font-bold">{phase.snapshot}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderPhaseParticipation = () => (
+    <div className="space-y-8">
+      <h2 className="text-3xl font-bold text-white mb-8">Phase Participation System</h2>
+      <div className="text-white">Manual participation required for each phase. Auto-participation is not supported.</div>
+    </div>
+  );
+
+  const renderClaimStrategies = () => (
+    <div className="space-y-8">
+      <h2 className="text-3xl font-bold text-white mb-8">Claim Strategy Guide</h2>
+      <div className="grid lg:grid-cols-3 gap-8">
+        {CLAIM_STRATEGIES.map((strategy, index) => (
+          <div
+            key={index}
+            className={`rounded-3xl p-8 border-2 ${
+              strategy.color === 'red' ? 'bg-red-900/20 border-red-500/40' :
+              strategy.color === 'green' ? 'bg-green-900/20 border-green-500/40' :
+              'bg-emerald-900/20 border-emerald-500/40'
+            }`}
+          >
+            <h3 className={`text-2xl font-black mb-4 ${
+              strategy.color === 'red' ? 'text-red-400' :
+              strategy.color === 'green' ? 'text-green-400' :
+              'text-emerald-400'
+            }`}>
+              {strategy.strategy}
+            </h3>
+            <div className="text-white">{strategy.result}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderStakingLevels = () => (
+    <div className="space-y-8">
+      <h2 className="text-3xl font-bold text-white mb-8">Staking Amount Levels</h2>
+      <div className="grid md:grid-cols-4 gap-6">
+        {stakingLevels.map((level, index) => (
+          <div
+            key={index}
+            className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 border border-gray-600/30 rounded-xl p-6 text-center"
+          >
+            <h4 className="text-lg font-bold text-white mb-2">{level.level}</h4>
+            <p className="text-emerald-400 font-bold mb-3">{level.range}</p>
+            <p className="text-sm text-gray-400">{level.description}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderNFTContent = () => (
+    <div className="space-y-8">
+      <h2 className="text-3xl font-bold text-white mb-8">NFT & Future Utility</h2>
+      <div className="text-white">Your final tier will be minted as a permanent NFT with future utility across the STAKE ecosystem.</div>
+    </div>
+  );
+
+  const renderContent = () => {
+    switch (activeSection) {
+      case 'evolution':
+        return renderEvolutionJourney();
+      case 'hybrid':
+        return renderHybridSystem();
+      case 'timeline':
+        return renderTimeline();
+      case 'participation':
+        return renderPhaseParticipation();
+      case 'strategies':
+        return renderClaimStrategies();
+      case 'levels':
+        return renderStakingLevels();
+      case 'nft':
+        return renderNFTContent();
+      default:
+        return renderEvolutionJourney();
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white">
+      {/* Hero Section */}
+      <div className="relative px-4 py-16 text-center">
+        <div className={`transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+          <h1 className="text-6xl md:text-8xl font-black mb-8 bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 bg-clip-text text-transparent">
+            VIRGEN → LEGEND
+          </h1>
+          <p className="text-2xl md:text-3xl text-gray-300 mb-12 max-w-4xl mx-auto leading-relaxed">
+            Master the complete STAKE evolution system and earn rewards along the way
+          </p>
+        </div>
+      </div>
+
+      {/* Accordion Navigation */}
+      <div className="max-w-6xl mx-auto px-4 pb-16">
+        <div className="space-y-2 mb-8">
+          {sections.map((section) => (
+            <div key={section.id} className="border border-gray-600/30 rounded-lg overflow-hidden">
+              <button
+                onClick={() => setActiveSection(activeSection === section.id ? '' : section.id)}
+                className="w-full flex items-center justify-between p-4 bg-gray-800/30 hover:bg-gray-700/30 transition-all duration-200 text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-gray-400">
+                    {activeSection === section.id ? '▼' : '▶'}
+                  </span>
+                  <span className="text-white font-bold">{section.title}</span>
+                </div>
+                <span className="text-gray-500 text-sm">#</span>
+              </button>
+              
+              {activeSection === section.id && (
+                <div className="border-t border-gray-600/30 bg-gray-900/20 p-6">
+                  {renderContent()}
+                </div>
+              )}
+            </div>
           ))}
         </div>
       </div>

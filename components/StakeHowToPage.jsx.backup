@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { evolutionSteps } from '../data/evolutionSteps';
+import { tierSystem, stakingLevels, phaseProgression, colorMap } from '../data/gameSystem';
+import { smallInvestorScenario } from '../data/scenarios';
 
 const StakeHowToPage = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -11,330 +14,6 @@ const StakeHowToPage = () => {
     setIsVisible(true);
   }, []);
 
-  const evolutionSteps = [
-    {
-      id: 'virgen',
-      title: 'VIRGEN',
-      characterName: 'The Unknowing Masses',
-      keywords: 'Not Participating, Potential',
-      story: "You know nothing. But the potential is infinite.",
-      description: 'The general public who have not entered the staking world. But every legend starts here.',
-      infoBlock: {
-        title: 'Starting Point: Everyone Begins Here',
-        content: `**The Journey Starts Now**
-
-1. No participation yet, but infinite potential awaits
-2. Learn about STAKE tokens and the leaderboard system  
-3. Prepare for your transformation journey
-4. Every Genesis OG and Heavy Eater started here
-
-Ready to begin your evolution?`,
-        bgColor: 'from-gray-900/30 to-slate-900/30',
-        borderColor: 'border-gray-500/40'
-      },
-      action: 'So when you gonna start?',
-      tips: [
-        'Learn what STAKE tokens are',
-        'Understand the 7-tier system',
-        'Acquire basic Web3 knowledge',
-        'Prepare your wallet for the journey'
-      ],
-      bgGradient: 'from-gray-800/40 via-slate-700/30 to-gray-900/40',
-      borderColor: 'border-gray-500/50',
-      accentColor: 'gray',
-      symbolColor: '#6b7280',
-      tierGrade: 'None',
-      multiplier: 'x0',
-      requirement: 'Not participating'
-    },
-    {
-      id: 'sizzlin-noob',
-      title: 'SIZZLIN\' NOOB',
-      characterName: 'The Fresh Entrant',
-      keywords: 'First Stake, Entry Level',
-      story: "It's not too late to start now. The first step is the most important.",
-      description: 'New entrant who finally participated in staking. Everything is new but has the will to learn.',
-      infoBlock: {
-        title: 'Welcome to the Game!',
-        content: `**Your Staking Journey Begins**
-
-1. **Entry Level**: Up to 200K STAKE tokens
-2. **x1.0 Multiplier**: Base level scoring  
-3. **Growth Path**: 6 phases to reach Heavy Eater
-4. **Next Goal**: Hold 1 week → Flipstarter
-
-Small start, big dreams possible!`,
-        bgColor: 'from-gray-100/10 to-white/10',
-        borderColor: 'border-white/40'
-      },
-      action: 'At least doing something? Got it!',
-      tips: [
-        'Connect wallet and buy STAKE tokens',
-        'Start with Entry level (up to 200K)',
-        'Get x1.0 multiplier after first stake',
-        'Plan for 1 week holding for next tier'
-      ],
-      bgGradient: 'from-gray-100/10 via-white/5 to-gray-200/10',
-      borderColor: 'border-white/30',
-      accentColor: 'white',
-      symbolColor: '#ffffff',
-      tierGrade: 'Normal',
-      multiplier: 'x1.0',
-      requirement: 'Entry level staking'
-    },
-    {
-      id: 'flipstarter',
-      title: 'FLIPSTARTER',
-      characterName: 'The Persistence Learner',
-      keywords: '1 Week Survivor, Uncommon',
-      story: "One week survived. I'm learning the game rules.",
-      description: 'First milestone achiever who held staking for 1 week. Starting to understand the long-term game.',
-      infoBlock: {
-        title: 'First Milestone Achieved!',
-        content: `**1 Week Survivor Rewards**
-
-1. **Condition**: Entry level + 1 week holding
-2. **x1.1 Multiplier**: +10% bonus scoring
-3. **Lesson**: Consistency over quick gains
-4. **Next Goal**: 2 weeks + Mid level → Flame Juggler
-
-Patience is starting to pay off!`,
-        bgColor: 'from-green-900/30 to-emerald-900/30',
-        borderColor: 'border-green-500/40'
-      },
-      action: '1 week? Not bad kid, got it!',
-      tips: [
-        'Achieved x1.1 multiplier (+10% bonus)',
-        'Learned the value of patience',
-        'Next: aim for Mid level (200K+ tokens)',
-        'Target 2 weeks for Flame Juggler'
-      ],
-      bgGradient: 'from-green-800/40 via-emerald-800/30 to-green-900/40',
-      borderColor: 'border-green-500/50',
-      accentColor: 'green',
-      symbolColor: '#22c55e',
-      tierGrade: 'Uncommon',
-      multiplier: 'x1.1',
-      requirement: 'Entry + 1 week'
-    },
-    {
-      id: 'flame-juggler',
-      title: 'FLAME JUGGLER',
-      characterName: 'The Growing Warrior',
-      keywords: '2 Weeks Survivor, Rare',
-      story: "Now I'm properly engaged. I've learned to handle the flames.",
-      description: 'Mid-level staker who survived 2 weeks. Became a true player through consistent dedication.',
-      infoBlock: {
-        title: 'Mid-Level Mastery',
-        content: `**Flame Handling Skills Unlocked**
-
-1. **Condition**: Mid level (200K-1M) + 2 weeks
-2. **x1.25 Multiplier**: +25% scoring power
-3. **Achievement**: True player status
-4. **Next Goal**: 1 month → Grilluminati
-
-The flames no longer burn you!`,
-        bgColor: 'from-blue-900/30 to-indigo-900/30',
-        borderColor: 'border-blue-500/40'
-      },
-      action: 'Fire juggling pro now, got it!',
-      tips: [
-        'Achieved x1.25 multiplier (+25% power)',
-        'Mid level staking (200K-1M tokens)',
-        'Survived 2 weeks of market volatility',
-        'Next milestone: 1 month holding'
-      ],
-      bgGradient: 'from-blue-800/40 via-indigo-800/30 to-blue-900/40',
-      borderColor: 'border-blue-500/50',
-      accentColor: 'blue',
-      symbolColor: '#3b82f6',
-      tierGrade: 'Rare',
-      multiplier: 'x1.25',
-      requirement: 'Mid + 2 weeks'
-    },
-    {
-      id: 'grilluminati',
-      title: 'GRILLUMINATI',
-      characterName: 'The Strategic Mind',
-      keywords: '1 Month Survivor, Epic',
-      story: "Points are taken by those who calculate. I understand the rules of the game.",
-      description: 'Strategic thinker who survived 1 month. Moves with logic, not emotion.',
-      infoBlock: {
-        title: 'Strategic Mastery Unlocked',
-        content: `**The Game Meta Revealed**
-
-1. **Condition**: Mid level + 1 month holding
-2. **x1.4 Multiplier**: +40% scoring advantage  
-3. **Skill**: Strategic thinking over emotions
-4. **Next Goal**: High level + 2 months → Stake Wizard
-
-You now see the bigger picture!`,
-        bgColor: 'from-purple-900/30 to-violet-900/30',
-        borderColor: 'border-purple-500/40'
-      },
-      action: 'Now I know the meta, got it!',
-      tips: [
-        'Achieved x1.4 multiplier (+40% advantage)',
-        'Survived 1 month - strategic milestone',
-        'Next: aim for High level (1M+ tokens)',
-        'Target 2 months for Stake Wizard tier'
-      ],
-      bgGradient: 'from-purple-800/40 via-violet-800/30 to-purple-900/40',
-      borderColor: 'border-purple-500/50',
-      accentColor: 'purple',
-      symbolColor: '#8b5cf6',
-      tierGrade: 'Epic',
-      multiplier: 'x1.4',
-      requirement: 'Mid + 1 month'
-    },
-    {
-      id: 'stake-wizard',
-      title: 'STAKE WIZARD',
-      characterName: 'The Rule Creator',
-      keywords: '2 Months Survivor, Unique',
-      story: "Those who design rules transcend them. Now I'm in the position of making the game.",
-      description: 'High-level master who survived 2 months. Transcendent who creates strategies beyond interpreting meta.',
-      infoBlock: {
-        title: 'Wizard Powers Awakened',
-        content: `**Rule Creator Status Achieved**
-
-1. **Condition**: High level (1M-10M) + 2 months
-2. **x1.6 Multiplier**: +60% scoring mastery
-3. **Power**: Creating new strategies
-4. **Next Goal**: Special level + 3 months → Heavy Eater
-
-You now shape the game itself!`,
-        bgColor: 'from-yellow-900/30 to-amber-900/30',
-        borderColor: 'border-yellow-500/40'
-      },
-      action: 'Now I am the rulebook, got it!',
-      tips: [
-        'Achieved x1.6 multiplier (+60% mastery)',
-        'High level staking (1M-10M tokens)',
-        'Survived 2 months - elite status',
-        'Next: aim for Special level (10M+ tokens)'
-      ],
-      bgGradient: 'from-yellow-800/40 via-amber-800/30 to-yellow-900/40',
-      borderColor: 'border-yellow-500/50',
-      accentColor: 'yellow',
-      symbolColor: '#eab308',
-      tierGrade: 'Unique',
-      multiplier: 'x1.6',
-      requirement: 'High + 2 months'
-    },
-    {
-      id: 'heavy-eater',
-      title: 'HEAVY EATER',
-      characterName: 'The Ultimate Victor',
-      keywords: '3 Months Survivor, Legendary',
-      story: "Those who endure eat everything. Now I am the ruler of the grill.",
-      description: 'Ultimate champion with Special level staking for 3+ months. The apex of the traditional tier system.',
-      infoBlock: {
-        title: 'Ultimate Dominance Achieved',
-        content: `**Legendary Status Unlocked**
-
-1. **Condition**: Special level (10M+) + 3 months
-2. **x1.8 Multiplier**: +80% legendary power
-3. **Status**: Traditional system apex
-4. **Special**: Phase transition → Genesis OG possible!
-
-You rule the traditional tier system!`,
-        bgColor: 'from-red-900/30 to-rose-900/30',
-        borderColor: 'border-red-500/40'
-      },
-      action: 'Now I rule the grill, got it!',
-      tips: [
-        'Achieved x1.8 multiplier (+80% power)',
-        'Special level staking (10M+ tokens)',
-        'Survived 3+ months - legendary status',
-        'Phase transition can lead to Genesis OG!'
-      ],
-      bgGradient: 'from-red-800/40 via-rose-800/30 to-red-900/40',
-      borderColor: 'border-red-500/50',
-      accentColor: 'red',
-      symbolColor: '#ef4444',
-      tierGrade: 'Legendary',
-      multiplier: 'x1.8',
-      requirement: 'Special + 3 months'
-    },
-    {
-      id: 'genesis-og',
-      title: 'GENESIS OG',
-      characterName: 'The Mythical Legend',
-      keywords: 'Time Transcendent, Genesis',
-      story: "Early or Never. A being that transcends time, itself a myth.",
-      description: 'Mythical being who either participated from launch day OR achieved Heavy Eater and survived phase transitions.',
-      infoBlock: {
-        title: 'Mythical Genesis Powers',
-        content: `**Two Paths to Legend**
-
-1. **Original Path**: Launch day participant + no jeet
-2. **New Path**: Heavy Eater → Phase transition
-3. **x2.0 Multiplier**: Maximum scoring power
-4. **Status**: Mythical ecosystem legend
-
-Time mastery = Ultimate rewards!`,
-        bgColor: 'from-emerald-900/30 to-teal-900/30',
-        borderColor: 'border-emerald-500/40'
-      },
-      action: 'Now I am legend, got it!',
-      tips: [
-        'Maximum x2.0 multiplier power',
-        'Two paths: Early entry OR phase survival',
-        'Permanent legendary status',
-        'Living witness of STAKE history'
-      ],
-      bgGradient: 'from-emerald-800/40 via-teal-800/30 to-emerald-900/40',
-      borderColor: 'border-emerald-500/50',
-      accentColor: 'emerald',
-      symbolColor: '#10b981',
-      tierGrade: 'Genesis',
-      multiplier: 'x2.0',
-      requirement: 'Launch day OR Heavy Eater + Phase survival'
-    }
-  ];
-
-  const tierSystem = [
-    { tier: '🐸', name: 'VIRGEN', condition: 'Not participating', benefit: 'Unlimited potential', multiplier: 'x0', color: '#6b7280', grade: 'None' },
-    { tier: '🆕', name: 'Sizzlin\' Noob', condition: 'Entry level staking', benefit: 'Basic participation', multiplier: 'x1.0', color: '#ffffff', grade: 'Normal' },
-    { tier: '🔁', name: 'Flipstarter', condition: 'Entry + 1 week', benefit: 'Consistency bonus', multiplier: 'x1.1', color: '#22c55e', grade: 'Uncommon' },
-    { tier: '🔥', name: 'Flame Juggler', condition: 'Mid + 2 weeks', benefit: 'Growing power', multiplier: 'x1.25', color: '#3b82f6', grade: 'Rare' },
-    { tier: '🧠', name: 'Grilluminati', condition: 'Mid + 1 month', benefit: 'Strategic advantage', multiplier: 'x1.4', color: '#8b5cf6', grade: 'Epic' },
-    { tier: '🧙‍♂️', name: 'Stake Wizard', condition: 'High + 2 months', benefit: 'Rule creation', multiplier: 'x1.6', color: '#eab308', grade: 'Unique' },
-    { tier: '🥩', name: 'Heavy Eater', condition: 'Special + 3 months', benefit: 'Ultimate domination', multiplier: 'x1.8', color: '#ef4444', grade: 'Legendary' },
-    { tier: '🌌', name: 'Genesis OG', condition: 'Launch day OR Phase survival', benefit: 'Mythical legend', multiplier: 'x2.0', color: '#10b981', grade: 'Genesis' }
-  ];
-
-  const stakingLevels = [
-    { level: '🔹 Entry', range: 'Up to 200K STAKE', description: 'Perfect for beginners' },
-    { level: '🔸 Mid', range: '200K - 1M STAKE', description: 'Serious participants' },
-    { level: '🔶 High', range: '1M - 10M STAKE', description: 'Dedicated investors' },
-    { level: '💎 Special', range: '10M+ STAKE', description: 'Elite whale tier' }
-  ];
-
-  const phaseProgression = [
-    { phase: 'Phase 1', tier: 'Sizzlin\' Noob', multiplier: 'x1.0' },
-    { phase: 'Phase 2', tier: 'Flipstarter', multiplier: 'x1.1' },
-    { phase: 'Phase 3', tier: 'Flame Juggler', multiplier: 'x1.25' },
-    { phase: 'Phase 4', tier: 'Grilluminati', multiplier: 'x1.4' },
-    { phase: 'Phase 5', tier: 'Stake Wizard', multiplier: 'x1.6' },
-    { phase: 'Phase 6', tier: 'Heavy Eater', multiplier: 'x1.8' },
-    { phase: 'Claim', tier: 'Genesis OG', multiplier: 'x2.0' }
-  ];
-
-  const smallInvestorScenario = {
-    initial: { amount: 200000, tokens: 'Entry Level (200K)' },
-    phases: [
-      { phase: 1, allocation: 100000, cumulative: 100000, tier: 'Sizzlin\' Noob', multiplier: 'x1.0' },
-      { phase: 2, allocation: 110000, cumulative: 210000, tier: 'Flipstarter', multiplier: 'x1.1' },
-      { phase: 3, allocation: 125000, cumulative: 335000, tier: 'Flame Juggler', multiplier: 'x1.25' },
-      { phase: 4, allocation: 140000, cumulative: 475000, tier: 'Grilluminati', multiplier: 'x1.4' },
-      { phase: 5, allocation: 160000, cumulative: 635000, tier: 'Stake Wizard', multiplier: 'x1.6' },
-      { phase: 6, allocation: 200000, cumulative: 835000, tier: 'Heavy Eater', multiplier: 'x1.8' }
-    ],
-    final: { totalStaking: 1035000, finalTier: 'Genesis OG', finalMultiplier: 'x2.0' }
-  };
-
   const handleStepComplete = (stepIndex) => {
     setCompletedSteps(prev => new Set([...prev, stepIndex]));
     if (stepIndex < evolutionSteps.length - 1) {
@@ -345,16 +24,6 @@ Time mastery = Ultimate rewards!`,
   const progressPercentage = ((currentStep + 1) / evolutionSteps.length) * 100;
 
   const getAccentColorClasses = (color) => {
-    const colorMap = {
-      gray: { text: 'text-gray-400', bg: 'bg-gray-500', ring: 'ring-gray-500', hover: 'hover:bg-gray-600' },
-      white: { text: 'text-white', bg: 'bg-white', ring: 'ring-white', hover: 'hover:bg-gray-100' },
-      green: { text: 'text-green-400', bg: 'bg-green-500', ring: 'ring-green-500', hover: 'hover:bg-green-600' },
-      blue: { text: 'text-blue-400', bg: 'bg-blue-500', ring: 'ring-blue-500', hover: 'hover:bg-blue-600' },
-      purple: { text: 'text-purple-400', bg: 'bg-purple-500', ring: 'ring-purple-500', hover: 'hover:bg-purple-600' },
-      yellow: { text: 'text-yellow-400', bg: 'bg-yellow-500', ring: 'ring-yellow-500', hover: 'hover:bg-yellow-600' },
-      red: { text: 'text-red-400', bg: 'bg-red-500', ring: 'ring-red-500', hover: 'hover:bg-red-600' },
-      emerald: { text: 'text-emerald-400', bg: 'bg-emerald-500', ring: 'ring-emerald-500', hover: 'hover:bg-emerald-600' }
-    };
     return colorMap[color] || colorMap.gray;
   };
 
@@ -445,25 +114,46 @@ Time mastery = Ultimate rewards!`,
       {/* Small Investor Path Modal */}
       {showSmallInvestorPath && (
         <>
-          {/* 모달 배경 - 하단 네비게이션 영역 제외 */}
           <div 
-            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-40"
-            style={{ paddingBottom: '100px' }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm"
+            style={{ 
+              zIndex: 200,
+              paddingTop: typeof window !== 'undefined' && window.innerWidth < 768 ? '80px' : '70px',
+              paddingBottom: '20px'
+            }}
             onClick={() => setShowSmallInvestorPath(false)}
           />
-          {/* 모달 컨텐츠 */}
-          <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ paddingBottom: '100px', pointerEvents: 'none' }}>
+          
+          <div 
+            className="fixed inset-0 flex items-start justify-center p-4 overflow-y-auto"
+            style={{ 
+              zIndex: 201,
+              paddingTop: typeof window !== 'undefined' && window.innerWidth < 768 ? '90px' : '80px',
+              paddingBottom: '30px',
+              pointerEvents: 'none'
+            }}
+          >
             <div 
-              className="bg-gradient-to-br from-gray-900 to-black border-2 border-emerald-500/50 rounded-3xl max-w-6xl w-full max-h-[90vh] overflow-y-auto"
-              style={{ pointerEvents: 'auto' }}
+              className="bg-gradient-to-br from-gray-900 to-black border-2 border-emerald-500/50 rounded-3xl max-w-6xl w-full max-h-none overflow-y-auto"
+              style={{ 
+                pointerEvents: 'auto',
+                maxHeight: typeof window !== 'undefined' && window.innerWidth < 768 ? 'calc(100vh - 120px)' : 'calc(100vh - 110px)'
+              }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-8">
-                <div className="flex justify-between items-center mb-8">
+                <div className="flex justify-between items-start mb-8">
                   <h2 className="text-4xl font-black text-emerald-400">🌱 Small Investor Dream Path</h2>
                   <button
                     onClick={() => setShowSmallInvestorPath(false)}
-                    className="text-4xl text-gray-400 hover:text-white transition-colors"
+                    className="text-4xl text-gray-400 hover:text-white transition-colors flex-shrink-0 ml-4"
+                    style={{
+                      minWidth: '44px',
+                      minHeight: '44px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
                   >
                     ×
                   </button>
@@ -551,25 +241,46 @@ Time mastery = Ultimate rewards!`,
       {/* Phase Strategy Modal */}
       {showPhaseStrategy && (
         <>
-          {/* 모달 배경 - 하단 네비게이션 영역 제외 */}
           <div 
-            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-40"
-            style={{ paddingBottom: '100px' }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm"
+            style={{ 
+              zIndex: 200,
+              paddingTop: typeof window !== 'undefined' && window.innerWidth < 768 ? '80px' : '70px',
+              paddingBottom: '20px'
+            }}
             onClick={() => setShowPhaseStrategy(false)}
           />
-          {/* 모달 컨텐츠 */}
-          <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ paddingBottom: '100px', pointerEvents: 'none' }}>
+          
+          <div 
+            className="fixed inset-0 flex items-start justify-center p-4 overflow-y-auto"
+            style={{ 
+              zIndex: 201,
+              paddingTop: typeof window !== 'undefined' && window.innerWidth < 768 ? '90px' : '80px',
+              paddingBottom: '30px',
+              pointerEvents: 'none'
+            }}
+          >
             <div 
-              className="bg-gradient-to-br from-gray-900 to-black border-2 border-orange-500/50 rounded-3xl max-w-6xl w-full max-h-[90vh] overflow-y-auto"
-              style={{ pointerEvents: 'auto' }}
+              className="bg-gradient-to-br from-gray-900 to-black border-2 border-orange-500/50 rounded-3xl max-w-6xl w-full max-h-none overflow-y-auto"
+              style={{ 
+                pointerEvents: 'auto',
+                maxHeight: typeof window !== 'undefined' && window.innerWidth < 768 ? 'calc(100vh - 120px)' : 'calc(100vh - 110px)'
+              }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-8">
-                <div className="flex justify-between items-center mb-8">
+                <div className="flex justify-between items-start mb-8">
                   <h2 className="text-4xl font-black text-orange-400">📈 Phase Transition Strategy</h2>
                   <button
                     onClick={() => setShowPhaseStrategy(false)}
-                    className="text-4xl text-gray-400 hover:text-white transition-colors"
+                    className="text-4xl text-gray-400 hover:text-white transition-colors flex-shrink-0 ml-4"
+                    style={{
+                      minWidth: '44px',
+                      minHeight: '44px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
                   >
                     ×
                   </button>
@@ -761,20 +472,12 @@ Time mastery = Ultimate rewards!`,
                           </div>
                         </div>
 
-                        {/* Evolution Number */}
-                        <div 
-                          className={`
-                            absolute -top-6 -left-6 w-16 h-16 rounded-full
-                            flex items-center justify-center font-black text-white text-xl
-                            shadow-lg border-4 border-gray-900
-                          `}
-                          style={{ backgroundColor: step.symbolColor }}
-                        >
-                          {isSpecial ? '🌌' : index + 1}
-                        </div>
-
-                        {/* Tier Info Overlay */}
-                        <div className="absolute top-4 right-4 bg-black/70 rounded-lg p-3 backdrop-blur-sm">
+                        {/* 🎯 오른쪽 상단 티어 정보 박스 - 20% 축소 */}
+                        <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-black/70 rounded-lg backdrop-blur-sm"
+                             style={{
+                               padding: typeof window !== 'undefined' && window.innerWidth < 768 ? '8px' : '12px',
+                               transform: typeof window !== 'undefined' && window.innerWidth < 768 ? 'scale(0.8)' : 'scale(1)'
+                             }}>
                           <div className="text-center">
                             <div className="text-xs text-gray-400 mb-1">Tier</div>
                             <div className="text-sm font-bold" style={{ color: step.symbolColor }}>
