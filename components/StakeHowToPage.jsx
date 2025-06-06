@@ -1,4 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import CompleteTimeline from './howto/CompleteTimeline';
+import PhaseParticipation from './howto/PhaseParticipation';
+import ClaimStrategies from './howto/ClaimStrategies';
+import NFTSection from './howto/NFTSection';
+import { COMPLETE_TIMELINE } from '../data/howtoData';
 
 const StakeHowToPage = () => {
   const [activeSection, setActiveSection] = useState('evolution');
@@ -9,56 +14,6 @@ const StakeHowToPage = () => {
   useEffect(() => {
     setIsVisible(true);
   }, []);
-
-  // Complete project timeline data
-  const COMPLETE_TIMELINE = {
-    phases: [
-      { 
-        phase: 1, 
-        staking: '2025-05-27 ~ 2025-06-27', 
-        snapshot: '2025-06-27 10:00 UTC',
-        status: 'current'
-      },
-      { 
-        phase: 2, 
-        staking: '2025-06-27 ~ 2025-07-27', 
-        snapshot: '2025-07-27 10:00 UTC',
-        status: 'upcoming' 
-      },
-      { 
-        phase: 3, 
-        staking: '2025-07-27 ~ 2025-08-27', 
-        snapshot: '2025-08-27 10:00 UTC',
-        status: 'upcoming' 
-      },
-      { 
-        phase: 4, 
-        staking: '2025-08-27 ~ 2025-09-27', 
-        snapshot: '2025-09-27 10:00 UTC',
-        status: 'upcoming' 
-      },
-      { 
-        phase: 5, 
-        staking: '2025-09-27 ~ 2025-10-27', 
-        snapshot: '2025-10-27 10:00 UTC',
-        status: 'upcoming' 
-      },
-      { 
-        phase: 6, 
-        staking: '2025-10-27 ~ 2025-11-27', 
-        snapshot: '2025-11-27 10:00 UTC',
-        status: 'upcoming' 
-      }
-    ],
-    vesting: [
-      { phase: 1, unlock: '2025-12-07', distribution: '2025-12-10', newTokens: '41.67M', cumulative: '41.67M', percentage: '16.67%' },
-      { phase: 2, unlock: '2026-01-07', distribution: '2026-01-10', newTokens: '41.67M', cumulative: '83.33M', percentage: '33.33%' },
-      { phase: 3, unlock: '2026-02-07', distribution: '2026-02-10', newTokens: '41.67M', cumulative: '125.00M', percentage: '50.00%' },
-      { phase: 4, unlock: '2026-03-07', distribution: '2026-03-10', newTokens: '41.67M', cumulative: '166.67M', percentage: '66.67%' },
-      { phase: 5, unlock: '2026-04-07', distribution: '2026-04-10', newTokens: '41.67M', cumulative: '208.33M', percentage: '83.33%' },
-      { phase: 6, unlock: '2026-05-07', distribution: '2026-05-10', newTokens: '41.67M', cumulative: '250.00M', percentage: '100%' }
-    ]
-  };
 
   // Phase participation rules
   const PHASE_PARTICIPATION_RULES = [
@@ -87,6 +42,24 @@ const StakeHowToPage = () => {
       importance: "warning"
     }
   ];
+  const tierSystem = [
+    { name: 'VIRGEN', condition: 'Not participating', benefit: 'Unlimited potential', multiplier: 'x0', color: '#6b7280', grade: 'None' },
+    { name: 'Sizzlin\' Noob', condition: 'Entry level staking', benefit: 'Basic participation', multiplier: 'x1.0', color: '#ffffff', grade: 'Normal' },
+    { name: 'Flipstarter', condition: 'Entry + 1 week', benefit: 'Consistency bonus', multiplier: 'x1.1', color: '#22c55e', grade: 'Uncommon' },
+    { name: 'Flame Juggler', condition: 'Mid + 2 weeks', benefit: 'Growing power', multiplier: 'x1.25', color: '#3b82f6', grade: 'Rare' },
+    { name: 'Grilluminati', condition: 'Mid + 1 month', benefit: 'Strategic advantage', multiplier: 'x1.4', color: '#8b5cf6', grade: 'Epic' },
+    { name: 'Stake Wizard', condition: 'High + 2 months', benefit: 'Rule creation', multiplier: 'x1.6', color: '#eab308', grade: 'Unique' },
+    { name: 'Heavy Eater', condition: 'Special + 3 months', benefit: 'Ultimate domination', multiplier: 'x1.8', color: '#ef4444', grade: 'Legendary' },
+    { name: 'Genesis OG', condition: 'Launch day OR Phase survival', benefit: 'Mythical legend', multiplier: 'x2.0', color: '#10b981', grade: 'Genesis' }
+ ];
+
+  const stakingLevels = [
+    { level: '🔹 Entry', range: 'Up to 200K STAKE', description: 'Perfect for beginners' },
+    { level: '🔸 Mid', range: '200K - 1M STAKE', description: 'Serious participants' },
+    { level: '🔶 High', range: '1M - 10M STAKE', description: 'Dedicated investors' },
+    { level: '💎 Special', range: '10M+ STAKE', description: 'Elite whale tier' }
+ ];
+  
 
   // Hybrid tier upgrade system
   const HYBRID_TIER_SYSTEM = {
@@ -421,29 +394,17 @@ Time mastery = Ultimate rewards!`,
     }
   ];
 
-  const tierSystem = [
-    { name: 'VIRGEN', condition: 'Not participating', benefit: 'Unlimited potential', multiplier: 'x0', color: '#6b7280', grade: 'None' },
-    { name: 'Sizzlin\' Noob', condition: 'Entry level staking', benefit: 'Basic participation', multiplier: 'x1.0', color: '#ffffff', grade: 'Normal' },
-    { name: 'Flipstarter', condition: 'Entry + 1 week', benefit: 'Consistency bonus', multiplier: 'x1.1', color: '#22c55e', grade: 'Uncommon' },
-    { name: 'Flame Juggler', condition: 'Mid + 2 weeks', benefit: 'Growing power', multiplier: 'x1.25', color: '#3b82f6', grade: 'Rare' },
-    { name: 'Grilluminati', condition: 'Mid + 1 month', benefit: 'Strategic advantage', multiplier: 'x1.4', color: '#8b5cf6', grade: 'Epic' },
-    { name: 'Stake Wizard', condition: 'High + 2 months', benefit: 'Rule creation', multiplier: 'x1.6', color: '#eab308', grade: 'Unique' },
-    { name: 'Heavy Eater', condition: 'Special + 3 months', benefit: 'Ultimate domination', multiplier: 'x1.8', color: '#ef4444', grade: 'Legendary' },
-    { name: 'Genesis OG', condition: 'Launch day OR Phase survival', benefit: 'Mythical legend', multiplier: 'x2.0', color: '#10b981', grade: 'Genesis' }
-  ];
-
-  const stakingLevels = [
-    { level: 'Entry', range: 'Up to 200K STAKE', description: 'Perfect for beginners' },
-    { level: 'Mid', range: '200K - 1M STAKE', description: 'Serious participants' },
-    { level: 'High', range: '1M - 10M STAKE', description: 'Dedicated investors' },
-    { level: 'Special', range: '10M+ STAKE', description: 'Elite whale tier' }
-  ];
 
   const sections = [
     {
       id: 'evolution',
       title: '🔥 Evolution Journey - Complete 8 Tiers & Earn 50K STAKE!',
       isEvent: true
+    },
+    {
+      id: 'tiers',
+      title: 'Complete Tier System Overview - All 8 Grades Explained',
+      isEvent: false
     },
     {
       id: 'hybrid',
@@ -470,6 +431,7 @@ Time mastery = Ultimate rewards!`,
       title: 'Staking Levels - Entry to Special Tier Guide',
       isEvent: false
     },
+   
     {
       id: 'nft',
       title: 'NFT & Future Utility - Your Permanent Legacy',
@@ -794,6 +756,98 @@ Time mastery = Ultimate rewards!`,
     </div>
   );
 
+  const renderTierSystemOverview = () => (
+  <div className="space-y-8">
+    <h2 className="text-4xl font-black text-center text-white mb-12">
+      ⭐ Complete Tier System Overview
+    </h2>
+    
+    <div className="space-y-4 max-w-5xl mx-auto">
+      {tierSystem.map((tier, index) => (
+        <div
+          key={index}
+          className="bg-gradient-to-r from-gray-800/30 to-gray-900/30 border border-gray-600/30 rounded-xl p-6 hover:border-opacity-60 transition-all duration-300 group"
+          style={{ borderColor: tier.color + '40' }}
+        >
+          <div className="grid md:grid-cols-5 gap-4 items-center text-center md:text-left">
+            {/* 티어 이름 & 등급 */}
+            <div className="md:col-span-1">
+              <div className="text-xs text-gray-400 mb-1 uppercase tracking-wide">{tier.grade}</div>
+              <h4 className="text-lg font-bold text-white group-hover:text-gray-100 transition-colors">
+                {tier.name}
+              </h4>
+            </div>
+            
+            {/* 조건 */}
+            <div className="md:col-span-2">
+              <div className="text-xs text-gray-400 mb-1 uppercase tracking-wide">Requirements</div>
+              <div className="text-sm text-gray-300 leading-relaxed">{tier.condition}</div>
+            </div>
+            
+            {/* 혜택 */}
+            <div className="md:col-span-1">
+              <div className="text-xs text-gray-400 mb-1 uppercase tracking-wide">Benefit</div>
+              <div className="text-sm text-gray-300">{tier.benefit}</div>
+            </div>
+            
+            {/* 배수 */}
+            <div className="md:col-span-1 text-center">
+              <div className="text-xs text-gray-400 mb-1 uppercase tracking-wide">Power</div>
+              <div 
+                className="text-2xl font-black group-hover:scale-110 transition-transform duration-300"
+                style={{ color: tier.color }}
+              >
+                {tier.multiplier}
+              </div>
+            </div>
+          </div>
+          
+          {/* 호버시 나타나는 추가 정보 */}
+          <div className="mt-4 p-3 bg-black/20 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300">
+            <div className="text-xs text-gray-400 text-center">
+              🎯 This tier gives you <span style={{ color: tier.color }} className="font-bold">{tier.multiplier}</span> scoring power
+              {tier.name === 'Genesis OG' && ' - The ultimate achievement! 🌟'}
+              {tier.name === 'VIRGEN' && ' - Your journey starts here! 🚀'}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+    
+    {/* 추가 설명 섹션 */}
+    <div className="mt-12 bg-gradient-to-br from-purple-900/20 to-indigo-900/20 border-2 border-purple-500/30 rounded-2xl p-8">
+      <h3 className="text-xl font-bold text-purple-400 mb-4 text-center">
+        🎮 How Tier Progression Works
+      </h3>
+      <div className="grid md:grid-cols-3 gap-6 text-sm">
+        <div className="text-center">
+          <h4 className="font-bold text-white mb-2">💪 Natural Progression</h4>
+          <p className="text-gray-300">
+            Advance through consistent staking amount and holding duration. 
+            Each tier has specific requirements to unlock.
+          </p>
+        </div>
+        <div className="text-center">
+          <h4 className="font-bold text-white mb-2">⚡ Phase Bonuses</h4>
+          <p className="text-gray-300">
+            Complete full phases with perfect conditions to get automatic 
+            tier upgrades as bonus rewards.
+          </p>
+        </div>
+        <div className="text-center">
+          <h4 className="font-bold text-white mb-2">🏆 Ultimate Goal</h4>
+          <p className="text-gray-300">
+            Reach Genesis OG for permanent legendary status and maximum 
+            x2.0 multiplier benefits across all future content.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+
+
   // Hybrid System Content
   const renderHybridSystem = () => (
     <div className="space-y-8">
@@ -954,99 +1008,45 @@ Time mastery = Ultimate rewards!`,
   );
 
   // Other section renders would go here...
-  const renderTimeline = () => (
-    <div className="space-y-8">
-      <h2 className="text-3xl font-bold text-white mb-8">Project Timeline</h2>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {COMPLETE_TIMELINE.phases.map((phase) => (
-          <div
-            key={phase.phase}
-            className={`rounded-2xl p-6 border-2 ${
-              phase.status === 'current' 
-                ? 'bg-emerald-900/30 border-emerald-500/50' 
-                : 'bg-gray-800/30 border-gray-600/30'
-            }`}
-          >
-            <div className="text-2xl font-black mb-4">Phase {phase.phase}</div>
-            <div className="space-y-2 text-sm">
-              <div>
-                <span className="text-gray-400">Period:</span>
-                <div className="text-white font-bold">{phase.staking}</div>
-              </div>
-              <div>
-                <span className="text-gray-400">Snapshot:</span>
-                <div className="text-white font-bold">{phase.snapshot}</div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const renderPhaseParticipation = () => (
-    <div className="space-y-8">
-      <h2 className="text-3xl font-bold text-white mb-8">Phase Participation System</h2>
-      <div className="text-white">Manual participation required for each phase. Auto-participation is not supported.</div>
-    </div>
-  );
-
-  const renderClaimStrategies = () => (
-    <div className="space-y-8">
-      <h2 className="text-3xl font-bold text-white mb-8">Claim Strategy Guide</h2>
-      <div className="grid lg:grid-cols-3 gap-8">
-        {CLAIM_STRATEGIES.map((strategy, index) => (
-          <div
-            key={index}
-            className={`rounded-3xl p-8 border-2 ${
-              strategy.color === 'red' ? 'bg-red-900/20 border-red-500/40' :
-              strategy.color === 'green' ? 'bg-green-900/20 border-green-500/40' :
-              'bg-emerald-900/20 border-emerald-500/40'
-            }`}
-          >
-            <h3 className={`text-2xl font-black mb-4 ${
-              strategy.color === 'red' ? 'text-red-400' :
-              strategy.color === 'green' ? 'text-green-400' :
-              'text-emerald-400'
-            }`}>
-              {strategy.strategy}
-            </h3>
-            <div className="text-white">{strategy.result}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  const renderTimeline = () => <CompleteTimeline />;
+  const renderPhaseParticipation = () => <PhaseParticipation />;
+  const renderClaimStrategies = () => <ClaimStrategies />;
+  const renderNFTContent = () => <NFTSection />;
 
   const renderStakingLevels = () => (
-    <div className="space-y-8">
-      <h2 className="text-3xl font-bold text-white mb-8">Staking Amount Levels</h2>
-      <div className="grid md:grid-cols-4 gap-6">
-        {stakingLevels.map((level, index) => (
-          <div
-            key={index}
-            className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 border border-gray-600/30 rounded-xl p-6 text-center"
-          >
-            <h4 className="text-lg font-bold text-white mb-2">{level.level}</h4>
-            <p className="text-emerald-400 font-bold mb-3">{level.range}</p>
-            <p className="text-sm text-gray-400">{level.description}</p>
+  <div className="space-y-8">
+    <h2 className="text-4xl font-black text-center text-white mb-12">
+      💰 Staking Amount Levels
+    </h2>
+    
+    <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
+      {stakingLevels.map((level, index) => (
+        <div
+          key={index}
+          className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 border border-gray-600/30 rounded-xl p-8 text-center hover:border-emerald-500/50 transition-all duration-300"
+        >
+          <div className="text-4xl mb-4">
+            {level.level.split(' ')[0]} {/* 이모지 부분 */}
           </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const renderNFTContent = () => (
-    <div className="space-y-8">
-      <h2 className="text-3xl font-bold text-white mb-8">NFT & Future Utility</h2>
-      <div className="text-white">Your final tier will be minted as a permanent NFT with future utility across the STAKE ecosystem.</div>
-    </div>
-  );
+          <h4 className="text-2xl font-bold text-white mb-3">
+            {level.level.split(' ')[1]} {/* 레벨 이름 */}
+          </h4>
+          <p className="text-emerald-400 font-bold text-lg mb-3">{level.range}</p>
+          <p className="text-sm text-gray-400">{level.description}</p>
+        </div>
+      ))}
+    </div>    
+  </div>
+);
 
   const renderContent = () => {
+
+    console.log('Current activeSection:', activeSection);
     switch (activeSection) {
       case 'evolution':
         return renderEvolutionJourney();
+      case 'tiers':
+        return renderTierSystemOverview(); 
       case 'hybrid':
         return renderHybridSystem();
       case 'timeline':
