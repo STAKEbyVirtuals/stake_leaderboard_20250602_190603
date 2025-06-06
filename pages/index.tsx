@@ -13,14 +13,43 @@ import CompactTopbar from '../components/CompactTopbar';
 // JSON API URL (구글시트 or GitHub JSON)
 const SHEET_BEST_URL = '/leaderboard.json';
 
-// 1. 실제 STAKE 프로젝트 페이즈 일정 (파일 상단에 추가)
+// 📅 pages/index.tsx에서 기존 PHASE_SCHEDULE (라인 25-31)을 이것으로 교체하세요
+
+// 1. 실제 STAKE 프로젝트 페이즈 일정 (수정된 버전)
 const PHASE_SCHEDULE = {
-  PHASE_1_END: new Date('2025-06-30T23:59:59Z'),
-  PHASE_2_START: new Date('2025-07-01T00:00:00Z'),
-  PHASE_3_START: new Date('2025-08-01T00:00:00Z'),
-  PHASE_4_START: new Date('2025-09-01T00:00:00Z'),
-  PHASE_5_START: new Date('2025-10-01T00:00:00Z'),
-  PHASE_6_START: new Date('2025-11-01T00:00:00Z'),
+  // 🚀 프로젝트 시작점
+  LAUNCH_DATE: new Date('2025-05-27T10:00:00Z'),
+  
+  // 🌌 Genesis OG 스냅샷
+  OG_SNAPSHOT: new Date('2025-05-28T10:00:00Z'),
+  
+  // 📊 Phase 1: 런칭부터 첫 번째 스냅샷까지
+  PHASE_1_END: new Date('2025-06-27T09:59:59Z'),
+  
+  // 📊 Phase 2: 두 번째 스테이킹 기간
+  PHASE_2_START: new Date('2025-06-27T10:00:00Z'),
+  PHASE_2_END: new Date('2025-07-27T09:59:59Z'),
+  
+  // 📊 Phase 3: 세 번째 스테이킹 기간
+  PHASE_3_START: new Date('2025-07-27T10:00:00Z'),
+  PHASE_3_END: new Date('2025-08-27T09:59:59Z'),
+  
+  // 📊 Phase 4: 네 번째 스테이킹 기간
+  PHASE_4_START: new Date('2025-08-27T10:00:00Z'),
+  PHASE_4_END: new Date('2025-09-27T09:59:59Z'),
+  
+  // 📊 Phase 5: 다섯 번째 스테이킹 기간
+  PHASE_5_START: new Date('2025-09-27T10:00:00Z'),
+  PHASE_5_END: new Date('2025-10-27T09:59:59Z'),
+  
+  // 📊 Phase 6: 마지막 스테이킹 기간
+  PHASE_6_START: new Date('2025-10-27T10:00:00Z'),
+  PHASE_6_END: new Date('2025-11-27T09:59:59Z'),
+  
+  // 💰 토큰 릴리즈 베스팅 기간 (6개월)
+  TOKEN_RELEASE_START: new Date('2025-12-07T00:00:00Z'),
+  TOKEN_RELEASE_END: new Date('2026-05-06T00:00:00Z'),
+  VESTING_DURATION_DAYS: 151, // 약 6개월
 };
 
 // --- 유틸리티 및 타입 ---
@@ -871,6 +900,12 @@ function Sidebar({ isOpen, onClose, wallet, currentPage, onPageChange, isMobile,
 
 // 🎯 토글 버튼 완전 제거 + 새 헤더 고정 버전
 
+// 📅 pages/index.tsx에서 기존 Layout 함수를 이것으로 완전히 교체하세요
+
+// 📅 pages/index.tsx에서 기존 Layout 함수를 이것으로 완전히 교체하세요
+
+// 📅 pages/index.tsx에서 기존 Layout 함수를 이것으로 완전히 교체하세요
+
 function Layout({
   children, currentPage, onPageChange, wallet, isMobile, isDesktop
 }:{
@@ -885,9 +920,27 @@ function Layout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedPhase, setSelectedPhase] = useState<number | null>(null);
   
-  // 기존 훅들 (그대로 유지)
+  // 🔧 수정된 훅들: 정확한 페이즈별 카운트다운
   const phase1TimeLeft = useCountdown(PHASE_SCHEDULE.PHASE_1_END);
+  
+  // 🆕 모든 페이즈의 카운트다운을 미리 계산 (조건부 훅 방지)
   const phase2TimeLeft = useCountdown(PHASE_SCHEDULE.PHASE_2_START);
+  const phase3TimeLeft = useCountdown(PHASE_SCHEDULE.PHASE_3_START);
+  const phase4TimeLeft = useCountdown(PHASE_SCHEDULE.PHASE_4_START);
+  const phase5TimeLeft = useCountdown(PHASE_SCHEDULE.PHASE_5_START);
+  const phase6TimeLeft = useCountdown(PHASE_SCHEDULE.PHASE_6_START);
+  
+  // 선택된 페이즈에 따라 적절한 카운트다운 선택
+  const getSelectedPhaseTimeLeft = () => {
+    switch(selectedPhase) {
+      case 2: return phase2TimeLeft;
+      case 3: return phase3TimeLeft;
+      case 4: return phase4TimeLeft;
+      case 5: return phase5TimeLeft;
+      case 6: return phase6TimeLeft;
+      default: return { months: 0, days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
+    }
+  };
   
   const handlePhaseClick = (phase: number) => {
     if (phase > 1) {
@@ -937,12 +990,12 @@ function Layout({
         </div>
       </main>
       
-      {/* 기존 커밍순 모달 (변경 없음) */}
+      {/* 🔧 수정된 모달: getSelectedPhaseTimeLeft() 사용 */}
       <ComingSoonModal 
         isOpen={selectedPhase !== null}
         onClose={() => setSelectedPhase(null)}
         phase={selectedPhase || 2}
-        timeLeft={phase2TimeLeft}
+        timeLeft={getSelectedPhaseTimeLeft()}  // 🆕 수정된 부분: 함수 호출로 안전하게 선택
         isMobile={isMobile}
       />
     </div>
@@ -4884,9 +4937,10 @@ function StatsPage({ data }: { data: LeaderboardItem[] }) {
   );
 }
 
-// 2. 카운트다운 훅 (useEffect 임포트 필요)
+// 1. 수정된 카운트다운 훅 (기존 useCountdown 함수를 이것으로 교체)
 function useCountdown(targetDate: Date) {
   const [timeLeft, setTimeLeft] = useState({
+    months: 0,
     days: 0,
     hours: 0,
     minutes: 0,
@@ -4901,15 +4955,22 @@ function useCountdown(targetDate: Date) {
       const difference = target - now;
 
       if (difference > 0) {
+        const months = Math.floor(difference / (1000 * 60 * 60 * 24 * 30));
+        const days = Math.floor((difference % (1000 * 60 * 60 * 24 * 30)) / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+        
         setTimeLeft({
-          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
-          seconds: Math.floor((difference % (1000 * 60)) / 1000),
+          months,
+          days,
+          hours,
+          minutes,
+          seconds,
           total: difference
         });
       } else {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 });
+        setTimeLeft({ months: 0, days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 });
       }
     }, 1000);
 
@@ -4917,6 +4978,21 @@ function useCountdown(targetDate: Date) {
   }, [targetDate]);
 
   return timeLeft;
+}
+
+
+
+// 2. 페이즈별 시작일 계산 함수 (새로 추가)
+function getPhaseStartDate(phase: number): Date {
+  switch(phase) {
+    case 1: return PHASE_SCHEDULE.LAUNCH_DATE;
+    case 2: return PHASE_SCHEDULE.PHASE_2_START;
+    case 3: return PHASE_SCHEDULE.PHASE_3_START;
+    case 4: return PHASE_SCHEDULE.PHASE_4_START;
+    case 5: return PHASE_SCHEDULE.PHASE_5_START;
+    case 6: return PHASE_SCHEDULE.PHASE_6_START;
+    default: return PHASE_SCHEDULE.PHASE_2_START;
+  }
 }
 
 // 3. 페이즈 진행바 컴포넌트 (기존 함수들 대신 추가)
@@ -5070,7 +5146,8 @@ function PhaseCountdown({
   );
 }
 
-// 5. 커밍순 모달 컴포넌트
+// 📅 pages/index.tsx에서 기존 ComingSoonModal 함수를 이것으로 교체하세요
+
 function ComingSoonModal({ 
   isOpen, 
   onClose, 
@@ -5092,6 +5169,24 @@ function ComingSoonModal({
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
   }, [onClose]);
+  
+  // 🆕 개선된 카운트다운 표시 함수
+  const formatCountdown = (timeLeft: any) => {
+    const hasMonths = timeLeft.months > 0;
+    const hasDays = timeLeft.days > 0 || hasMonths;
+    
+    return {
+      months: timeLeft.months,
+      days: timeLeft.days,
+      hours: timeLeft.hours.toString().padStart(2, '0'),
+      minutes: timeLeft.minutes.toString().padStart(2, '0'),
+      seconds: timeLeft.seconds.toString().padStart(2, '0'),
+      showMonths: hasMonths,
+      showDays: hasDays
+    };
+  };
+
+  const countdown = formatCountdown(timeLeft);
   
   if (isMobile) {
     // 모바일 풀스크린 모달
@@ -5178,7 +5273,7 @@ function ComingSoonModal({
             Get ready for the next evolution of STAKE
           </p>
           
-          {/* 모바일 카운트다운 */}
+          {/* 🆕 개선된 모바일 카운트다운 */}
           <div style={{
             width: '100%',
             maxWidth: 320,
@@ -5199,26 +5294,49 @@ function ComingSoonModal({
               🕐 Launches in
             </div>
             
+            {/* 🆕 Month 포함 카운트다운 그리드 */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: 8,
+              gridTemplateColumns: countdown.showMonths ? 'repeat(5, 1fr)' : 'repeat(4, 1fr)',
+              gap: 6,
               marginBottom: 16
             }}>
+              {countdown.showMonths && (
+                <div style={{
+                  background: 'rgba(0,0,0,0.3)',
+                  borderRadius: 12,
+                  padding: '12px 4px',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ 
+                    fontSize: 20, 
+                    fontWeight: 900, 
+                    color: '#4ade80',
+                    fontFamily: 'monospace',
+                    lineHeight: 1
+                  }}>
+                    {countdown.months}
+                  </div>
+                  <div style={{ fontSize: 9, color: '#999', marginTop: 4 }}>
+                    MON
+                  </div>
+                </div>
+              )}
+              
               {[
-                { value: timeLeft.days, label: 'DAYS' },
-                { value: timeLeft.hours.toString().padStart(2, '0'), label: 'HRS' },
-                { value: timeLeft.minutes.toString().padStart(2, '0'), label: 'MIN' },
-                { value: timeLeft.seconds.toString().padStart(2, '0'), label: 'SEC' }
+                { value: countdown.days, label: 'DAYS' },
+                { value: countdown.hours, label: 'HRS' },
+                { value: countdown.minutes, label: 'MIN' },
+                { value: countdown.seconds, label: 'SEC' }
               ].map((item, index) => (
                 <div key={index} style={{
                   background: 'rgba(0,0,0,0.3)',
                   borderRadius: 12,
-                  padding: '16px 8px',
+                  padding: '12px 4px',
                   textAlign: 'center'
                 }}>
                   <div style={{ 
-                    fontSize: 24, 
+                    fontSize: 20, 
                     fontWeight: 900, 
                     color: index === 3 ? '#4ade80' : '#fff',
                     fontFamily: 'monospace',
@@ -5226,7 +5344,7 @@ function ComingSoonModal({
                   }}>
                     {item.value}
                   </div>
-                  <div style={{ fontSize: 10, color: '#999', marginTop: 4 }}>
+                  <div style={{ fontSize: 9, color: '#999', marginTop: 4 }}>
                     {item.label}
                   </div>
                 </div>
@@ -5325,7 +5443,7 @@ function ComingSoonModal({
           Get ready for the next phase of STAKE evolution
         </p>
         
-        {/* 데스크탑 카운트다운 */}
+        {/* 🆕 개선된 데스크탑 카운트다운 */}
         <div style={{
           background: 'rgba(74,222,128,0.1)',
           border: '2px solid rgba(74,222,128,0.2)',
@@ -5344,27 +5462,39 @@ function ComingSoonModal({
             🕐 Launches in
           </div>
           
+          {/* 🆕 Month 포함 데스크탑 카운트다운 */}
           <div style={{
             display: 'flex',
             justifyContent: 'center',
-            gap: 24,
+            alignItems: 'center',
+            gap: countdown.showMonths ? 16 : 24,
             fontSize: 28,
             fontWeight: 900,
             color: '#fff',
             fontFamily: 'monospace'
           }}>
+            {countdown.showMonths && (
+              <>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 40, lineHeight: 1, color: '#4ade80' }}>{countdown.months}</div>
+                  <div style={{ fontSize: 14, color: '#999', marginTop: 8 }}>MONTHS</div>
+                </div>
+                <div style={{ fontSize: 40, color: '#4ade80', lineHeight: 1 }}>:</div>
+              </>
+            )}
+            
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 40, lineHeight: 1 }}>{timeLeft.days}</div>
+              <div style={{ fontSize: 40, lineHeight: 1 }}>{countdown.days}</div>
               <div style={{ fontSize: 14, color: '#999', marginTop: 8 }}>DAYS</div>
             </div>
             <div style={{ fontSize: 40, color: '#4ade80', lineHeight: 1 }}>:</div>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 40, lineHeight: 1 }}>{timeLeft.hours.toString().padStart(2, '0')}</div>
+              <div style={{ fontSize: 40, lineHeight: 1 }}>{countdown.hours}</div>
               <div style={{ fontSize: 14, color: '#999', marginTop: 8 }}>HOURS</div>
             </div>
             <div style={{ fontSize: 40, color: '#4ade80', lineHeight: 1 }}>:</div>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 40, lineHeight: 1 }}>{timeLeft.minutes.toString().padStart(2, '0')}</div>
+              <div style={{ fontSize: 40, lineHeight: 1 }}>{countdown.minutes}</div>
               <div style={{ fontSize: 14, color: '#999', marginTop: 8 }}>MINUTES</div>
             </div>
           </div>

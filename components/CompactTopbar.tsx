@@ -3,14 +3,43 @@
 import React, { useState, useEffect } from 'react';
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 
+// 📅 components/CompactTopbar.tsx에서 기존 PHASE_SCHEDULE (라인 8-14)을 이것으로 교체하세요
+
 // 페이즈 일정 (기존과 동일)
 const PHASE_SCHEDULE = {
-  PHASE_1_END: new Date('2025-06-30T23:59:59Z'),
-  PHASE_2_START: new Date('2025-07-01T00:00:00Z'),
-  PHASE_3_START: new Date('2025-08-01T00:00:00Z'),
-  PHASE_4_START: new Date('2025-09-01T00:00:00Z'),
-  PHASE_5_START: new Date('2025-10-01T00:00:00Z'),
-  PHASE_6_START: new Date('2025-11-01T00:00:00Z'),
+  // 🚀 프로젝트 시작점
+  LAUNCH_DATE: new Date('2025-05-27T10:00:00Z'),
+  
+  // 🌌 Genesis OG 스냅샷
+  OG_SNAPSHOT: new Date('2025-05-28T10:00:00Z'),
+  
+  // 📊 Phase 1: 런칭부터 첫 번째 스냅샷까지
+  PHASE_1_END: new Date('2025-06-27T09:59:59Z'),
+  
+  // 📊 Phase 2: 두 번째 스테이킹 기간
+  PHASE_2_START: new Date('2025-06-27T10:00:00Z'),
+  PHASE_2_END: new Date('2025-07-27T09:59:59Z'),
+  
+  // 📊 Phase 3: 세 번째 스테이킹 기간
+  PHASE_3_START: new Date('2025-07-27T10:00:00Z'),
+  PHASE_3_END: new Date('2025-08-27T09:59:59Z'),
+  
+  // 📊 Phase 4: 네 번째 스테이킹 기간
+  PHASE_4_START: new Date('2025-08-27T10:00:00Z'),
+  PHASE_4_END: new Date('2025-09-27T09:59:59Z'),
+  
+  // 📊 Phase 5: 다섯 번째 스테이킹 기간
+  PHASE_5_START: new Date('2025-09-27T10:00:00Z'),
+  PHASE_5_END: new Date('2025-10-27T09:59:59Z'),
+  
+  // 📊 Phase 6: 마지막 스테이킹 기간
+  PHASE_6_START: new Date('2025-10-27T10:00:00Z'),
+  PHASE_6_END: new Date('2025-11-27T09:59:59Z'),
+  
+  // 💰 토큰 릴리즈 베스팅 기간 (6개월)
+  TOKEN_RELEASE_START: new Date('2025-12-07T00:00:00Z'),
+  TOKEN_RELEASE_END: new Date('2026-05-06T00:00:00Z'),
+  VESTING_DURATION_DAYS: 151, // 약 6개월
 };
 
 // 카운트다운 훅

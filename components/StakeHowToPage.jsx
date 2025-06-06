@@ -442,26 +442,24 @@ Time mastery = Ultimate rewards!`,
         </div>
       </div>
 
-      {/* Small Investor Path Modal - 수정된 부분 */}
+      {/* Small Investor Path Modal */}
       {showSmallInvestorPath && (
         <>
-          {/* 수정된 모달 배경 - z-index 및 패딩 조정 */}
           <div 
             className="fixed inset-0 bg-black/90 backdrop-blur-sm"
             style={{ 
-              zIndex: 200, // 상단바(100)보다 높게
-              paddingTop: typeof window !== 'undefined' && window.innerWidth < 768 ? '80px' : '70px', // 모바일/PC 상단바 높이 고려
+              zIndex: 200,
+              paddingTop: typeof window !== 'undefined' && window.innerWidth < 768 ? '80px' : '70px',
               paddingBottom: '20px'
             }}
             onClick={() => setShowSmallInvestorPath(false)}
           />
           
-          {/* 수정된 모달 컨텐츠 */}
           <div 
             className="fixed inset-0 flex items-start justify-center p-4 overflow-y-auto"
             style={{ 
-              zIndex: 201, // 배경보다 높게
-              paddingTop: typeof window !== 'undefined' && window.innerWidth < 768 ? '90px' : '80px', // 상단바 + 여백
+              zIndex: 201,
+              paddingTop: typeof window !== 'undefined' && window.innerWidth < 768 ? '90px' : '80px',
               paddingBottom: '30px',
               pointerEvents: 'none'
             }}
@@ -470,19 +468,18 @@ Time mastery = Ultimate rewards!`,
               className="bg-gradient-to-br from-gray-900 to-black border-2 border-emerald-500/50 rounded-3xl max-w-6xl w-full max-h-none overflow-y-auto"
               style={{ 
                 pointerEvents: 'auto',
-                maxHeight: typeof window !== 'undefined' && window.innerWidth < 768 ? 'calc(100vh - 120px)' : 'calc(100vh - 110px)' // 동적 최대 높이
+                maxHeight: typeof window !== 'undefined' && window.innerWidth < 768 ? 'calc(100vh - 120px)' : 'calc(100vh - 110px)'
               }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-8">
-                {/* 수정된 헤더 - 닫기 버튼 위치 조정 */}
                 <div className="flex justify-between items-start mb-8">
                   <h2 className="text-4xl font-black text-emerald-400">🌱 Small Investor Dream Path</h2>
                   <button
                     onClick={() => setShowSmallInvestorPath(false)}
                     className="text-4xl text-gray-400 hover:text-white transition-colors flex-shrink-0 ml-4"
                     style={{
-                      minWidth: '44px', // 터치 영역 보장
+                      minWidth: '44px',
                       minHeight: '44px',
                       display: 'flex',
                       alignItems: 'center',
@@ -572,26 +569,24 @@ Time mastery = Ultimate rewards!`,
         </>
       )}
 
-      {/* Phase Strategy Modal - 수정된 부분 */}
+      {/* Phase Strategy Modal */}
       {showPhaseStrategy && (
         <>
-          {/* 수정된 모달 배경 - z-index 및 패딩 조정 */}
           <div 
             className="fixed inset-0 bg-black/90 backdrop-blur-sm"
             style={{ 
-              zIndex: 200, // 상단바(100)보다 높게
-              paddingTop: typeof window !== 'undefined' && window.innerWidth < 768 ? '80px' : '70px', // 모바일/PC 상단바 높이 고려
+              zIndex: 200,
+              paddingTop: typeof window !== 'undefined' && window.innerWidth < 768 ? '80px' : '70px',
               paddingBottom: '20px'
             }}
             onClick={() => setShowPhaseStrategy(false)}
           />
           
-          {/* 수정된 모달 컨텐츠 */}
           <div 
             className="fixed inset-0 flex items-start justify-center p-4 overflow-y-auto"
             style={{ 
-              zIndex: 201, // 배경보다 높게
-              paddingTop: typeof window !== 'undefined' && window.innerWidth < 768 ? '90px' : '80px', // 상단바 + 여백
+              zIndex: 201,
+              paddingTop: typeof window !== 'undefined' && window.innerWidth < 768 ? '90px' : '80px',
               paddingBottom: '30px',
               pointerEvents: 'none'
             }}
@@ -600,19 +595,18 @@ Time mastery = Ultimate rewards!`,
               className="bg-gradient-to-br from-gray-900 to-black border-2 border-orange-500/50 rounded-3xl max-w-6xl w-full max-h-none overflow-y-auto"
               style={{ 
                 pointerEvents: 'auto',
-                maxHeight: typeof window !== 'undefined' && window.innerWidth < 768 ? 'calc(100vh - 120px)' : 'calc(100vh - 110px)' // 동적 최대 높이
+                maxHeight: typeof window !== 'undefined' && window.innerWidth < 768 ? 'calc(100vh - 120px)' : 'calc(100vh - 110px)'
               }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-8">
-                {/* 수정된 헤더 - 닫기 버튼 위치 조정 */}
                 <div className="flex justify-between items-start mb-8">
                   <h2 className="text-4xl font-black text-orange-400">📈 Phase Transition Strategy</h2>
                   <button
                     onClick={() => setShowPhaseStrategy(false)}
                     className="text-4xl text-gray-400 hover:text-white transition-colors flex-shrink-0 ml-4"
                     style={{
-                      minWidth: '44px', // 터치 영역 보장
+                      minWidth: '44px',
                       minHeight: '44px',
                       display: 'flex',
                       alignItems: 'center',
@@ -809,20 +803,15 @@ Time mastery = Ultimate rewards!`,
                           </div>
                         </div>
 
-                        {/* Evolution Number */}
-                        <div 
-                          className={`
-                            absolute -top-6 -left-6 w-16 h-16 rounded-full
-                            flex items-center justify-center font-black text-white text-xl
-                            shadow-lg border-4 border-gray-900
-                          `}
-                          style={{ backgroundColor: step.symbolColor }}
-                        >
-                          {isSpecial ? '🌌' : index + 1}
-                        </div>
+                        {/* 🎯 왼쪽 상단 원형 숫자 완전 제거 - 이 부분을 주석처리 또는 삭제 */}
+                        {/* Evolution Number - REMOVED */}
 
-                        {/* Tier Info Overlay */}
-                        <div className="absolute top-4 right-4 bg-black/70 rounded-lg p-3 backdrop-blur-sm">
+                        {/* 🎯 오른쪽 상단 티어 정보 박스 - 20% 축소 */}
+                        <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-black/70 rounded-lg backdrop-blur-sm"
+                             style={{
+                               padding: typeof window !== 'undefined' && window.innerWidth < 768 ? '8px' : '12px', // 모바일: 8px, 데스크톱: 12px (원래 15px에서 축소)
+                               transform: typeof window !== 'undefined' && window.innerWidth < 768 ? 'scale(0.8)' : 'scale(1)' // 모바일에서 추가로 20% 축소
+                             }}>
                           <div className="text-center">
                             <div className="text-xs text-gray-400 mb-1">Tier</div>
                             <div className="text-sm font-bold" style={{ color: step.symbolColor }}>
