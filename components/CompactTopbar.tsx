@@ -1,4 +1,4 @@
-// 📁 components/CompactTopbar.tsx - 새 파일로 생성하세요!
+// 📁 components/CompactTopbar.tsx - 개선된 버전
 
 import React, { useState, useEffect } from 'react';
 import { ConnectButton } from "@rainbow-me/rainbowkit";
@@ -48,7 +48,7 @@ function useCountdown(targetDate: Date) {
   return timeLeft;
 }
 
-// 🆕 CompactTopbar 컴포넌트
+// 🆕 개선된 CompactTopbar 컴포넌트
 interface CompactTopbarProps {
   isMobile: boolean;
   onMobileMenuToggle: () => void;
@@ -68,7 +68,7 @@ const CompactTopbar: React.FC<CompactTopbarProps> = ({
 
   return (
     <>
-      {/* 🎨 컴팩트 상단바 스타일 */}
+      {/* 🎨 개선된 컴팩트 상단바 스타일 */}
       <style jsx>{`
         .compact-topbar {
           position: fixed;
@@ -81,7 +81,7 @@ const CompactTopbar: React.FC<CompactTopbarProps> = ({
           border-bottom: 1px solid rgba(255, 255, 255, 0.08);
           z-index: 100;
           display: flex;
-          align-items: ${isMobile ? 'stretch' : 'center'};
+          align-items: ${isMobile ? 'center' : 'center'};
           justify-content: space-between;
           padding: 0 ${isMobile ? '16px' : '32px'};
         }
@@ -92,12 +92,13 @@ const CompactTopbar: React.FC<CompactTopbarProps> = ({
           flex: 0 0 auto;
         }
 
+        /* 🎯 개선된 로고 스타일 - 앤틱 골드 맥박 + 링 */
         .logo-circle {
-          width: 36px;
-          height: 36px;
+          width: ${isMobile ? '48px' : '36px'};
+          height: ${isMobile ? '48px' : '36px'};
           border-radius: 50%;
-          background: linear-gradient(135deg, #4ade80, #22c55e);
-          border: 2px solid rgba(74, 222, 128, 0.3);
+          background: linear-gradient(135deg, #b8860b, #d4af37);
+          border: 2px solid rgba(184, 134, 11, 0.4);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -105,41 +106,87 @@ const CompactTopbar: React.FC<CompactTopbarProps> = ({
           position: relative;
           overflow: hidden;
           transition: all 0.3s ease;
+          animation: logoPulse 2s infinite;
         }
 
         .logo-circle:hover {
           transform: scale(1.05);
-          border-color: rgba(74, 222, 128, 0.6);
-          box-shadow: 0 0 20px rgba(74, 222, 128, 0.4);
+          box-shadow: 0 8px 25px rgba(184, 134, 11, 0.4);
         }
 
+        .logo-circle:active {
+          transform: scale(0.95);
+        }
+
+        /* 맥박 링 효과 - 앤틱 골드 */
         .logo-circle::after {
           content: '';
           position: absolute;
-          top: -2px;
-          left: -2px;
-          right: -2px;
-          bottom: -2px;
-          border: 2px solid rgba(74, 222, 128, 0.4);
+          inset: -4px;
+          border: 2px solid rgba(184, 134, 11, 0.3);
           border-radius: 50%;
-          animation: pulse-ring 2s infinite;
+          animation: pulseRing 2s infinite;
+          pointer-events: none;
         }
 
-        @keyframes pulse-ring {
+        /* 로고 이미지 스타일 */
+        .logo-image {
+          width: 100%;
+          height: 100%;
+          background-image: url('/images/logo.png');
+          background-size: cover;
+          background-position: center;
+          background-repeat: no-repeat;
+          border-radius: 50%;
+          filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+          z-index: 1;
+        }
+
+        /* 로고 이미지 로딩 실패시 백업 */
+        .logo-image-fallback {
+          font-size: ${isMobile ? '20px' : '16px'};
+          filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+          z-index: 1;
+          color: white;
+          font-weight: bold;
+        }
+
+        /* MENU 라벨 */
+        .menu-label {
+          position: absolute;
+          bottom: -18px;
+          left: 50%;
+          transform: translateX(-50%);
+          font-size: 9px;
+          color: rgba(255,255,255,0.6);
+          font-weight: 600;
+          letter-spacing: 0.5px;
+          white-space: nowrap;
+          opacity: 0.8;
+          display: ${isMobile ? 'block' : 'none'};
+        }
+
+        /* 맥박 애니메이션 - 앤틱 골드 */
+        @keyframes logoPulse {
+          0%, 100% { 
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(184, 134, 11, 0.4);
+          }
+          50% { 
+            transform: scale(1.02);
+            box-shadow: 0 0 0 10px rgba(184, 134, 11, 0);
+          }
+        }
+
+        @keyframes pulseRing {
           0% {
             transform: scale(1);
             opacity: 1;
           }
           100% {
-            transform: scale(1.3);
+            transform: scale(1.4);
             opacity: 0;
           }
-        }
-
-        .logo-emoji {
-          font-size: 16px;
-          filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
-          z-index: 1;
         }
 
         .phase-section {
@@ -250,66 +297,117 @@ const CompactTopbar: React.FC<CompactTopbarProps> = ({
           display: flex;
           align-items: center;
           flex: 0 0 auto;
+          position: relative;
         }
 
         .wallet-section .connect-button {
           display: ${isMobile ? 'none' : 'block'};
         }
 
+        /* 🎯 개선된 지갑 아바타 - 로고와 동일한 테두리 두께 */
         .wallet-avatar {
-          width: 36px;
-          height: 36px;
+          width: ${isMobile ? '48px' : '36px'};
+          height: ${isMobile ? '48px' : '36px'};
           border-radius: 50%;
-          background: rgba(156, 163, 175, 0.15);
-          border: 1px solid rgba(156, 163, 175, 0.3);
+          background: rgba(107, 114, 128, 0.1);
+          border: 2px solid rgba(107, 114, 128, 0.3);
           display: ${isMobile ? 'flex' : 'none'};
           align-items: center;
           justify-content: center;
           cursor: pointer;
           transition: all 0.2s;
+          position: relative;
         }
 
         .wallet-avatar:hover {
-          background: rgba(156, 163, 175, 0.25);
-          border-color: rgba(156, 163, 175, 0.5);
+          background: rgba(107, 114, 128, 0.2);
+          border-color: rgba(107, 114, 128, 0.5);
           transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(107, 114, 128, 0.2);
         }
 
-        .user-icon {
-          width: 18px;
-          height: 18px;
-          position: relative;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 2px;
+        .wallet-avatar:active {
+          transform: scale(0.95);
         }
 
-        .user-icon::before,
-        .user-icon::after {
-          content: '';
-          background: #9ca3af;
-          border-radius: 50%;
+        /* 연결됨 상태 스타일 - 회색 유지, 이모티콘 제거 */
+        .wallet-avatar.connected {
+          background: rgba(107, 114, 128, 0.15);
+          border: 2px solid rgba(107, 114, 128, 0.4);
+          box-shadow: 0 0 8px rgba(107, 114, 128, 0.2);
         }
 
-        .user-icon::before {
-          width: 8px;
-          height: 8px;
+        .wallet-avatar.connected:hover {
+          background: rgba(107, 114, 128, 0.25);
+          border-color: rgba(107, 114, 128, 0.6);
+          box-shadow: 0 0 12px rgba(107, 114, 128, 0.3);
         }
 
-        .user-icon::after {
+        /* 지갑 아이콘 */
+        .wallet-icon {
+          width: ${isMobile ? '24px' : '18px'};
+          height: ${isMobile ? '24px' : '18px'};
+          color: #6b7280;
+          font-size: ${isMobile ? '20px' : '16px'};
+          transition: all 0.2s;
+        }
+
+        .wallet-avatar.connected .wallet-icon {
+          color: #6b7280;
+          filter: none;
+        }
+
+        /* 연결 상태 인디케이터 - 회색 톤 */
+        .connection-indicator {
+          position: absolute;
+          top: -2px;
+          right: -2px;
           width: 12px;
-          height: 8px;
-          border-radius: 12px 12px 0 0;
+          height: 12px;
+          border-radius: 50%;
+          background: #6b7280;
+          border: 2px solid #0a0a0a;
+          animation: connectionPulse 2s infinite;
+        }
+
+        @keyframes connectionPulse {
+          0%, 100% { 
+            box-shadow: 0 0 0 0 rgba(107, 114, 128, 0.4);
+          }
+          50% { 
+            box-shadow: 0 0 0 4px rgba(107, 114, 128, 0);
+          }
         }
       `}</style>
 
       {/* 🏗️ 컴팩트 상단 고정바 구조 */}
       <div className="compact-topbar">
-        {/* 1. 로고 섹션 (모바일만) */}
+        {/* 1. 개선된 로고 섹션 (모바일만) */}
         <div className="logo-section">
           <div className="logo-circle" onClick={onMobileMenuToggle}>
-            <span className="logo-emoji">🥩</span>
+            <div 
+              className="logo-image"
+              onError={(e) => {
+                // 이미지 로딩 실패시 백업 표시
+                const target = e.currentTarget as HTMLDivElement;
+                const nextEl = target.nextElementSibling as HTMLDivElement;
+                target.style.display = 'none';
+                if (nextEl) nextEl.style.display = 'flex';
+              }}
+            />
+            <div 
+              className="logo-image-fallback" 
+              style={{ 
+                display: 'none', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                width: '100%', 
+                height: '100%' 
+              }}
+            >
+              🥩
+            </div>
+            <div className="menu-label">MENU</div>
           </div>
         </div>
 
@@ -359,7 +457,7 @@ const CompactTopbar: React.FC<CompactTopbarProps> = ({
           </div>
         </div>
 
-        {/* 3. 지갑 섹션 */}
+        {/* 3. 개선된 지갑 섹션 */}
         <div className="wallet-section">
           {/* PC용 연결 버튼 */}
           <div className="connect-button">
@@ -371,7 +469,7 @@ const CompactTopbar: React.FC<CompactTopbarProps> = ({
             />
           </div>
           
-          {/* 모바일용 아바타 버튼 */}
+          {/* 모바일용 개선된 아바타 버튼 */}
           <div className="wallet-avatar">
             <ConnectButton.Custom>
               {({ account, chain, openAccountModal, openChainModal, openConnectModal, mounted }) => {
@@ -380,6 +478,7 @@ const CompactTopbar: React.FC<CompactTopbarProps> = ({
 
                 return (
                   <div
+                    className={connected ? 'connected' : ''}
                     onClick={connected ? openAccountModal : openConnectModal}
                     style={{ 
                       cursor: 'pointer', 
@@ -387,26 +486,14 @@ const CompactTopbar: React.FC<CompactTopbarProps> = ({
                       height: '100%', 
                       display: 'flex', 
                       alignItems: 'center', 
-                      justifyContent: 'center' 
+                      justifyContent: 'center',
+                      position: 'relative'
                     }}
                   >
-                    {connected ? (
-                      <div style={{
-                        width: '20px',
-                        height: '20px',
-                        borderRadius: '50%',
-                        background: 'linear-gradient(135deg, #4ade80, #22c55e)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '10px',
-                        fontWeight: 'bold'
-                      }}>
-                        💰
-                      </div>
-                    ) : (
-                      <div className="user-icon" />
-                    )}
+                    <div className="wallet-icon">
+                      👤
+                    </div>
+                    {connected && <div className="connection-indicator" />}
                   </div>
                 );
               }}

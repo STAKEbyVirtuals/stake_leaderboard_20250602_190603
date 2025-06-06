@@ -442,52 +442,28 @@ Time mastery = Ultimate rewards!`,
         </div>
       </div>
 
-      {/* Small Investor Path Modal - 수정된 부분 */}
+      {/* Small Investor Path Modal */}
       {showSmallInvestorPath && (
         <>
-          {/* 수정된 모달 배경 - z-index 및 패딩 조정 */}
+          {/* 모달 배경 - 하단 네비게이션 영역 제외 */}
           <div 
-            className="fixed inset-0 bg-black/90 backdrop-blur-sm"
-            style={{ 
-              zIndex: 200, // 상단바(100)보다 높게
-              paddingTop: typeof window !== 'undefined' && window.innerWidth < 768 ? '80px' : '70px', // 모바일/PC 상단바 높이 고려
-              paddingBottom: '20px'
-            }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-40"
+            style={{ paddingBottom: '100px' }}
             onClick={() => setShowSmallInvestorPath(false)}
           />
-          
-          {/* 수정된 모달 컨텐츠 */}
-          <div 
-            className="fixed inset-0 flex items-start justify-center p-4 overflow-y-auto"
-            style={{ 
-              zIndex: 201, // 배경보다 높게
-              paddingTop: typeof window !== 'undefined' && window.innerWidth < 768 ? '90px' : '80px', // 상단바 + 여백
-              paddingBottom: '30px',
-              pointerEvents: 'none'
-            }}
-          >
+          {/* 모달 컨텐츠 */}
+          <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ paddingBottom: '100px', pointerEvents: 'none' }}>
             <div 
-              className="bg-gradient-to-br from-gray-900 to-black border-2 border-emerald-500/50 rounded-3xl max-w-6xl w-full max-h-none overflow-y-auto"
-              style={{ 
-                pointerEvents: 'auto',
-                maxHeight: typeof window !== 'undefined' && window.innerWidth < 768 ? 'calc(100vh - 120px)' : 'calc(100vh - 110px)' // 동적 최대 높이
-              }}
+              className="bg-gradient-to-br from-gray-900 to-black border-2 border-emerald-500/50 rounded-3xl max-w-6xl w-full max-h-[90vh] overflow-y-auto"
+              style={{ pointerEvents: 'auto' }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-8">
-                {/* 수정된 헤더 - 닫기 버튼 위치 조정 */}
-                <div className="flex justify-between items-start mb-8">
+                <div className="flex justify-between items-center mb-8">
                   <h2 className="text-4xl font-black text-emerald-400">🌱 Small Investor Dream Path</h2>
                   <button
                     onClick={() => setShowSmallInvestorPath(false)}
-                    className="text-4xl text-gray-400 hover:text-white transition-colors flex-shrink-0 ml-4"
-                    style={{
-                      minWidth: '44px', // 터치 영역 보장
-                      minHeight: '44px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
+                    className="text-4xl text-gray-400 hover:text-white transition-colors"
                   >
                     ×
                   </button>
@@ -572,52 +548,28 @@ Time mastery = Ultimate rewards!`,
         </>
       )}
 
-      {/* Phase Strategy Modal - 수정된 부분 */}
+      {/* Phase Strategy Modal */}
       {showPhaseStrategy && (
         <>
-          {/* 수정된 모달 배경 - z-index 및 패딩 조정 */}
+          {/* 모달 배경 - 하단 네비게이션 영역 제외 */}
           <div 
-            className="fixed inset-0 bg-black/90 backdrop-blur-sm"
-            style={{ 
-              zIndex: 200, // 상단바(100)보다 높게
-              paddingTop: typeof window !== 'undefined' && window.innerWidth < 768 ? '80px' : '70px', // 모바일/PC 상단바 높이 고려
-              paddingBottom: '20px'
-            }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-40"
+            style={{ paddingBottom: '100px' }}
             onClick={() => setShowPhaseStrategy(false)}
           />
-          
-          {/* 수정된 모달 컨텐츠 */}
-          <div 
-            className="fixed inset-0 flex items-start justify-center p-4 overflow-y-auto"
-            style={{ 
-              zIndex: 201, // 배경보다 높게
-              paddingTop: typeof window !== 'undefined' && window.innerWidth < 768 ? '90px' : '80px', // 상단바 + 여백
-              paddingBottom: '30px',
-              pointerEvents: 'none'
-            }}
-          >
+          {/* 모달 컨텐츠 */}
+          <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ paddingBottom: '100px', pointerEvents: 'none' }}>
             <div 
-              className="bg-gradient-to-br from-gray-900 to-black border-2 border-orange-500/50 rounded-3xl max-w-6xl w-full max-h-none overflow-y-auto"
-              style={{ 
-                pointerEvents: 'auto',
-                maxHeight: typeof window !== 'undefined' && window.innerWidth < 768 ? 'calc(100vh - 120px)' : 'calc(100vh - 110px)' // 동적 최대 높이
-              }}
+              className="bg-gradient-to-br from-gray-900 to-black border-2 border-orange-500/50 rounded-3xl max-w-6xl w-full max-h-[90vh] overflow-y-auto"
+              style={{ pointerEvents: 'auto' }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-8">
-                {/* 수정된 헤더 - 닫기 버튼 위치 조정 */}
-                <div className="flex justify-between items-start mb-8">
+                <div className="flex justify-between items-center mb-8">
                   <h2 className="text-4xl font-black text-orange-400">📈 Phase Transition Strategy</h2>
                   <button
                     onClick={() => setShowPhaseStrategy(false)}
-                    className="text-4xl text-gray-400 hover:text-white transition-colors flex-shrink-0 ml-4"
-                    style={{
-                      minWidth: '44px', // 터치 영역 보장
-                      minHeight: '44px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
+                    className="text-4xl text-gray-400 hover:text-white transition-colors"
                   >
                     ×
                   </button>
