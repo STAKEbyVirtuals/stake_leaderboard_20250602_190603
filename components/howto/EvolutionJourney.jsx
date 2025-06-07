@@ -1,4 +1,4 @@
-// components/howto/EvolutionJourney.jsx - 지갑 주소 포함 + 구글폼 연결
+// components/howto/EvolutionJourney.jsx - 자동 트윗 제거, 모달만 열기
 import React, { useState, useEffect } from 'react';
 import { EVOLUTION_STEPS } from '../../data/evolutionData';
 import { getAccentColorClasses, getTierEmoji, getTierImage } from '../../utils/colorUtils';
@@ -82,31 +82,15 @@ const EvolutionJourney = () => {
     }
   };
 
-  // 🔧 수정된 트윗 함수 - 지갑 주소 포함
-  const handleShareOnX = () => {
+  // 🔧 수정된 함수 - 트윗 없이 모달만 열기
+  const handleOpenEventModal = () => {
     if (!walletAddress) {
       alert('Please connect your wallet first to participate in the event!');
       return;
     }
 
-    // 🆕 지갑 주소 포함된 트윗 템플릿 (더 짧게)
-    const tweetText = encodeURIComponent(
-      `🔥 STAKE Evolution Complete! 🚀\n\n` +
-      `✅ All 8 tiers mastered\n` +
-      `💰 50K stSTAKE earned!\n\n` +
-      `🔗 ${walletAddress}\n\n` +
-      `#STAKEEvolution #Web3Gaming`
-    );
-    
-    const tweetUrl = `https://twitter.com/intent/tweet?text=${tweetText}`;
-    
-    // X에서 트윗 작성 페이지 열기
-    window.open(tweetUrl, '_blank');
-    
-    // 🆕 트윗 후 구글폼 모달 표시
-    setTimeout(() => {
-      setShowTweetModal(true);
-    }, 2000); // 2초 후 모달 표시 (트윗 작성 시간 고려)
+    // 🆕 모달만 열기 (트윗은 나중에 증명서 버튼에서)
+    setShowTweetModal(true);
   };
 
   const progressPercentage = ((completedSteps.size) / EVOLUTION_STEPS.length) * 100;
@@ -168,7 +152,7 @@ const EvolutionJourney = () => {
             </div>
           </div>
 
-          {/* 🔧 수정된 버튼 - 지갑 연결 체크 포함 */}
+          {/* 🔧 수정된 버튼 - 모달만 열기 */}
           {completedSteps.size === EVOLUTION_STEPS.length && (
             <div className="space-y-4">
               {/* 지갑 연결 안내 */}
@@ -184,7 +168,7 @@ const EvolutionJourney = () => {
               )}
               
               <button 
-                onClick={handleShareOnX}
+                onClick={handleOpenEventModal}
                 disabled={!walletAddress}
                 className={`
                   text-white font-bold py-4 px-8 rounded-2xl text-xl transition-all duration-300 shadow-lg
@@ -195,7 +179,7 @@ const EvolutionJourney = () => {
                 `}
               >
                 {walletAddress ? (
-                  <>🐦 Share on X & Claim 50K stSTAKE!</>
+                  <>🎨 Create Certificate & Share!</>
                 ) : (
                   <>🔒 Connect Wallet to Participate</>
                 )}
@@ -240,7 +224,7 @@ const EvolutionJourney = () => {
                   bg-gradient-to-br ${step.bgGradient} backdrop-blur-xl
                   border-2 ${step.borderColor} rounded-3xl overflow-hidden
                   ${isActive ? `ring-4 ${accentColors.ring}/30 shadow-2xl` : ''}
-                  ${isCompleted ? 'ring-4 ring-green-500/50 shadow-2xl shadow-green-500/20' : ''}
+                  ${isCompleted ? 'ring-4 ring-green-500/50 shadow-2xl' : ''}
                   ${isSpecial ? 'ring-4 ring-emerald-500/50 shadow-2xl shadow-emerald-500/20' : ''}
                   transition-all duration-700
                 `}>
@@ -426,11 +410,11 @@ const EvolutionJourney = () => {
                 EVOLUTION COMPLETE!
               </h2>
               <p className="text-2xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
-                You've mastered all 8 tiers! Now share your achievement on X to claim your <span className="text-orange-400 font-bold">50,000 stSTAKE</span> reward!
+                You've mastered all 8 tiers! Now create your personalized certificate and share your achievement to claim your <span className="text-orange-400 font-bold">50,000 stSTAKE</span> reward!
               </p>
               
               <button 
-                onClick={handleShareOnX}
+                onClick={handleOpenEventModal}
                 disabled={!walletAddress}
                 className={`
                   text-white font-bold py-6 px-12 rounded-2xl transition-all duration-300 shadow-lg text-2xl
@@ -441,7 +425,7 @@ const EvolutionJourney = () => {
                 `}
               >
                 {walletAddress ? (
-                  <>🐦 Share Achievement & Claim Reward</>
+                  <>🎨 Create Your Certificate</>
                 ) : (
                   <>🔒 Connect Wallet First</>
                 )}

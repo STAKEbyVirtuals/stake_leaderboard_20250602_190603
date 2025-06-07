@@ -1,180 +1,214 @@
-// components/CompletionCertificate.jsx - 홍보 이미지 + 오버레이 방식
 import React, { useRef, useState, useEffect } from 'react';
 
 const CompletionCertificate = ({ walletAddress, onImageReady }) => {
   const canvasRef = useRef(null);
   const [baseImageLoaded, setBaseImageLoaded] = useState(false);
   const [baseImage, setBaseImage] = useState(null);
+  const [logoImage, setLogoImage] = useState(null);
+  const [certificateReady, setCertificateReady] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
-  // 🖼️ 베이스 이미지 로드
   useEffect(() => {
+    const checkMobile = () => {
+      const userAgent = navigator.userAgent;
+      const mobilePattern = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+      setIsMobile(window.innerWidth < 768 || mobilePattern.test(userAgent));
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  useEffect(() => {
+    let loadedCount = 0;
+    const totalImages = 2;
+
+    const checkAllLoaded = () => {
+      loadedCount++;
+      if (loadedCount >= totalImages) {
+        setCertificateReady(true);
+      }
+    };
+
     const img = new Image();
-    img.crossOrigin = 'anonymous'; // CORS 문제 방지
+    img.crossOrigin = 'anonymous';
     
     img.onload = () => {
+      console.log('베이스 이미지 로드 성공');
       setBaseImage(img);
       setBaseImageLoaded(true);
-      console.log('✅ STAKE GENESIS 원본 이미지 로드 성공!');
+      checkAllLoaded();
     };
     
     img.onerror = () => {
-      console.warn('❌ 원본 이미지 로드 실패, 폴백 디자인 사용');
+      console.warn('베이스 이미지 로드 실패');
       setBaseImageLoaded(false);
+      checkAllLoaded();
     };
     
-    // 🔧 실제 홍보 이미지 경로로 시도
-    img.src = '/images/stake-genesis-promo.jpg'; 
-    
-    // 2초 후에도 로드 안되면 폴백으로 전환
-    setTimeout(() => {
-      if (!baseImageLoaded) {
-        console.warn('⏰ 이미지 로드 타임아웃, 폴백 사용');
-        setBaseImageLoaded(false);
-      }
-    }, 2000);
-  }, []);
+    img.src = '/images/stake-genesis-promo.jpg';
 
-  // 🎨 증명서 이미지 생성 (오버레이 방식)
+    const logoImg = new Image();
+    logoImg.crossOrigin = 'anonymous';
+    
+    logoImg.onload = () => {
+      console.log('로고 이미지 로드 성공');
+      setLogoImage(logoImg);
+      checkAllLoaded();
+    };
+    
+    logoImg.onerror = () => {
+      console.warn('로고 이미지 로드 실패');
+      checkAllLoaded();
+    };
+    
+    logoImg.src = '/images/stake-token-logo.png';
+
+    setTimeout(() => {
+      if (!certificateReady) {
+        console.warn('이미지 로드 타임아웃');
+        setCertificateReady(true);
+      }
+    }, 5000);
+  }, [certificateReady]);
+
+  const roundRect = (ctx, x, y, width, height, radius) => {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+  };
+
   const generateCertificate = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     
-    // 캔버스 크기 설정 (Twitter 최적 비율 16:9)
-    canvas.width = 1200;
-    canvas.height = 675;
+    canvas.width = 1024;
+    canvas.height = 1600;
 
     if (baseImageLoaded && baseImage) {
-      // 🖼️ 베이스 이미지 그리기 (홍보 이미지)
-      ctx.drawImage(baseImage, 0, 0, 1200, 675);
+      console.log('홍보 이미지 적용 중');
+      ctx.drawImage(baseImage, 0, 64, 1024, 1536);
+      
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, 1024, 64);
     } else {
-      // 🎨 폴백: 깔끔한 STAKE 브랜드 디자인
-      const gradient = ctx.createLinearGradient(0, 0, 1200, 675);
+      console.log('폴백 디자인 적용 중');
+      
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, 1024, 64);
+      
+      const gradient = ctx.createLinearGradient(0, 64, 0, 1600);
       gradient.addColorStop(0, '#2c1810');
       gradient.addColorStop(0.5, '#8b4513');
       gradient.addColorStop(1, '#2c1810');
       ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, 1200, 675);
+      ctx.fillRect(0, 64, 1024, 1536);
 
-      // 메인 제목
       ctx.fillStyle = '#f97316';
-      ctx.font = 'bold 72px Arial';
+      ctx.font = 'bold 64px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('STAKE GENESIS', 600, 120);
+      ctx.fillText('STAKE GENESIS', 512, 264);
       
       ctx.fillStyle = '#fbbf24';
-      ctx.font = 'bold 36px Arial';
-      ctx.fillText('LeaderBoard OPEN', 600, 170);
-
-      // 장식 원들
-      const circles = [
-        {x: 200, y: 300, r: 40, color: '#4ade80'},
-        {x: 600, y: 350, r: 60, color: '#059669', stroke: '#f97316'},
-        {x: 1000, y: 300, r: 35, color: '#06b6d4'},
-        {x: 300, y: 500, r: 45, color: '#10b981'},
-        {x: 900, y: 500, r: 38, color: '#3b82f6'},
-        {x: 150, y: 150, r: 12, color: '#ff6b35'},
-        {x: 1050, y: 120, r: 15, color: '#dc2626'},
-        {x: 200, y: 600, r: 18, color: '#f97316'},
-        {x: 1000, y: 580, r: 14, color: '#ef4444'}
-      ];
-
-      circles.forEach(circle => {
-        ctx.fillStyle = circle.color;
-        ctx.beginPath();
-        ctx.arc(circle.x, circle.y, circle.r, 0, 2 * Math.PI);
-        ctx.fill();
-        
-        if (circle.stroke) {
-          ctx.strokeStyle = circle.stroke;
-          ctx.lineWidth = 4;
-          ctx.stroke();
-        }
-      });
+      ctx.font = 'bold 32px Arial';
+      ctx.fillText('LeaderBoard OPEN', 512, 324);
     }
 
-    // 🏷️ 상단 우측 완료 뱃지
-    const badgeX = 1050;
-    const badgeY = 60;
-    const badgeWidth = 140;
-    const badgeHeight = 70;
-    
-    // 뱃지 배경 (반투명)
-    ctx.fillStyle = 'rgba(249, 115, 22, 0.95)';
-    ctx.roundRect(badgeX - badgeWidth/2, badgeY - badgeHeight/2, badgeWidth, badgeHeight, 10);
-    ctx.fill();
-    
-    // 뱃지 테두리
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    
-    // 뱃지 텍스트
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 16px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('✅ COMPLETED', badgeX, badgeY - 10);
-    ctx.font = 'bold 12px Arial';
-    ctx.fillText('All 8 Tiers', badgeX, badgeY + 8);
-
-    // 🏆 하단 오버레이 배경
-    const overlayGradient = ctx.createLinearGradient(0, 500, 0, 675);
+    const overlayGradient = ctx.createLinearGradient(0, 1250, 0, 1600);
     overlayGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
-    overlayGradient.addColorStop(0.3, 'rgba(0, 0, 0, 0.7)');
-    overlayGradient.addColorStop(1, 'rgba(0, 0, 0, 0.9)');
+    overlayGradient.addColorStop(0.3, 'rgba(0, 0, 0, 0.8)');
+    overlayGradient.addColorStop(1, 'rgba(0, 0, 0, 0.95)');
     ctx.fillStyle = overlayGradient;
-    ctx.fillRect(0, 500, 1200, 175);
+    ctx.fillRect(0, 1250, 1024, 350);
 
-    // 🎖️ 완료 뱃지 (하단 좌측)
     ctx.fillStyle = 'rgba(16, 185, 129, 0.9)';
-    ctx.roundRect(40, 520, 300, 35, 18);
+    roundRect(ctx, 25, 1350, 320, 38, 19);
     ctx.fill();
     
     ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 18px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText('🏆 EVOLUTION COMPLETE', 35, 1374);
+
+    ctx.fillStyle = '#9ca3af';
     ctx.font = 'bold 16px Arial';
     ctx.textAlign = 'left';
-    ctx.fillText('🏆 EVOLUTION CHALLENGE COMPLETE', 55, 542);
-
-    // 💳 지갑 정보 (하단 좌측)
-    ctx.fillStyle = '#9ca3af';
-    ctx.font = '14px Arial';
-    ctx.fillText('Wallet Address:', 40, 580);
+    ctx.fillText('Wallet Address:', 25, 1405);
     
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 16px monospace';
-    const shortAddress = `${walletAddress.slice(0, 10)}...${walletAddress.slice(-8)}`;
-    ctx.fillText(shortAddress, 40, 600);
+    ctx.font = 'bold 18px monospace';
+    const walletStart = walletAddress.slice(0, 8);
+    const walletEnd = walletAddress.slice(-6);
+    const shortWallet = walletStart + '...' + walletEnd;
+    ctx.fillText(shortWallet, 25, 1425);
     
-    // 📅 완료 날짜
     ctx.fillStyle = '#6b7280';
-    ctx.font = '12px Arial';
-    const completionDate = new Date().toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-    ctx.fillText(`Completed: ${completionDate}`, 40, 620);
+    ctx.font = 'bold 14px Arial';
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.toLocaleDateString('en-US', { month: 'long' });
+    const day = today.getDate();
+    const dateText = 'Completed: ' + month + ' ' + day + ', ' + year;
+    ctx.fillText(dateText, 25, 1444);
 
-    // 💰 보상 정보 (하단 우측)
     ctx.fillStyle = '#f59e0b';
-    ctx.font = 'bold 36px Arial';
+    ctx.font = 'bold 42px Arial';
     ctx.textAlign = 'right';
-    ctx.fillText('50,000', 1160, 585);
+    ctx.fillText('50,000', 989, 1375);
     
     ctx.fillStyle = '#fbbf24';
-    ctx.font = 'bold 18px Arial';
-    ctx.fillText('stSTAKE', 1160, 605);
+    ctx.font = 'bold 22px Arial';
+    ctx.fillText('stSTAKE', 989, 1398);
     
     ctx.fillStyle = '#9ca3af';
-    ctx.font = '12px Arial';
-    ctx.fillText('REWARD', 1160, 620);
-
-    // 🏷️ 해시태그 (하단 중앙)
-    ctx.fillStyle = '#3b82f6';
     ctx.font = 'bold 14px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('#STAKEEvolution #Web3Gaming', 600, 650);
+    ctx.fillText('REWARD', 989, 1416);
 
-    // 이미지를 Base64로 변환하여 반환
+    const brandingX = 800;
+    const brandingY = 1440;
+    const certLogoSize = 22;
+    
+    if (logoImage) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(brandingX, brandingY, certLogoSize, 0, 2 * Math.PI);
+      ctx.clip();
+      ctx.drawImage(logoImage, brandingX - certLogoSize, brandingY - certLogoSize, certLogoSize * 2, certLogoSize * 2);
+      ctx.restore();
+      
+      ctx.strokeStyle = '#f97316';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(brandingX, brandingY, certLogoSize, 0, 2 * Math.PI);
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = '#f97316';
+      ctx.beginPath();
+      ctx.arc(brandingX, brandingY, certLogoSize, 0, 2 * Math.PI);
+      ctx.fill();
+      
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 16px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('$', brandingX, brandingY + 6);
+    }
+    
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 18px Arial';
+    ctx.textAlign = 'left';
+    const textX = brandingX + certLogoSize + 10;
+    const textY = brandingY + 6;
+    ctx.fillText('STAKE by Virtuals', textX, textY);
+
     const imageDataUrl = canvas.toDataURL('image/png', 0.9);
     if (onImageReady) {
       onImageReady(imageDataUrl);
@@ -183,34 +217,42 @@ const CompletionCertificate = ({ walletAddress, onImageReady }) => {
     return imageDataUrl;
   };
 
-  // Canvas roundRect 폴리필 (구형 브라우저 대응)
-  if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
-    CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, radius) {
-      this.beginPath();
-      this.moveTo(x + radius, y);
-      this.lineTo(x + width - radius, y);
-      this.quadraticCurveTo(x + width, y, x + width, y + radius);
-      this.lineTo(x + width, y + height - radius);
-      this.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-      this.lineTo(x + radius, y + height);
-      this.quadraticCurveTo(x, y + height, x, y + height - radius);
-      this.lineTo(x, y + radius);
-      this.quadraticCurveTo(x, y, x + radius, y);
-      this.closePath();
-    };
-  }
-
-  // 다운로드 함수
-  const downloadCertificate = () => {
-    const imageDataUrl = generateCertificate();
-    const link = document.createElement('a');
-    link.download = `STAKE-Evolution-Certificate-${Date.now()}.png`;
-    link.href = imageDataUrl;
-    link.click();
+  const openTwitterWithImage = () => {
+    const line1 = 'GO VIRGEN, YOUNG BOY —';
+    const line2 = '$STAKE AND BECOME GENESIS.';
+    const line3 = '';
+    const line4 = 'Join now — Earn your share of 50,000 stSTAKE!';
+    const line5 = '👉(사이트주소)';
+    const line6 = '🔗 ' + walletAddress;
+    const line7 = '';
+    const line8 = '@virtuals_io #STAKE';
+    
+    const tweetContent = line1 + '\n' + line2 + '\n' + line3 + '\n' + line4 + '\n' + line5 + '\n' + line6 + '\n' + line7 + '\n' + line8;
+    const tweetText = encodeURIComponent(tweetContent);
+    const tweetUrl = 'https://twitter.com/intent/tweet?text=' + tweetText;
+    window.open(tweetUrl, '_blank');
   };
 
-  // 클립보드 복사 (모바일 대응)
-  const copyCertificate = async () => {
+  const downloadAndTweet = () => {
+    const imageDataUrl = generateCertificate();
+    const link = document.createElement('a');
+    const timestamp = Date.now();
+    const filename = 'STAKE-Evolution-Certificate-' + timestamp + '.png';
+    link.download = filename;
+    link.href = imageDataUrl;
+    link.click();
+    
+    setTimeout(() => {
+      openTwitterWithImage();
+    }, 1000);
+  };
+
+  const copyAndTweet = async () => {
+    if (isMobile) {
+      downloadAndTweet();
+      return;
+    }
+
     try {
       const imageDataUrl = generateCertificate();
       const response = await fetch(imageDataUrl);
@@ -220,55 +262,88 @@ const CompletionCertificate = ({ walletAddress, onImageReady }) => {
         new ClipboardItem({ 'image/png': blob })
       ]);
       
-      alert('Certificate copied to clipboard! You can paste it in your tweet.');
+      alert('Certificate copied to clipboard! Now opening X...');
+      
+      setTimeout(() => {
+        openTwitterWithImage();
+      }, 500);
+      
     } catch (error) {
       console.error('Copy failed:', error);
-      downloadCertificate(); // 복사 실패시 다운로드로 대체
+      downloadAndTweet();
     }
   };
 
+  if (!certificateReady) {
+    return (
+      <div className="bg-gray-500/20 border-2 border-gray-500 rounded-xl p-4">
+        <h4 className="text-white font-bold mb-3 flex items-center gap-2">
+          ⏳ Generating Certificate...
+        </h4>
+        <div className="animate-pulse bg-gray-600/50 h-32 rounded"></div>
+      </div>
+    );
+  }
+
+  const statusText1 = baseImageLoaded ? 'Official STAKE GENESIS promotional image (1024×1600) with enhanced overlay and spacing!' : 'Custom STAKE branded design (1024×1600) with enhanced overlay and spacing!';
+  const statusText2 = baseImageLoaded ? 'Original promotional image applied!' : 'Fallback design active';
+
   return (
     <div className="space-y-4">
-      {/* 숨겨진 캔버스 */}
-      <canvas 
-        ref={canvasRef} 
-        className="hidden"
-      />
+      <canvas ref={canvasRef} className="hidden" />
       
-      {/* 미리보기 및 다운로드 버튼 - 강제 표시 */}
       <div className="bg-orange-500/20 border-2 border-orange-500 rounded-xl p-4">
         <h4 className="text-white font-bold mb-3 flex items-center gap-2">
-          🎨 Personalized Certificate
+          🎨 Share Your Achievement
         </h4>
         
         <p className="text-gray-300 text-sm mb-4">
-          Your completion certificate using the official STAKE GENESIS promotional image with personalized overlay!
+          ✅ {statusText1}
         </p>
         
-        <div className="flex gap-3 mb-3">
-          <button
-            onClick={downloadCertificate}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors text-sm"
-          >
-            📥 Download Certificate
-          </button>
-          
-          <button
-            onClick={copyCertificate}
-            className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors text-sm"
-          >
-            📋 Copy to Clipboard
-          </button>
+        <div className="space-y-3">
+          {isMobile ? (
+            <div className="space-y-3">
+              <button
+                onClick={downloadAndTweet}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-4 rounded-lg transition-colors text-base"
+              >
+                📱 Download & Open X App
+              </button>
+              <p className="text-xs text-gray-400 text-center">
+                📱 Mobile: Download → Open X app → Attach image → Tweet
+              </p>
+            </div>
+          ) : (
+            <div className="flex gap-3">
+              <button
+                onClick={downloadAndTweet}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors text-sm"
+              >
+                📥 Download & Tweet
+              </button>
+              
+              <button
+                onClick={copyAndTweet}
+                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors text-sm"
+              >
+                📋 Copy & Tweet
+              </button>
+            </div>
+          )}
         </div>
         
-        <div className="text-xs text-gray-400 space-y-1">
-          <p>💡 <strong>Features:</strong> STAKE GENESIS branding + your wallet address + completion date</p>
-          <p>📱 <strong>Tip:</strong> Copy to clipboard works great on mobile devices!</p>
-          <p>🎨 <strong>Status:</strong> Certificate generator ready!</p>
+        <div className="text-xs text-gray-400 space-y-1 mt-3">
+          <p>💡 <strong>Enhanced:</strong> Larger text + STAKE by Virtuals branding</p>
+          <p>🎨 <strong>Size:</strong> 1024×1600 (Enhanced vertical layout with proper spacing)</p>
+          <p>📐 <strong>Status:</strong> {statusText2}</p>
+          {isMobile && (
+            <p>📱 <strong>Mobile Note:</strong> Clipboard limitations - using download method</p>
+          )}
         </div>
       </div>
-  </div>
-  )
+    </div>
+  );
 };
 
 export default CompletionCertificate;
