@@ -14,6 +14,22 @@ export const getAccentColorClasses = (color) => {
   return colorMap[color] || colorMap.gray;
 };
 
+// 🆕 이미지 경로 함수 추가
+export const getTierImage = (stepId) => {
+  const imageMap = {
+    'virgen': '/images/character/virgen.png',
+    'sizzlin-noob': '/images/character/sizzlin-noob.png',
+    'flipstarter': '/images/character/flipstarter.png',
+    'flame-juggler': '/images/character/flame-juggler.png',
+    'grilluminati': '/images/character/grilluminati.png',
+    'stake-wizard': '/images/character/stake-wizard.png',
+    'heavy-eater': '/images/character/heavy-eater.png',
+    'genesis-og': '/images/character/genesis-og.png'
+  };
+  return imageMap[stepId] || '/images/character/default.png';
+};
+
+// 기존 이모지 함수 (백업용)
 export const getTierEmoji = (stepId) => {
   const emojiMap = {
     'virgen': '🐸',

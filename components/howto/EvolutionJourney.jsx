@@ -1,11 +1,76 @@
 // components/howto/EvolutionJourney.jsx
 import React, { useState, useEffect } from 'react';
 import { EVOLUTION_STEPS } from '../../data/evolutionData';
-import { getAccentColorClasses, getTierEmoji } from '../../utils/colorUtils';
+import { getAccentColorClasses, getTierEmoji, getTierImage } from '../../utils/colorUtils';
+
+// 🆕 TierImage 컴포넌트 - 이미지 가득 채우기
+const TierImage = ({ stepId }) => {
+  const [imageError, setImageError] = useState(false);
+  const imagePath = getTierImage(stepId);
+  const fallbackEmoji = getTierEmoji(stepId);
+
+  return (
+    // 🔧 w-32 h-32 제거하고 w-full h-full로 변경
+    <div className="w-full h-full flex items-center justify-center">
+      {!imageError ? (
+        <img
+          src={imagePath}
+          alt={stepId}
+          // 🔧 rounded-2xl shadow-lg 제거하여 박스에 딱 맞게
+          className="w-full h-full object-cover object-center"
+          style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))' }}
+          onError={() => setImageError(true)}
+          loading="lazy"
+        />
+      ) : (
+        <div 
+          className="text-8xl"
+          style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))' }}
+        >
+          {fallbackEmoji}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const EvolutionJourney = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState(new Set());
+  
+  // 🆕 카운트다운 상태 추가
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0
+  });
+
+  // 🆕 카운트다운 로직 추가
+  useEffect(() => {
+    // 이벤트 종료일 설정 (7일 후)
+    const eventEndDate = new Date();
+    eventEndDate.setDate(eventEndDate.getDate() + 7); // 7일 후
+    eventEndDate.setHours(23, 59, 59, 999);
+
+    const timer = setInterval(() => {
+      const now = new Date().getTime();
+      const distance = eventEndDate.getTime() - now;
+
+      if (distance > 0) {
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        setTimeLeft({ days, hours, minutes, seconds });
+      } else {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   const handleStepComplete = (stepIndex) => {
     setCompletedSteps(prev => new Set([...prev, stepIndex]));
@@ -18,7 +83,7 @@ const EvolutionJourney = () => {
     const tweetText = encodeURIComponent(
       `🔥 I just completed the STAKE Evolution Challenge! 🚀\n\n` +
       `✅ Mastered all 8 tiers from VIRGEN to GENESIS OG\n` +
-      `💰 Earned 50,000 STAKE tokens!\n\n` +
+      `💰 Earned 50,000 stSTAKE tokens!\n\n` +
       `Join the evolution: [Your-Link-Here]\n\n` +
       `#STAKEEvolution #Web3Gaming #STAKEProtocol`
     );
@@ -37,8 +102,33 @@ const EvolutionJourney = () => {
         <h2 className="text-2xl sm:text-4xl font-black text-orange-400 mb-4">
           Special Event: Evolution Challenge
         </h2>
+        
+        {/* 🆕 카운트다운 추가 */}
+        <div className="mb-6 p-4 bg-black/30 rounded-xl border border-orange-500/30">
+          <div className="text-orange-400 font-bold text-sm mb-2">
+            ⏰ Event Ends In
+          </div>
+          <div className="grid grid-cols-4 gap-2 max-w-sm mx-auto">
+            {[
+              { label: 'Days', value: timeLeft.days },
+              { label: 'Hours', value: timeLeft.hours },
+              { label: 'Mins', value: timeLeft.minutes },
+              { label: 'Secs', value: timeLeft.seconds }
+            ].map((time, index) => (
+              <div key={index} className="text-center">
+                <div className="text-lg sm:text-xl font-bold text-white">
+                  {time.value.toString().padStart(2, '0')}
+                </div>
+                <div className="text-xs text-orange-400">
+                  {time.label}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        
         <p className="text-lg sm:text-xl text-gray-300 mb-6 max-w-3xl mx-auto px-2">
-          Complete all 8 tier steps, share your achievement on X, and earn <span className="text-orange-400 font-bold">50,000 STAKE tokens!</span>
+          Complete all 8 tier steps, share your achievement on X, and earn <span className="text-orange-400 font-bold">50,000 stSTAKE tokens!</span>
         </p>
         
         {/* Progress Tracker */}
@@ -46,7 +136,7 @@ const EvolutionJourney = () => {
           <div className="flex justify-between text-lg text-gray-400 mb-4">
             <span className="font-bold">Progress</span>
             <span className="font-bold text-orange-400">{completedSteps.size}/8 Completed</span>
-            <span className="font-bold">50K STAKE</span>
+            <span className="font-bold">50K stSTAKE</span>
           </div>
           <div className="w-full bg-gray-800 rounded-full h-6 shadow-inner">
             <div 
@@ -65,7 +155,7 @@ const EvolutionJourney = () => {
             onClick={handleShareOnX}
             className="bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-4 px-8 rounded-2xl text-xl hover:scale-105 transition-all duration-300 shadow-lg"
           >
-            🐦 Share on X & Claim 50K STAKE!
+            🐦 Share on X & Claim 50K stSTAKE!
           </button>
         )}
       </div>
@@ -117,11 +207,9 @@ const EvolutionJourney = () => {
                         {/* Character image/emoji with overlay text */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                         
-                        {/* Character emoji */}
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="text-8xl" style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))' }}>
-                            {getTierEmoji(step.id)}
-                          </div>
+                        {/* 🆕 Character 이미지 - 이제 박스에 가득 참 */}
+                        <div className="absolute inset-0">
+                          <TierImage stepId={step.id} />
                         </div>
 
                         {/* Text overlay at bottom */}
@@ -287,7 +375,7 @@ const EvolutionJourney = () => {
               EVOLUTION COMPLETE!
             </h2>
             <p className="text-2xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
-              You've mastered all 8 tiers! Now share your achievement on X to claim your <span className="text-orange-400 font-bold">50,000 STAKE</span> reward!
+              You've mastered all 8 tiers! Now share your achievement on X to claim your <span className="text-orange-400 font-bold">50,000 stSTAKE</span> reward!
             </p>
             
             <button 

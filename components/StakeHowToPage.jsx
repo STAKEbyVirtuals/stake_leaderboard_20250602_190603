@@ -39,42 +39,42 @@ const StakeHowToPage = () => {
   const sections = [
     {
       id: 'evolution',
-      title: '🔥 Evolution Journey - Complete 8 Tiers & Earn 50K STAKE!',
+      title: '🔥 Evolution Journey - Complete 8 Tiers & Earn 50,000 stSTAKE!',
       isEvent: true
     },
     {
       id: 'tiers',
-      title: '⭐ Complete Tier System Overview - All 8 Grades Explained',
+      title: 'Complete Tier System Overview - All 8 Grades Explained',
       isEvent: false
     },
     {
       id: 'levels',
-      title: '💰 Staking Levels - Entry to Special Tier Guide',
+      title: 'Staking Levels - Entry to Special Tier Guide',
       isEvent: false
     },
     {
       id: 'hybrid',
-      title: '⚡ Hybrid Tier System - Two Paths to Advancement',
+      title: 'Hybrid Tier System - Two Paths to Advancement',
       isEvent: false
     },
     {
       id: 'timeline',
-      title: '📅 Project Timeline - 6 Phases & Token Distribution',
+      title: 'Project Timeline - 6 Phases & Token Distribution',
       isEvent: false
     },
     {
       id: 'participation',
-      title: '🎯 Phase Participation - Manual Join Requirements',
+      title: 'Phase Participation - Manual Join Requirements',
       isEvent: false
     },
     {
       id: 'strategies',
-      title: '💡 Claim Strategies - When to Hold vs When to Cash Out',
+      title: 'Claim Strategies - When to Hold vs When to Cash Out',
       isEvent: false
     },
     {
       id: 'nft',
-      title: '🎨 NFT & Future Utility - Your Permanent Legacy',
+      title: 'NFT & Future Utility - Your Permanent Legacy',
       isEvent: false
     }
   ];
@@ -105,17 +105,52 @@ const StakeHowToPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white">
-      {/* Hero Section */}
-      <div className="relative px-4 py-16 text-center">
-        <div className={`transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-          <h1 className="text-6xl md:text-8xl font-black mb-8 bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 bg-clip-text text-transparent">
-            VIRGEN → LEGEND
-          </h1>
-          <p className="text-2xl md:text-3xl text-gray-300 mb-12 max-w-4xl mx-auto leading-relaxed">
-            Master the complete STAKE evolution system and earn rewards along the way
-          </p>
-        </div>
-      </div>
+     {/* Hero Section */}
+<div className="relative px-4 py-16 text-center">
+  <div className={`transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+    
+    {/* 🔕 GEN 강조된 메인 타이틀 - 주석처리
+    <h1 className="text-6xl md:text-8xl font-black mb-8">
+      <span className="bg-gradient-to-r from-gray-400 via-gray-500 to-gray-400 bg-clip-text text-transparent">
+        VIR
+      </span>
+      <span className="bg-gradient-to-r from-emerald-400 via-emerald-300 to-emerald-400 bg-clip-text text-transparent">
+        GEN
+      </span>
+      <span className="bg-gradient-to-r from-gray-400 via-gray-500 to-gray-400 bg-clip-text text-transparent mx-4">
+        →
+      </span>
+      <span className="bg-gradient-to-r from-emerald-400 via-emerald-300 to-emerald-400 bg-clip-text text-transparent">
+        GEN
+      </span>
+      <span className="bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 bg-clip-text text-transparent">
+        ESIS
+      </span>
+      <span className="bg-gradient-to-r from-pink-500 to-red-500 bg-clip-text text-transparent ml-2">
+        OG
+      </span>
+    </h1>
+    */}
+    
+    {/* 🔕 서브타이틀 with 연결고리 강조 - 주석처리
+    <div className="mb-8 p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/30 max-w-4xl mx-auto">
+      <p className="text-xl md:text-2xl text-emerald-400 font-bold mb-2">
+        🔗 The Hidden Evolution Pattern
+      </p>
+      <p className="text-lg text-gray-300 leading-relaxed">
+        From the moment you become a <span className="text-white font-bold">VIR<span className="text-emerald-400 bg-emerald-500/20 px-1 rounded">GEN</span></span>, 
+        the seed of <span className="text-emerald-300 font-bold"><span className="text-emerald-400 bg-emerald-500/20 px-1 rounded">GEN</span>ESIS</span> already lives within you
+      </p>
+    </div>
+    */}
+    
+    {/* 🔕 기본 설명 문구 - 주석처리
+    <p className="text-2xl md:text-3xl text-gray-300 mb-12 max-w-4xl mx-auto leading-relaxed">
+      Master the complete STAKE evolution system and earn rewards along the way
+    </p>
+    */}
+  </div>
+</div>
 
       {/* Accordion Navigation */}
       <div className="max-w-6xl mx-auto px-2 sm:px-4 pb-16">
