@@ -89,15 +89,13 @@ const EvolutionJourney = () => {
       return;
     }
 
-    // 🆕 지갑 주소 포함된 트윗 템플릿
+    // 🆕 지갑 주소 포함된 트윗 템플릿 (더 짧게)
     const tweetText = encodeURIComponent(
-      `🔥 I just completed the STAKE Evolution Challenge! 🚀\n\n` +
-      `✅ Mastered all 8 tiers from VIRGEN to GENESIS OG\n` +
-      `💰 Earned 50,000 stSTAKE tokens!\n\n` +
-      `🔗 My Wallet: ${walletAddress}\n` +
-      `🎯 Challenge completed: ${new Date().toISOString()}\n\n` +
-      `Join the evolution: https://stake-leaderboard.com\n\n` +
-      `#STAKEEvolution #Web3Gaming #STAKEProtocol`
+      `🔥 STAKE Evolution Complete! 🚀\n\n` +
+      `✅ All 8 tiers mastered\n` +
+      `💰 50K stSTAKE earned!\n\n` +
+      `🔗 ${walletAddress}\n\n` +
+      `#STAKEEvolution #Web3Gaming`
     );
     
     const tweetUrl = `https://twitter.com/intent/tweet?text=${tweetText}`;

@@ -1,12 +1,13 @@
-// components/TweetSubmissionForm.jsx - 구글폼 연결 모달
+// components/TweetSubmissionForm.jsx - 구글폼 연결 모달 + 증명서 생성
 import React, { useState, useEffect } from 'react';
+import CompletionCertificate from './CompletionCertificate'; // 🆕 증명서 컴포넌트
 
 const TweetSubmissionForm = ({ isOpen, onClose, walletAddress }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   
   // 🔧 구글폼 URL (실제 생성된 폼 URL로 교체 필요)
-  const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSduW--u8_7fWakK18hUc6mVWbl1sKm9H1Ttn86xmA8S0x7FbQ/viewform?usp=dialog'; // ⚠️ 실제 폼 URL로 교체
+  const GOOGLE_FORM_URL = 'https://forms.gle/your-actual-form-id'; // ⚠️ 실제 폼 URL로 교체
 
   // ESC 키로 닫기
   useEffect(() => {
@@ -59,37 +60,31 @@ const TweetSubmissionForm = ({ isOpen, onClose, walletAddress }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* 배경 오버레이 */}
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 py-20 safe-area-inset">
+      {/* 배경 오버레이 - 고정 */}
       <div 
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm"
         onClick={onClose}
       />
       
-      {/* 모달 컨텐츠 */}
-      <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-orange-500/30 rounded-3xl p-8 max-w-lg w-full mx-4 shadow-2xl">
-        {/* 닫기 버튼 */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-700/50 transition-colors"
-        >
-          ×
-        </button>
-
-        {/* 모달 헤더 */}
-        <div className="text-center mb-8">
-          <div className="text-5xl mb-4">🎉</div>
-          <h2 className="text-2xl font-bold text-white mb-2">
-            Almost Done!
-          </h2>
-          <p className="text-gray-300 text-sm">
-            Submit your tweet to claim your 50,000 stSTAKE reward
-          </p>
+      {/* 모달 컨텐츠 - 모바일 최적화 */}
+      <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-orange-500/30 rounded-none sm:rounded-3xl shadow-2xl w-full max-w-lg mx-4 max-h-[80vh] sm:max-h-[85vh] flex flex-col">
+        {/* 닫기 버튼 - 모바일/데스크톱 차별화 */}
+        <div className="flex justify-end p-3 pb-7 sm:p-4 sm:pb-6 sm:rounded-t-3xl overflow-hidden">
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white text-3xl w-12 h-12 flex items-center justify-center rounded-full hover:bg-gray-700/50 transition-colors border border-gray-600/30"
+          >
+            ×
+          </button>
         </div>
+
+        {/* 스크롤 가능한 컨텐츠 영역 - 모바일 여백 증가 */}
+        <div className="flex-1 overflow-y-auto px-6 pb-6 sm:px-8 sm:pb-8 pt-2 sm:pt-0 scrollbar-thin scrollbar-thumb-orange-500/50 scrollbar-track-gray-800/30 min-h-0">
 
         {isSubmitted ? (
           // 제출 완료 상태
-          <div className="text-center">
+          <div className="text-center py-8">
             <div className="text-6xl mb-4">✅</div>
             <h3 className="text-xl font-bold text-green-400 mb-4">
               Submission Completed!
@@ -103,29 +98,42 @@ const TweetSubmissionForm = ({ isOpen, onClose, walletAddress }) => {
           </div>
         ) : (
           <>
+            {/* 모달 헤더 */}
+            <div className="text-center mb-6">
+              <div className="text-5xl mb-4">🎉</div>
+              <h2 className="text-2xl font-bold text-white mb-2">
+                Almost Done!
+              </h2>
+              <p className="text-gray-300 text-sm">
+                Submit your tweet to claim your 50,000 stSTAKE reward
+              </p>
+            </div>
+
             {/* 제출 안내 */}
             <div className="space-y-6 mb-8">
+              {/* 🆕 증명서 다운로드 섹션 */}
+              <CompletionCertificate walletAddress={walletAddress} />
               {/* 단계 안내 */}
               <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
                 <h4 className="text-blue-400 font-bold mb-3 flex items-center gap-2">
-                  📋 Next Steps
+                  📋 How to Submit
                 </h4>
                 <div className="space-y-2 text-sm text-gray-300">
                   <div className="flex items-start gap-2">
                     <span className="text-blue-400 mt-1">1.</span>
-                    <span>Click "Submit Tweet" to open verification form</span>
+                    <span>Download your certificate image above</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="text-blue-400 mt-1">2.</span>
-                    <span>Paste your tweet URL in the form</span>
+                    <span>Attach the image to your tweet</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="text-blue-400 mt-1">3.</span>
-                    <span>Fill in required information</span>
+                    <span>Click "Submit Tweet" to open verification form</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="text-blue-400 mt-1">4.</span>
-                    <span>Wait for verification (within 24 hours)</span>
+                    <span>Paste your tweet URL and submit</span>
                   </div>
                 </div>
               </div>
@@ -135,7 +143,7 @@ const TweetSubmissionForm = ({ isOpen, onClose, walletAddress }) => {
                 <h4 className="text-green-400 font-bold mb-2 flex items-center gap-2">
                   🔗 Connected Wallet
                 </h4>
-                <div className="font-mono text-sm text-gray-300 bg-black/30 rounded px-3 py-2">
+                <div className="font-mono text-sm text-gray-300 bg-black/30 rounded px-3 py-2 break-all">
                   {walletAddress}
                 </div>
                 <p className="text-xs text-gray-400 mt-2">
@@ -189,13 +197,14 @@ const TweetSubmissionForm = ({ isOpen, onClose, walletAddress }) => {
             </div>
 
             {/* 도움말 */}
-            <div className="mt-6 text-center">
+            <div className="mt-6 text-center pb-4">
               <p className="text-xs text-gray-500">
                 Need help? Contact us via Discord or Telegram
               </p>
             </div>
           </>
         )}
+        </div>
       </div>
     </div>
   );
