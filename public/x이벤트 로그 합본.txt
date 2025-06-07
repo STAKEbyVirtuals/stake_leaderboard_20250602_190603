@@ -1,3 +1,164 @@
+📋 STAKE 트윗 이벤트 + stSTAKE 시스템 완전 기획서
+🎯 프로젝트 개요
+목표:
+
+구글폼 기반 트윗 검증 시스템 구축 (50,000 stSTAKE 보상)
+stSTAKE 관리 시스템 구현 (실제 + 가상 스테이킹 통합)
+빠른 업데이트 시스템 도입 (게이미피케이션 강화)
+
+핵심 컨셉:
+
+구글폼: 복잡한 백엔드 없이 안전한 검증
+하이브리드 추적: 즉시성(1-2분) + 정확성(6시간)
+실시간 누적 점수: 시간 × 수량 적분 방식
+
+
+🏗️ 시스템 아키텍처
+1. 트윗 이벤트 플로우
+사용자 8단계 완료 → 트윗 작성 → 구글폼 제출 → 5단계 검증 → 관리자 승인 → 50K stSTAKE 지급
+2. stSTAKE 데이터 구조
+javascript// leaderboard.json 확장
+{
+  address: "0xabc...",
+  total_staked: 1000000,        // 기존: 실제 스테이킹
+  virtual_staked: 50000,        // 🆕: 이벤트 보상 (DB상에만 존재)
+  virtual_staked_date: "2025-06-15", // 🆕: 받은 날짜
+  display_staked: 1050000,      // 🆕: 사이트 표시용 (total + virtual)
+  holding_days: 90,
+  // ... 기존 필드들
+}
+3. 점수 계산 방식 (실시간 누적)
+javascript// 올바른 적분 방식
+const realScore = total_staked × holding_days;
+const virtualDays = Math.max(0, holding_days - getDaysSince(virtual_staked_date));
+const virtualScore = virtual_staked × virtualDays;
+const totalScore = realScore + virtualScore;
+
+// 예시: 90일간 100K + 30일 전 50K 받음 = (100K×90) + (50K×30) = 10,500,000점
+
+🛡️ 5단계 검증 시스템
+구글폼 + 구글 스크립트 자동 검증:
+
+✅ URL 중복 방지 - 동일 트윗 URL 재사용 차단
+✅ 지갑 중복 방지 - 한 지갑당 1회만 참여
+✅ X계정 중복 방지 - 한 X계정당 1회만 참여 (핵심!)
+✅ X계정 연령 확인 - 30일 이상 된 계정만 허용
+✅ 트윗 내용 검증 - 지갑주소 포함 여부 확인
+
+경제적 억제 효과:
+
+기존: 무제한 중복 가능 → 개선 후: 95%+ 부정행위 차단
+봇 운영 비용: 1000%↑ 증가로 자연 포기 유도
+
+
+⚡ 하이브리드 추적 시스템
+문제점: 기존 6시간 업데이트는 게이미피케이션에 치명적
+해결책: 즉시성 + 정확성 조합
+javascript// 옵션 1: 사용자 새로고침 (채택)
+async function quickRefresh(userAddress) {
+  const currentStaked = await stakingContract.balanceOf(userAddress);
+  // 임시 UI 업데이트 → 6시간 후 정확한 데이터로 보정
+}
+타이밍:
+
+즉시 추정: 1-2분 (게임성)
+정확한 보정: 6시간 (신뢰성)
+
+
+🛠️ 구현 계획 (5단계)
+1단계: 구글폼 트윗 검증 시스템 ⏱️ 30분
+구성요소:
+- 구글폼 생성 (지갑주소 + 트윗URL 입력)
+- 구글 스크립트 (5단계 검증 자동화)
+- 사이트 연결 버튼 (EvolutionJourney.jsx 수정)
+- TweetSubmissionForm 컴포넌트 (신규 생성)
+2단계: stSTAKE 데이터 구조 확장 ⏱️ 1시간
+수정 파일:
+- pages/index.tsx (LeaderboardItem 타입 확장)
+- leaderboard.json (새 필드 추가)
+- 점수 계산 로직 업데이트
+3단계: 빠른 업데이트 시스템 ⏱️ 1시간
+구성요소:
+- 클라이언트 새로고침 함수
+- RPC 호출 로직
+- 임시 데이터 관리
+4단계: 대시보드 UI 개선 ⏱️ 1시간
+수정 파일:
+- MyDashboardPage 컴포넌트들
+- stSTAKE 분리 표시 (실제 + 가상)
+- 새로고침 버튼 추가
+5단계: 점수 계산 로직 업데이트 ⏱️ 30분
+실시간 누적 방식으로 전환:
+- 기존 total_staked × holding_days
+- 신규 적분 계산 적용
+
+📁 참조 필요 파일 목록
+핵심 수정 파일:
+
+components/howto/EvolutionJourney.jsx - 버튼 추가
+pages/index.tsx - 타입/로직 수정
+components/MyDashboardPage 관련 - UI 업데이트
+utils/tier.ts - 점수 계산 로직
+
+스타일 참조:
+
+styles/globals.css - 기존 스타일 패턴
+components/CompactTopbar.tsx - 버튼 스타일
+data/evolutionData.js - 구조 참조
+
+신규 생성 파일:
+
+components/TweetSubmissionForm.jsx
+utils/tweetVerification.js
+utils/quickUpdate.js
+
+
+🎮 게이미피케이션 핵심
+즉시성이 생명:
+
+스테이킹 후 1-2분 내 점수 반영
+"새로고침" 버튼으로 즉시 확인 가능
+6시간 후 정확한 데이터로 자동 보정
+
+투명성 유지:
+
+실제 stSTAKE vs 가상 stSTAKE 분리 표시
+이벤트 받은 날짜 명시
+점수 계산 과정 투명하게 공개
+
+
+⚠️ 주의사항
+데이터 일관성:
+
+임시 업데이트와 정확한 데이터 간 충돌 방지
+virtual_staked_date 필드로 정확한 점수 계산
+
+보안:
+
+구글 스크립트로 서버사이드 검증
+클라이언트 조작 방지
+
+확장성:
+
+향후 다른 이벤트도 virtual_staked에 누적 가능
+모듈화된 구조로 유지보수성 확보
+
+
+🚀 다음 대화에서 바로 시작할 수 있는 정보
+
+현재 상황: 구글폼 방식 확정, 하이브리드 추적 방식 채택
+우선순위: 1단계(구글폼) → 2단계(데이터) → 3단계(빠른 업데이트)
+핵심 결정사항:
+
+실시간 누적 점수 방식
+virtual_staked_date 기준 계산
+사용자 새로고침 버튼 방식
+
+
+참조 파일: 위 목록 참조하여 기존 패턴 유지
+
+
+
 howto 페이지에서 기획하고 있는 이벤트 (X트윗) 를 완료했는지 내가 알 방법이 뭐가 있을까
 
 편집
@@ -11,8 +172,7 @@ howto 페이지에서 기획하고 있는 이벤트 (X트윗) 를 완료했는�
 X(트위터) 새 창에서 미리 작성된 트윗 열기
 하지만 현재로는 실제로 트윗을 했는지 확인할 방법이 없는 상태입니다.
 
-💡 가능한 해결책들
-1️⃣ 간단한 방법: 자가 신고 시스템
+💡 가능한 해결책들1️⃣ 간단한 방법: 자가 신고 시스템
 사용자가 트윗 후 → "트윗 완료" 버튼 클릭 → 보상 지급
 2️⃣ 중급 방법: 트윗 URL 입력
 사용자가 트윗 후 → 트윗 URL 복사/붙여넣기 → URL 검증 → 보상 지급

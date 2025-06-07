@@ -9,6 +9,7 @@ import Image from 'next/image';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area } from 'recharts';
 import StakeHowToPage from '../components/StakeHowToPage';
 import CompactTopbar from '../components/CompactTopbar';
+import OptimizedIntegratedDashboard from '../components/OptimizedIntegratedDashboard';
 
 // JSON API URL (구글시트 or GitHub JSON)
 const SHEET_BEST_URL = '/leaderboard.json';
@@ -5626,7 +5627,7 @@ export default function Home() {
   const renderCurrentPage = () => {
     switch (currentPage) {
       case "dashboard":
-        return <MyDashboardPage data={data} wallet={wallet || ""} />;
+        return <OptimizedIntegratedDashboard userAddress={wallet} />;
       case "stats":
         return <StatsPage data={data} />;
       case "howto":  // 👈 이 부분 추가
