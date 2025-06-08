@@ -14,62 +14,62 @@ const GiftBoxSystem = ({
   const [showRatesInfo, setShowRatesInfo] = useState(false);
   const [selectedTierForRates, setSelectedTierForRates] = useState(userTier);
 
-  // 상자 시스템 정의 (개선된 멀티플라이어)
+  // 상자 시스템 정의 (STAKE 프로젝트 티어 색상 적용)
   const BOX_SYSTEM = {
     "COMMON": {
       name: "일반 상자",
       emoji: "📦",
       multiplier: 1,
-      color: "#8B7355",
-      glow: "rgba(139, 115, 85, 0.5)",
+      color: "#9ca3af",      // SIZZLIN' NOOB 색상
+      glow: "rgba(156, 163, 175, 0.5)",
       rarity: "Common"
     },
     "UNCOMMON": {
       name: "고급 상자",
       emoji: "🎁",
       multiplier: 1.5,
-      color: "#2ECC71",
-      glow: "rgba(46, 204, 113, 0.5)",
+      color: "#22c55e",      // FLIPSTARTER 색상
+      glow: "rgba(34, 197, 94, 0.5)",
       rarity: "Uncommon"
     },
     "RARE": {
       name: "희귀 상자",
       emoji: "💎",
       multiplier: 2,
-      color: "#3498DB",
-      glow: "rgba(52, 152, 219, 0.5)",
+      color: "#3b82f6",      // FLAME JUGGLER 색상
+      glow: "rgba(59, 130, 246, 0.5)",
       rarity: "Rare"
     },
     "EPIC": {
       name: "영웅 상자",
       emoji: "🔮",
       multiplier: 3.5,
-      color: "#9B59B6",
-      glow: "rgba(155, 89, 182, 0.5)",
+      color: "#9333ea",      // GRILLUMINATI 색상
+      glow: "rgba(147, 51, 234, 0.5)",
       rarity: "Epic"
     },
     "UNIQUE": {
       name: "유니크 상자",
       emoji: "🧙‍♂️",
       multiplier: 5,
-      color: "#8E44AD",
-      glow: "rgba(142, 68, 173, 0.5)",
+      color: "#fbbf24",      // STAKE WIZARD 색상
+      glow: "rgba(251, 191, 36, 0.5)",
       rarity: "Unique"
     },
     "LEGENDARY": {
       name: "전설 상자",
       emoji: "⚡",
       multiplier: 7,
-      color: "#F39C12",
-      glow: "rgba(243, 156, 18, 0.5)",
+      color: "#ef4444",      // HEAVY EATER 색상
+      glow: "rgba(239, 68, 68, 0.5)",
       rarity: "Legendary"
     },
     "GENESIS": {
       name: "창세 상자",
       emoji: "👑",
       multiplier: 10,
-      color: "#FFD700",
-      glow: "rgba(255, 215, 0, 0.8)",
+      color: "#10b981",      // GENESIS OG 색상
+      glow: "rgba(16, 185, 129, 0.8)",
       rarity: "Genesis"
     }
   };
@@ -106,6 +106,20 @@ const GiftBoxSystem = ({
     }
   };
 
+  // 등급별 멀티플라이어 조회
+  const getUserMultiplier = (tier) => {
+    const tierMultipliers = {
+      "GENESIS_OG": 2.0,
+      "HEAVY_EATER": 1.8,
+      "STAKE_WIZARD": 1.6,
+      "GRILLUMINATI": 1.4,
+      "FLAME_JUGGLER": 1.25,
+      "FLIPSTARTER": 1.1,
+      "SIZZLIN_NOOB": 1.0
+    };
+    return tierMultipliers[tier] || 1.0;
+  };
+
   // 상자 드랍 로직
   const generateRandomBox = () => {
     const rates = DROP_RATES[userTier] || DROP_RATES["SIZZLIN_NOOB"];
@@ -121,10 +135,11 @@ const GiftBoxSystem = ({
     return "COMMON";
   };
 
-  // 포인트 계산 (userStake × 3600초 × 상자 멀티플라이어)
+  // 포인트 계산 (userStake × 3600초 × 본인 등급 멀티플라이어 × 상자 멀티플라이어)
   const calculateBoxPoints = (boxType) => {
-    const multiplier = BOX_SYSTEM[boxType].multiplier;
-    return userStake * 3600 * multiplier;
+    const userMultiplier = getUserMultiplier(userTier); // 본인 등급 멀티플라이어
+    const boxMultiplier = BOX_SYSTEM[boxType].multiplier; // 상자 멀티플라이어
+    return userStake * 3600 * userMultiplier * boxMultiplier;
   };
 
   // 시간 포맷팅
@@ -347,17 +362,29 @@ const GiftBoxSystem = ({
                   color: '#999',
                   marginBottom: 8
                 }}>
-                  {BOX_SYSTEM[currentBox].multiplier}x Multiplier
+                  User: {getUserMultiplier(userTier)}x × Box: {BOX_SYSTEM[currentBox].multiplier}x
                 </div>
                 
                 <div style={{
                   fontSize: isMobile ? 11 : 12,
                   color: '#4ade80',
                   fontFamily: 'monospace',
-                  marginBottom: 12,
+                  marginBottom: 8,
                   fontWeight: 600
                 }}>
                   +{formatNumber(calculateBoxPoints(currentBox))} Points
+                </div>
+                
+                <div style={{
+                  fontSize: isMobile ? 9 : 10,
+                  color: '#fbbf24',
+                  background: 'rgba(251,191,36,0.1)',
+                  padding: '2px 6px',
+                  borderRadius: 4,
+                  border: '1px solid rgba(251,191,36,0.2)',
+                  marginBottom: 8
+                }}>
+                  = {formatNumber(userStake)} × {getUserMultiplier(userTier)} × {BOX_SYSTEM[currentBox].multiplier}
                 </div>
                 
                 {!isOpening && (
@@ -746,7 +773,7 @@ const GiftBoxSystem = ({
               </div>
             </div>
 
-            {/* 선택된 티어의 드랍률 (개선된 디자인) */}
+            {/* 선택된 티어의 드랍률 */}
             <div style={{
               background: 'rgba(0,0,0,0.3)',
               borderRadius: 12,
@@ -838,9 +865,9 @@ const GiftBoxSystem = ({
                   color: '#ccc',
                   lineHeight: 1.4
                 }}>
+                  • Points = Stake × User Tier Multiplier × Box Multiplier<br/>
                   • Higher tier = Better drop rates for rare boxes<br/>
                   • Genesis gets 50% chance for Genesis boxes<br/>
-                  • Everyone has a chance at any box type<br/>
                   • Boxes drop every 6 hours, expire in 24 hours
                 </div>
               </div>

@@ -1,4 +1,4 @@
-# === STAKE 리더보드 통합 시스템 ===
+# === STAKE 리더보드 통합 시스템 (안전 모드) ===
 import requests
 import pandas as pd
 import json
@@ -21,6 +21,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# === 안전 모드 설정 ===
+SAFE_MODE = os.environ.get('SAFE_MODE', 'false').lower() == 'true'
+UPDATE_RANGE = os.environ.get('UPDATE_RANGE', 'A:U')  # 기본값: A:U (21개 컬럼)
+
+if SAFE_MODE:
+    logger.info("🛡️ 안전 모드 활성화: 기존 21개 컬럼만 업데이트")
+    logger.info(f"📊 업데이트 범위: {UPDATE_RANGE}")
+else:
+    logger.info("⚠️ 일반 모드: 전체 범위 업데이트")
+
 # === 설정 ===
 RPC_URL = "https://mainnet.base.org"
 STAKING_ADDRESS = "0xBa13ae24684bee910820Be1Fcf52067332F8412f"
@@ -38,9 +48,6 @@ if not SHEET_BEST_URL:
     logger.warning("⚠️ SHEET_BEST_URL 환경변수가 설정되지 않았습니다. 기본값을 사용합니다.")
 else:
     logger.info(f"✅ Sheet.best URL 설정 완료: {SHEET_BEST_URL[:30]}...")
-
-# 나머지 코드는 그대로 유지
-
 
 # 페이즈 설정
 CURRENT_PHASE = 1
@@ -62,127 +69,31 @@ staking_data = defaultdict(lambda: {
     'unstake_transactions': []
 })
 
-# stake_leaderboard_system.py에 추가할 테스트 함수들:
+# === 안전 모드용 컬럼 정의 ===
+SAFE_MODE_COLUMNS = [
+    'address', 'rank', 'grade', 'grade_emoji', 'percentile',
+    'total_staked', 'time_score', 'holding_days', 'stake_count', 'unstake_count',
+    'is_active', 'current_phase', 'phase_score', 'total_score_all_phases',
+    'airdrop_share_phase', 'airdrop_share_total', 'first_stake_time', 'last_action_time',
+    'rank_change_24h', 'score_change_24h', 'phase_rank_history'
+]
 
-def test_sheet_best_formats(data):
-    """다양한 형식으로 Sheet.best API 테스트"""
-    logger.info("🧪 Sheet.best API 형식 테스트 시작...")
+def apply_safe_mode_filter(data):
+    """안전 모드: 기존 21개 컬럼만 필터링"""
+    if not SAFE_MODE:
+        return data
     
-    if not SHEET_BEST_URL or 'YOUR_SHEET_ID' in SHEET_BEST_URL:
-        logger.error("❌ SHEET_BEST_URL이 설정되지 않았습니다")
-        return False
+    logger.info("🛡️ 안전 모드 필터 적용: 21개 컬럼만 추출")
     
-    # 테스트할 다양한 형식들
-    test_formats = []
+    filtered_data = []
+    for item in data:
+        filtered_item = {}
+        for column in SAFE_MODE_COLUMNS:
+            filtered_item[column] = item.get(column, '')
+        filtered_data.append(filtered_item)
     
-    # 형식 1: 매우 간단한 객체
-    test_formats.append({
-        "name": "Simple Object",
-        "data": {"address": "0x123", "rank": 1, "total": 1000}
-    })
-    
-    # 형식 2: 단순 배열
-    test_formats.append({
-        "name": "Simple Array", 
-        "data": [{"address": "0x123", "rank": 1}]
-    })
-    
-    # 형식 3: 문자열만
-    test_formats.append({
-        "name": "String Only",
-        "data": [{"address": "0x123", "rank": "1", "total": "1000"}]
-    })
-    
-    # 형식 4: 실제 데이터 1개
-    if data:
-        sample = data[0]
-        test_formats.append({
-            "name": "Real Data Single",
-            "data": [{
-                "address": str(sample.get('address', '')),
-                "rank": str(sample.get('rank', '')),
-                "grade": str(sample.get('grade', '')),
-                "total_staked": str(sample.get('total_staked', ''))
-            }]
-        })
-    
-    # 형식 5: 컬럼명 간소화
-    test_formats.append({
-        "name": "Short Columns",
-        "data": [{"addr": "0x123", "rank": 1, "amount": 1000}]
-    })
-    
-    # 각 형식 테스트
-    for i, test_format in enumerate(test_formats, 1):
-        logger.info(f"📝 테스트 {i}: {test_format['name']}")
-        
-        success = try_upload_format(test_format['data'], test_format['name'])
-        
-        if success:
-            logger.info(f"✅ 성공! 형식: {test_format['name']}")
-            return test_format['name']
-        
-        # 잠시 대기 (API 제한 방지)
-        time.sleep(2)
-    
-    logger.error("❌ 모든 형식 테스트 실패")
-    return False
-
-def try_upload_format(test_data, format_name):
-    """특정 형식으로 업로드 시도"""
-    try:
-        headers = {
-            'Content-Type': 'application/json',
-            'User-Agent': 'STAKE-Test/1.0'
-        }
-        
-        logger.info(f"📤 {format_name} 형식 업로드 시도...")
-        logger.info(f"📊 데이터: {str(test_data)[:100]}...")
-        
-        response = requests.put(
-            SHEET_BEST_URL,
-            json=test_data,
-            headers=headers,
-            timeout=30
-        )
-        
-        logger.info(f"📡 응답 코드: {response.status_code}")
-        logger.info(f"📄 응답 내용: {response.text[:200]}")
-        
-        if response.status_code == 200:
-            return True
-        else:
-            return False
-            
-    except Exception as e:
-        logger.error(f"❌ {format_name} 업로드 오류: {e}")
-        return False
-
-def get_sheet_best_info():
-    """Sheet.best API 정보 확인"""
-    logger.info("ℹ️ Sheet.best API 정보 확인...")
-    
-    try:
-        # GET 요청으로 현재 데이터 확인
-        response = requests.get(SHEET_BEST_URL, timeout=30)
-        
-        logger.info(f"📡 GET 응답 코드: {response.status_code}")
-        logger.info(f"📄 현재 시트 데이터: {response.text[:500]}")
-        
-        if response.status_code == 200:
-            try:
-                current_data = response.json()
-                if current_data:
-                    logger.info(f"📊 현재 데이터 구조: {type(current_data)}")
-                    if isinstance(current_data, list) and len(current_data) > 0:
-                        logger.info(f"🔍 첫 번째 항목: {current_data[0]}")
-                        logger.info(f"🗝️ 컬럼명들: {list(current_data[0].keys()) if isinstance(current_data[0], dict) else 'Not dict'}")
-            except:
-                logger.info("📄 JSON 파싱 실패, 텍스트 데이터")
-        
-    except Exception as e:
-        logger.error(f"❌ Sheet.best 정보 확인 실패: {e}")
-
+    logger.info(f"✅ 안전 모드 필터링 완료: {len(filtered_data)}개 항목, {len(SAFE_MODE_COLUMNS)}개 컬럼")
+    return filtered_data
 
 def rpc_call(method, params):
     """RPC 호출 with 에러 핸들링"""
@@ -444,7 +355,7 @@ def extract_all_stake_data():
         return False
 
 def process_leaderboard_data():
-    """리더보드 데이터 처리 및 생성"""
+    """리더보드 데이터 처리 및 생성 (안전 모드 지원)"""
     logger.info("📊 리더보드 데이터 처리 시작...")
     
     try:
@@ -498,7 +409,8 @@ def process_leaderboard_data():
             rank_change_24h = 0
             score_change_24h = 0
             
-            leaderboard_data.append({
+            # 기본 21개 컬럼 데이터
+            item_data = {
                 'address': address,
                 'rank': rank,
                 'grade': grade,
@@ -520,7 +432,14 @@ def process_leaderboard_data():
                 'rank_change_24h': rank_change_24h,
                 'score_change_24h': score_change_24h,
                 'phase_rank_history': f"P1:{rank}"  # 향후 확장
-            })
+            }
+            
+            leaderboard_data.append(item_data)
+        
+        # 🛡️ 안전 모드 필터 적용
+        if SAFE_MODE:
+            leaderboard_data = apply_safe_mode_filter(leaderboard_data)
+            logger.info("🛡️ 안전 모드: 신규 18개 컬럼은 Apps Script에서 자동 생성됩니다")
         
         logger.info(f"✅ 리더보드 데이터 처리 완료: {len(leaderboard_data)}개 항목")
         return leaderboard_data
@@ -530,17 +449,16 @@ def process_leaderboard_data():
         logger.error(traceback.format_exc())
         return []
 
-# stake_leaderboard_system.py 파일의 upload_to_sheet_best 함수를 이렇게 수정:
-
-# upload_to_sheet_best 함수를 이렇게 교체:
-
 def upload_to_sheet_best(data):
-    """Sheet.best 시도 후 실패시 GitHub Pages로 자동 전환"""
+    """Sheet.best 시도 후 실패시 GitHub Pages로 자동 전환 (안전 모드 지원)"""
     logger.info("📤 Sheet.best API 업로드 시작...")
     
     if not data:
         logger.error("❌ 업로드할 데이터가 없습니다")
         return False
+    
+    if SAFE_MODE:
+        logger.info("🛡️ 안전 모드: 기존 21개 컬럼만 업로드")
     
     # 1. Sheet.best 시도
     sheet_success = try_sheet_best_upload(data)
@@ -551,21 +469,30 @@ def upload_to_sheet_best(data):
     else:
         logger.warning("⚠️ Sheet.best 실패, GitHub Pages로 전환...")
         return save_to_github_pages(data)
-    
 
 def try_sheet_best_upload(data):
-    """Sheet.best 업로드만 시도"""
+    """Sheet.best 업로드만 시도 (안전 모드 지원)"""
     try:
+        if not data:
+            return False
+            
         test_item = data[0]
-        single_object = {
-            "address": str(test_item.get('address', '')),
-            "rank": str(test_item.get('rank', '')),
-            "grade": str(test_item.get('grade', '')),
-            "total_staked": str(test_item.get('total_staked', '')),
-            "time_score": str(test_item.get('time_score', '')),
-            "holding_days": str(test_item.get('holding_days', '')),
-            "is_active": str(test_item.get('is_active', ''))
-        }
+        
+        # 안전 모드에서는 21개 컬럼만 업로드
+        if SAFE_MODE:
+            single_object = {}
+            for column in SAFE_MODE_COLUMNS:
+                single_object[column] = str(test_item.get(column, ''))
+        else:
+            single_object = {
+                "address": str(test_item.get('address', '')),
+                "rank": str(test_item.get('rank', '')),
+                "grade": str(test_item.get('grade', '')),
+                "total_staked": str(test_item.get('total_staked', '')),
+                "time_score": str(test_item.get('time_score', '')),
+                "holding_days": str(test_item.get('holding_days', '')),
+                "is_active": str(test_item.get('is_active', ''))
+            }
         
         headers = {
             'Content-Type': 'application/json',
@@ -589,7 +516,7 @@ def try_sheet_best_upload(data):
         return False
 
 def save_to_github_pages(data):
-    """GitHub Pages용 JSON 파일 생성 및 자동 커밋"""
+    """GitHub Pages용 JSON 파일 생성 및 자동 커밋 (안전 모드 지원)"""
     logger.info("📄 GitHub Pages용 JSON 파일 생성...")
     
     try:
@@ -603,6 +530,8 @@ def save_to_github_pages(data):
             "total_wallets": len(data),
             "active_wallets": len([d for d in data if d.get('is_active')]),
             "phase": 1,
+            "safe_mode": SAFE_MODE,  # 🆕 안전 모드 정보 추가
+            "update_range": UPDATE_RANGE if SAFE_MODE else "A:AM",
             "leaderboard": data[:100]  # 상위 100개
         }
         
@@ -613,6 +542,9 @@ def save_to_github_pages(data):
         
         logger.info(f"✅ JSON 파일 생성: {json_file}")
         logger.info(f"📊 데이터 크기: {len(api_data['leaderboard'])}개 항목")
+        
+        if SAFE_MODE:
+            logger.info("🛡️ 안전 모드: 신규 18개 컬럼은 Apps Script에서 자동 추가됩니다")
         
         # Git 자동 커밋 (GitHub Actions 환경에서)
         try:
@@ -628,7 +560,7 @@ def save_to_github_pages(data):
             subprocess.run(['git', 'add', 'public/leaderboard.json'], 
                          cwd='..', check=True)
             
-            commit_msg = f"Update leaderboard data - {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}"
+            commit_msg = f"Update leaderboard data (Safe Mode: {SAFE_MODE}) - {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}"
             subprocess.run(['git', 'commit', '-m', commit_msg], 
                          cwd='..', check=True)
             
@@ -652,79 +584,13 @@ def save_to_github_pages(data):
         logger.error(traceback.format_exc())
         return False
 
-# 추가할 새로운 함수 (새로 추가):
-def create_next_js_config():
-    """Next.js에서 GitHub Pages JSON 사용하도록 설정"""
-    logger.info("⚙️ Next.js 설정 안내...")
-    logger.info("🔧 index.tsx에서 이렇게 변경:")
-    logger.info("const SHEET_BEST_URL = 'https://username.github.io/repo-name/leaderboard.json';")
-    logger.info("===============================================")    
-    
-def upload_multiple_objects(data):
-    """여러 객체를 순차적으로 업로드"""
-    logger.info(f"📤 {len(data)}개 객체 순차 업로드 시작...")
-    
-    success_count = 0
-    
-    for i, item in enumerate(data):
-        try:
-            # POST로 개별 추가 시도
-            single_object = {
-                "address": str(item.get('address', '')),
-                "rank": str(item.get('rank', '')),
-                "grade": str(item.get('grade', '')),
-                "total_staked": str(item.get('total_staked', ''))
-            }
-            
-            # PUT 대신 POST 시도 (추가 모드)
-            response = requests.post(
-                SHEET_BEST_URL,
-                json=single_object,
-                headers={'Content-Type': 'application/json'},
-                timeout=30
-            )
-            
-            if response.status_code == 200:
-                success_count += 1
-                logger.info(f"✅ 항목 {i+1} 업로드 성공")
-            else:
-                logger.warning(f"⚠️ 항목 {i+1} 업로드 실패: {response.status_code}")
-                
-            time.sleep(1)  # API 제한 방지
-            
-        except Exception as e:
-            logger.error(f"❌ 항목 {i+1} 오류: {e}")
-            continue
-    
-    logger.info(f"📊 순차 업로드 완료: {success_count}/{len(data)}개 성공")
-    return success_count > 0
-
-# 권한 문제 해결을 위한 안내 함수
-def show_sheet_permission_guide():
-    """Google Sheets 권한 설정 안내"""
-    logger.info("🔧 === Sheet.best 권한 설정 안내 ===")
-    logger.info("1. Google Sheets 열기")
-    logger.info("2. 오른쪽 상단 '공유' 버튼 클릭") 
-    logger.info("3. '링크가 있는 모든 사용자'로 설정")
-    logger.info("4. 권한을 '편집자'로 설정")
-    logger.info("5. '완료' 클릭")
-    logger.info("6. Sheet.best 연결 다시 테스트")
-    logger.info("============================================")
-
-# 기존 함수 앞에 권한 안내 추가
-def upload_to_sheet_best_with_guide(data):
-    """권한 안내 포함 업로드"""
-    show_sheet_permission_guide()
-    return upload_to_sheet_best(data)    
-
-# 추가: math 모듈 import 필요
-import math
-
 def save_backup_data(data):
     """백업 데이터 저장"""
     try:
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        backup_file = f'backup/stake_leaderboard_{timestamp}.json'
+        
+        safe_mode_suffix = "_safe" if SAFE_MODE else ""
+        backup_file = f'backup/stake_leaderboard_{timestamp}{safe_mode_suffix}.json'
         
         # 백업 디렉토리 생성
         os.makedirs('backup', exist_ok=True)
@@ -736,7 +602,7 @@ def save_backup_data(data):
         
         # CSV도 저장
         df = pd.DataFrame(data)
-        csv_file = f'backup/stake_leaderboard_{timestamp}.csv'
+        csv_file = f'backup/stake_leaderboard_{timestamp}{safe_mode_suffix}.csv'
         df.to_csv(csv_file, index=False, encoding='utf-8-sig')
         logger.info(f"💾 CSV 백업 저장 완료: {csv_file}")
         
@@ -744,8 +610,13 @@ def save_backup_data(data):
         logger.error(f"❌ 백업 저장 실패: {e}")
 
 def update_leaderboard():
-    """전체 리더보드 업데이트 프로세스"""
+    """전체 리더보드 업데이트 프로세스 (안전 모드 지원)"""
     logger.info("🎯 === STAKE 리더보드 업데이트 시작 ===")
+    
+    if SAFE_MODE:
+        logger.info("🛡️ 안전 모드: 기존 21개 컬럼만 업데이트")
+        logger.info("🔒 신규 18개 컬럼 보호 (Apps Script에서 자동 처리)")
+    
     start_time = datetime.now()
     
     try:
@@ -774,6 +645,9 @@ def update_leaderboard():
         logger.info(f"📊 처리된 항목: {len(leaderboard_data)}개")
         logger.info(f"📅 완료 시간: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
         
+        if SAFE_MODE:
+            logger.info("🛡️ 안전 모드 완료: Apps Script가 신규 컬럼을 자동 계산합니다")
+        
     except Exception as e:
         logger.error(f"💥 === 리더보드 업데이트 실패 ===")
         logger.error(f"❌ 오류: {e}")
@@ -783,6 +657,7 @@ def start_scheduler():
     """스케줄러 시작"""
     logger.info("⏰ STAKE 리더보드 스케줄러 시작")
     logger.info(f"📋 설정: 6시간마다 자동 업데이트")
+    logger.info(f"🛡️ 안전 모드: {SAFE_MODE}")
     logger.info(f"🎯 다음 실행: {datetime.now() + pd.Timedelta(hours=6)}")
     
     # 6시간마다 실행
@@ -805,11 +680,12 @@ def start_scheduler():
             time.sleep(300)  # 5분 후 재시도
 
 if __name__ == "__main__":
-    logger.info("🥩 STAKE 리더보드 시스템 시작")
+    logger.info("🥩 STAKE 리더보드 시스템 시작 (안전 모드 지원)")
     logger.info(f"🔗 RPC URL: {RPC_URL}")
     logger.info(f"📋 스테이킹 컨트랙트: {STAKING_ADDRESS}")
     logger.info(f"🎯 제네시스 블록: {GENESIS_BLOCK:,}")
     logger.info(f"📊 현재 페이즈: {CURRENT_PHASE}/{TOTAL_PHASES}")
+    logger.info(f"🛡️ 안전 모드: {SAFE_MODE}")
     
     try:
         start_scheduler()

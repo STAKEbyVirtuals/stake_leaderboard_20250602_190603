@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import ReferralSystem from './ReferralSystem';
+import ReferralDashboard from './ReferralDashboard';
+import GrillTemperature from './GrillTemperature';
+import GiftBoxSystem from './GiftBoxSystem';
 
 // 🎯 Optimized Integrated Dashboard - No Duplicates, Enhanced UX
 const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1f5fc3b5bee10dae15" }) => {
@@ -1581,13 +1585,52 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
             <UpgradeTracksRow />
             <StakehouseCard />
           </div>
-          
+
+          <GrillTemperature 
+            userStake={userData.display_staked}
+            referralBonus={userData.points_breakdown.by_referral}
+            userTier={userData.grade}
+            userRank={userData.rank}
+            totalUsers={1247}
+            isMobile={isMobile}
+          />
+
+          <GiftBoxSystem 
+            userStake={userData.display_staked}
+            userTier={userData.grade}
+            isMobile={isMobile}
+          />
+        
           {/* Right: Phase 1 allocation + Time/Actions */}
           <div>
             <Phase1AllocationCard />
             <TimeAndActions />
           </div>
         </div>
+
+        {/* 🚀 추천인 시스템 섹션 추가 */}
+        {userAddress && (
+          <div style={{
+            marginTop: isMobile ? 24 : 32,
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+            gap: isMobile ? 16 : 24
+          }}>
+            {/* 추천인 시스템 카드 */}
+            <div style={{
+              gridColumn: isMobile ? '1 / -1' : 'auto'
+            }}>
+              <ReferralSystem walletAddress={userAddress} />
+            </div>
+            
+            {/* 추천인 대시보드 */}
+            <div style={{
+              gridColumn: isMobile ? '1 / -1' : 'auto'
+            }}>
+              <ReferralDashboard walletAddress={userAddress} />
+            </div>
+          </div>
+        )}
       </div>
       
       {/* JEET warning modal */}
