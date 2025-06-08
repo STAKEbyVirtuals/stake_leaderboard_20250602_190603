@@ -1,4 +1,6 @@
+// components/CompletionCertificate.jsx 수정 - 추천인 코드 포함
 import React, { useRef, useState, useEffect } from 'react';
+import { ReferralCore } from './ReferralSystem';
 
 const CompletionCertificate = ({ walletAddress, onImageReady }) => {
   const canvasRef = useRef(null);
@@ -217,17 +219,30 @@ const CompletionCertificate = ({ walletAddress, onImageReady }) => {
     return imageDataUrl;
   };
 
-  const openTwitterWithImage = () => {
+  // 🆕 추천인 코드가 포함된 트윗 텍스트 생성
+  const generateTweetWithReferral = () => {
+    // 내 추천인 코드 생성
+    const myReferralCode = ReferralCore.generateReferralCode(walletAddress);
+    
+    // 현재 사이트 주소에 추천인 코드 추가
+    const baseUrl = window.location.origin;
+    const referralLink = `${baseUrl}?ref=${myReferralCode}`;
+    
     const line1 = 'GO VIRGEN, YOUNG BOY —';
     const line2 = '$STAKE AND BECOME GENESIS.';
     const line3 = '';
     const line4 = 'Join now — Earn your share of 50,000 stSTAKE!';
-    const line5 = '👉(사이트주소)';
-    const line6 = '🔗 ' + walletAddress;
-    const line7 = '';
-    const line8 = '@virtuals_io #STAKE';
+    const line5 = `👉 ${referralLink}`;  // 🆕 추천인 코드 포함 링크
+    const line6 = `🔗 ${walletAddress}`;
+    const line7 = `🎁 Ref Code: ${myReferralCode}`;  // 🆕 추천인 코드 명시
+    const line8 = '';
+    const line9 = '@virtuals_io #STAKE #Referral';  // 🆕 해시태그 추가
     
-    const tweetContent = line1 + '\n' + line2 + '\n' + line3 + '\n' + line4 + '\n' + line5 + '\n' + line6 + '\n' + line7 + '\n' + line8;
+    return line1 + '\n' + line2 + '\n' + line3 + '\n' + line4 + '\n' + line5 + '\n' + line6 + '\n' + line7 + '\n' + line8 + '\n' + line9;
+  };
+
+  const openTwitterWithImage = () => {
+    const tweetContent = generateTweetWithReferral();
     const tweetText = encodeURIComponent(tweetContent);
     const tweetUrl = 'https://twitter.com/intent/tweet?text=' + tweetText;
     window.open(tweetUrl, '_blank');
@@ -274,6 +289,20 @@ const CompletionCertificate = ({ walletAddress, onImageReady }) => {
     }
   };
 
+  // 🆕 추천인 링크만 복사하는 기능
+  const copyReferralLink = () => {
+    const myReferralCode = ReferralCore.generateReferralCode(walletAddress);
+    const baseUrl = window.location.origin;
+    const referralLink = `${baseUrl}?ref=${myReferralCode}`;
+    
+    navigator.clipboard.writeText(referralLink).then(() => {
+      alert(`Referral link copied!\n${referralLink}`);
+    }).catch(err => {
+      console.error('Copy failed:', err);
+      prompt('Copy this referral link:', referralLink);
+    });
+  };
+
   if (!certificateReady) {
     return (
       <div className="bg-gray-500/20 border-2 border-gray-500 rounded-xl p-4">
@@ -287,6 +316,7 @@ const CompletionCertificate = ({ walletAddress, onImageReady }) => {
 
   const statusText1 = baseImageLoaded ? 'Official STAKE GENESIS promotional image (1024×1600) with enhanced overlay and spacing!' : 'Custom STAKE branded design (1024×1600) with enhanced overlay and spacing!';
   const statusText2 = baseImageLoaded ? 'Original promotional image applied!' : 'Fallback design active';
+  const myReferralCode = ReferralCore.generateReferralCode(walletAddress);
 
   return (
     <div className="space-y-4">
@@ -301,6 +331,29 @@ const CompletionCertificate = ({ walletAddress, onImageReady }) => {
           ✅ {statusText1}
         </p>
         
+        {/* 🆕 추천인 코드 정보 */}
+        <div className="bg-purple-500/20 border border-purple-500/30 rounded-lg p-3 mb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-purple-400 font-semibold text-sm mb-1">
+                🎁 Your Referral Code
+              </div>
+              <div className="font-mono text-white font-bold">
+                {myReferralCode}
+              </div>
+            </div>
+            <button
+              onClick={copyReferralLink}
+              className="bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 px-3 py-2 rounded-lg text-sm font-semibold transition-colors"
+            >
+              📋 Copy Link
+            </button>
+          </div>
+          <div className="text-xs text-gray-400 mt-2">
+            💡 Your referral code is automatically included in the tweet!
+          </div>
+        </div>
+        
         <div className="space-y-3">
           {isMobile ? (
             <div className="space-y-3">
@@ -311,7 +364,7 @@ const CompletionCertificate = ({ walletAddress, onImageReady }) => {
                 📱 Download & Open X App
               </button>
               <p className="text-xs text-gray-400 text-center">
-                📱 Mobile: Download → Open X app → Attach image → Tweet
+                📱 Mobile: Download → Open X app → Attach image → Tweet with referral link
               </p>
             </div>
           ) : (
@@ -334,7 +387,8 @@ const CompletionCertificate = ({ walletAddress, onImageReady }) => {
         </div>
         
         <div className="text-xs text-gray-400 space-y-1 mt-3">
-          <p>💡 <strong>Enhanced:</strong> Larger text + STAKE by Virtuals branding</p>
+          <p>💡 <strong>Enhanced:</strong> Includes your referral code for bonus points!</p>
+          <p>🎁 <strong>Referral:</strong> Code {myReferralCode} automatically added</p>
           <p>🎨 <strong>Size:</strong> 1024×1600 (Enhanced vertical layout with proper spacing)</p>
           <p>📐 <strong>Status:</strong> {statusText2}</p>
           {isMobile && (

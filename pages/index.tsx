@@ -10,6 +10,10 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import StakeHowToPage from '../components/StakeHowToPage';
 import CompactTopbar from '../components/CompactTopbar';
 import OptimizedIntegratedDashboard from '../components/OptimizedIntegratedDashboard';
+import ReferralTracker from '../components/ReferralTracker';
+import ReferralSystem from '../components/ReferralSystem';
+import ReferralDashboard from '../components/ReferralDashboard';
+
 
 // JSON API URL (구글시트 or GitHub JSON)
 const SHEET_BEST_URL = '/leaderboard.json';
@@ -991,6 +995,15 @@ function Layout({
           onPhaseClick={handlePhaseClick}
         />
         
+        {/* 🚀 여기에 ReferralTracker 추가! */}
+        <ReferralTracker 
+          walletAddress={wallet} 
+          onReferralDetected={(code) => {
+            console.log('🎁 추천인 코드 감지:', code);
+            // 추가 처리 로직 (선택사항)
+          }}
+        />
+
         {/* 메인 컨텐츠 */}
         <div style={{ 
           flex: 1, 
@@ -3857,6 +3870,10 @@ function MyDashboardPage({ data, wallet }:{ data: LeaderboardItem[]; wallet: str
       
       {/* 등급업 가이드 섹션 */}
       <GradeUpgradeGuide myData={myData} isMobile={isMobile} />
+
+      {/* 🆕 추천인 시스템 추가 */}
+      <ReferralSystem walletAddress={wallet} />
+      <ReferralDashboard walletAddress={wallet} />
     </div>
   );
 }
