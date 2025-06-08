@@ -44,7 +44,7 @@ SHEET_BEST_URL = os.environ.get('SHEET_BEST_URL')
 
 if not SHEET_BEST_URL:
     # 로컬 개발 시 기본값 (실제 URL로 교체)
-    SHEET_BEST_URL = 'https://api.sheetbest.com/sheets/5edda2e2-ce31-471d-9465-ad4caa27fc2c'
+    SHEET_BEST_URL = 'https://api.sheetbest.com/sheets/de22dc8c-2579-461b-b255-4d9833d13dd3'
     logger.warning("⚠️ SHEET_BEST_URL 환경변수가 설정되지 않았습니다. 기본값을 사용합니다.")
 else:
     logger.info(f"✅ Sheet.best URL 설정 완료: {SHEET_BEST_URL[:30]}...")
@@ -471,33 +471,58 @@ def upload_to_sheet_best(data):
         return save_to_github_pages(data)
 
 def try_sheet_best_upload(data):
-    """Sheet.best 업로드만 시도 (안전 모드 지원)"""
+    """Sheet.best 업로드만 시도 (데이터 타입 수정)"""
     try:
         if not data:
             return False
             
         test_item = data[0]
         
-        # 안전 모드에서는 21개 컬럼만 업로드
+        # 🔧 올바른 데이터 타입으로 전송 (문자열 변환 제거)
         if SAFE_MODE:
-            single_object = {}
-            for column in SAFE_MODE_COLUMNS:
-                single_object[column] = str(test_item.get(column, ''))
-        else:
+            # 안전 모드: 21개 컬럼만 올바른 타입으로 업로드
             single_object = {
-                "address": str(test_item.get('address', '')),
-                "rank": str(test_item.get('rank', '')),
-                "grade": str(test_item.get('grade', '')),
-                "total_staked": str(test_item.get('total_staked', '')),
-                "time_score": str(test_item.get('time_score', '')),
-                "holding_days": str(test_item.get('holding_days', '')),
-                "is_active": str(test_item.get('is_active', ''))
+                "address": test_item.get('address', ''),
+                "rank": int(test_item.get('rank', 0)) if test_item.get('rank') else 0,
+                "grade": test_item.get('grade', ''),
+                "grade_emoji": test_item.get('grade_emoji', ''),
+                "percentile": float(test_item.get('percentile', 0)) if test_item.get('percentile') else 0.0,
+                "total_staked": float(test_item.get('total_staked', 0)) if test_item.get('total_staked') else 0.0,
+                "time_score": float(test_item.get('time_score', 0)) if test_item.get('time_score') else 0.0,
+                "holding_days": float(test_item.get('holding_days', 0)) if test_item.get('holding_days') else 0.0,
+                "stake_count": int(test_item.get('stake_count', 0)) if test_item.get('stake_count') else 0,
+                "unstake_count": int(test_item.get('unstake_count', 0)) if test_item.get('unstake_count') else 0,
+                "is_active": bool(test_item.get('is_active', False)),
+                "current_phase": int(test_item.get('current_phase', 1)),
+                "phase_score": float(test_item.get('phase_score', 0)) if test_item.get('phase_score') else 0.0,
+                "total_score_all_phases": float(test_item.get('total_score_all_phases', 0)) if test_item.get('total_score_all_phases') else 0.0,
+                "airdrop_share_phase": float(test_item.get('airdrop_share_phase', 0)) if test_item.get('airdrop_share_phase') else 0.0,
+                "airdrop_share_total": float(test_item.get('airdrop_share_total', 0)) if test_item.get('airdrop_share_total') else 0.0,
+                "first_stake_time": int(test_item.get('first_stake_time', 0)) if test_item.get('first_stake_time') else 0,
+                "last_action_time": int(test_item.get('last_action_time', 0)) if test_item.get('last_action_time') else 0,
+                "rank_change_24h": int(test_item.get('rank_change_24h', 0)) if test_item.get('rank_change_24h') else 0,
+                "score_change_24h": float(test_item.get('score_change_24h', 0)) if test_item.get('score_change_24h') else 0.0,
+                "phase_rank_history": test_item.get('phase_rank_history', '')
+            }
+        else:
+            # 일반 모드: 기본 필드만 올바른 타입으로
+            single_object = {
+                "address": test_item.get('address', ''),
+                "rank": int(test_item.get('rank', 0)) if test_item.get('rank') else 0,
+                "grade": test_item.get('grade', ''),
+                "total_staked": float(test_item.get('total_staked', 0)) if test_item.get('total_staked') else 0.0,
+                "time_score": float(test_item.get('time_score', 0)) if test_item.get('time_score') else 0.0,
+                "holding_days": float(test_item.get('holding_days', 0)) if test_item.get('holding_days') else 0.0,
+                "is_active": bool(test_item.get('is_active', False))
             }
         
         headers = {
             'Content-Type': 'application/json',
             'User-Agent': 'STAKE-Leaderboard/1.0'
         }
+        
+        logger.info(f"📤 Sheet.best 업로드 시도 (데이터 타입 수정)")
+        logger.info(f"📊 샘플 데이터: address={single_object.get('address', 'N/A')[:10]}..., rank={single_object.get('rank')}, total_staked={single_object.get('total_staked')}")
         
         response = requests.put(
             SHEET_BEST_URL,
@@ -508,6 +533,12 @@ def try_sheet_best_upload(data):
         
         logger.info(f"📡 Sheet.best 응답: {response.status_code}")
         logger.info(f"📄 응답 내용: {response.text[:200]}")
+        
+        if response.status_code == 200:
+            logger.info("✅ Sheet.best 데이터 타입 수정으로 업로드 성공!")
+        else:
+            logger.error(f"❌ Sheet.best 업로드 실패: {response.status_code}")
+            logger.error(f"📄 에러 응답: {response.text}")
         
         return response.status_code == 200
         
