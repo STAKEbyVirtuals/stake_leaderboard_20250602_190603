@@ -44,7 +44,7 @@ SHEET_BEST_URL = os.environ.get('SHEET_BEST_URL')
 
 if not SHEET_BEST_URL:
     # 로컬 개발 시 기본값 (실제 URL로 교체)
-    SHEET_BEST_URL = 'https://api.sheetbest.com/sheets/5edda2e2-ce31-471d-9465-ad4caa27fc2c'
+    SHEET_BEST_URL = 'https://api.sheetbest.com/sheets/ecc08e38-a6e9-43c9-8029-2bbf2a86fb67'
     logger.warning("⚠️ SHEET_BEST_URL 환경변수가 설정되지 않았습니다. 기본값을 사용합니다.")
 else:
     logger.info(f"✅ Sheet.best URL 설정 완료: {SHEET_BEST_URL[:30]}...")
