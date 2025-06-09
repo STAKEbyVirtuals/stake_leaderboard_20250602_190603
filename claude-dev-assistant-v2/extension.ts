@@ -17,14 +17,14 @@ export function activate(context: vscode.ExtensionContext) {
     fileManager = new FileManager();
     stakeHelpers = new STAKEHelpers(fileManager, claudeAPI);
 
-    // Show activation message
-    vscode.window.showInformationMessage('🎉 Claude Dev Assistant for STAKE is ready!');
-
     // Register all commands
     registerCommands(context);
     
-    // Create status bar item
+    // Create status bar
     createStatusBar(context);
+
+    // Show activation message
+    vscode.window.showInformationMessage('🎉 Claude Dev Assistant for STAKE is ready!');
 
     console.log('✅ Claude Dev Assistant for STAKE v2 activated successfully!');
 }
@@ -32,32 +32,43 @@ export function activate(context: vscode.ExtensionContext) {
 function registerCommands(context: vscode.ExtensionContext) {
     // 💬 Main chat command
     const openChatCommand = vscode.commands.registerCommand('claude.openChat', async () => {
-
         console.log('🤖 Claude openChat command executed!');
-        vscode.window.showInformationMessage('Claude 채팅을 여는 중...'); 
+        vscode.window.showInformationMessage('Claude 채팅을 여는 중...'); // 임시 확인용
+        
         if (!chatPanel) {
+            console.log('Creating new ChatPanel...');
             chatPanel = new ChatPanel(context.extensionUri, claudeAPI, fileManager, stakeHelpers);
         }
+        console.log('Showing ChatPanel...');
         chatPanel.show();
     });
 
-    // 🔍 Analyze current file
+    // 🔍 Analyze current file (수정된 버전)
     const analyzeFileCommand = vscode.commands.registerCommand('claude.analyzeFile', async () => {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            vscode.window.showWarningMessage('No file is currently open');
-            return;
-        }
-
-        const fileName = editor.document.fileName;
-        const content = editor.document.getText();
+        console.log('🔍 Claude analyzeFile command executed!');
         
-        // Open chat and analyze file
-        if (!chatPanel) {
-            chatPanel = new ChatPanel(context.extensionUri, claudeAPI, fileManager, stakeHelpers);
+        try {
+            // 활성 편집기에서 파일 정보 가져오기
+            const activeFileData = await fileManager.readActiveFile();
+            
+            if (!activeFileData) {
+                vscode.window.showWarningMessage('❌ 분석할 파일이 열려있지 않습니다.');
+                return;
+            }
+
+            console.log('📄 분석할 파일:', activeFileData.fileName);
+            
+            // Open chat and analyze file
+            if (!chatPanel) {
+                chatPanel = new ChatPanel(context.extensionUri, claudeAPI, fileManager, stakeHelpers);
+            }
+            chatPanel.show();
+            chatPanel.analyzeFile(activeFileData.fileName, activeFileData.content);
+            
+        } catch (error) {
+            console.error('❌ 파일 분석 오류:', error);
+            vscode.window.showErrorMessage(`파일 분석 중 오류가 발생했습니다: ${error}`);
         }
-        chatPanel.show();
-        chatPanel.analyzeFile(fileName, content);
     });
 
     // 🔑 Configure API Key
@@ -105,6 +116,50 @@ function registerCommands(context: vscode.ExtensionContext) {
         await executeQuickAction('deployPreview');
     });
 
+    // 🔍 Advanced: Analyze Project Structure
+    const analyzeProjectCommand = vscode.commands.registerCommand('claude.analyzeProject', async () => {
+        console.log('🏗️ 프로젝트 구조 분석 시작...');
+        
+        try {
+            vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: '🔍 STAKE 프로젝트 구조를 분석하고 있습니다...',
+                cancellable: false
+            }, async (progress) => {
+                progress.report({ increment: 0, message: '프로젝트 파일 스캔 중...' });
+                
+                const projectContext = await stakeHelpers.getProjectContext();
+                
+                progress.report({ increment: 50, message: 'Claude 분석 중...' });
+                
+                // Open chat and show project analysis
+                if (!chatPanel) {
+                    chatPanel = new ChatPanel(context.extensionUri, claudeAPI, fileManager, stakeHelpers);
+                }
+                chatPanel.show();
+                
+                // Send project analysis to chat
+                const analysisMessage = `📊 STAKE 프로젝트 구조 분석 결과:
+
+**발견된 컴포넌트**: ${projectContext.structure?.components?.length || 0}개
+**페이지**: ${projectContext.structure?.pages?.length || 0}개  
+**유틸리티**: ${projectContext.structure?.utils?.length || 0}개
+**STAKE 관련 파일**: ${Object.values(projectContext.stakeFiles || {}).flat().length}개
+
+어떤 부분을 자세히 분석하거나 개선하고 싶으신가요?`;
+                
+                // Simulate sending message to chat
+                chatPanel.showProjectAnalysis(analysisMessage);
+                
+                progress.report({ increment: 100, message: '분석 완료!' });
+            });
+            
+        } catch (error) {
+            console.error('❌ 프로젝트 분석 오류:', error);
+            vscode.window.showErrorMessage(`프로젝트 분석 중 오류가 발생했습니다: ${error}`);
+        }
+    });
+
     // Register all commands
     context.subscriptions.push(
         openChatCommand,
@@ -115,7 +170,8 @@ function registerCommands(context: vscode.ExtensionContext) {
         addNewTierCommand,
         optimizePerformanceCommand,
         syncLeaderboardCommand,
-        deployPreviewCommand
+        deployPreviewCommand,
+        analyzeProjectCommand
     );
 }
 
@@ -177,6 +233,7 @@ async function executeQuickAction(actionType: string) {
         });
 
     } catch (error) {
+        console.error('❌ Quick action 실행 오류:', error);
         vscode.window.showErrorMessage(`Error executing quick action: ${error}`);
     }
 }

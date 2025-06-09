@@ -21,7 +21,72 @@ export class FileManager {
     private workspaceRoot: string;
 
     constructor() {
-        this.workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
+        // 워크스페이스 루트 경로 설정
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (workspaceFolders && workspaceFolders.length > 0) {
+            this.workspaceRoot = workspaceFolders[0].uri.fsPath;
+        } else {
+            this.workspaceRoot = '';
+        }
+        
+        console.log('🎯 FileManager 워크스페이스 경로:', this.workspaceRoot);
+    }
+
+    // 📄 파일 읽기 (VS Code API 우선, Node.js fs 백업)
+    async readFile(filePath: string): Promise<string> {
+        console.log('📖 파일 읽기 시도:', filePath);
+        
+        try {
+            // 방법 1: VS Code API 사용 (권장)
+            const fullPath = this.resolveFilePath(filePath);
+            const uri = vscode.Uri.file(fullPath);
+            
+            console.log('🔍 URI 생성:', uri.fsPath);
+            
+            try {
+                const document = await vscode.workspace.openTextDocument(uri);
+                const content = document.getText();
+                console.log('✅ VS Code API로 파일 읽기 성공:', content.length, '문자');
+                return content;
+            } catch (vsCodeError) {
+                console.log('⚠️ VS Code API 실패, Node.js fs 시도:', vsCodeError);
+                
+                // 방법 2: Node.js fs 모듈 사용 (백업)
+                const content = fs.readFileSync(fullPath, 'utf8');
+                console.log('✅ Node.js fs로 파일 읽기 성공:', content.length, '문자');
+                return content;
+            }
+            
+        } catch (error) {
+            const errorMsg = `파일을 읽을 수 없습니다: ${filePath} - ${error}`;
+            console.error('❌ 파일 읽기 완전 실패:', errorMsg);
+            throw new Error(errorMsg);
+        }
+    }
+
+    // 📄 현재 활성 편집기의 파일 읽기
+    async readActiveFile(): Promise<{fileName: string, content: string} | null> {
+        try {
+            const activeEditor = vscode.window.activeTextEditor;
+            if (!activeEditor) {
+                console.log('❌ 활성 편집기 없음');
+                return null;
+            }
+
+            const document = activeEditor.document;
+            const fileName = document.fileName;
+            const content = document.getText();
+            
+            console.log('✅ 활성 파일 읽기 성공:', fileName, content.length, '문자');
+            
+            return {
+                fileName: fileName,
+                content: content
+            };
+        } catch (error) {
+            console.error('❌ 활성 파일 읽기 실패:', error);
+            return null;
+        }
     }
 
     // 📁 프로젝트 구조 분석
@@ -34,51 +99,53 @@ export class FileManager {
             data: []
         };
 
+        if (!this.workspaceRoot) {
+            console.log('❌ 워크스페이스 루트 없음');
+            return structure;
+        }
+
         try {
+            console.log('🔍 프로젝트 구조 스캔 시작:', this.workspaceRoot);
+
             // components 폴더 스캔
             const componentsPath = path.join(this.workspaceRoot, 'components');
-            if (fs.existsSync(componentsPath)) {
+            if (this.directoryExists(componentsPath)) {
                 structure.components = await this.scanDirectory(componentsPath, ['.jsx', '.tsx', '.js', '.ts']);
+                console.log('📂 Components 발견:', structure.components.length, '개');
             }
 
             // pages 폴더 스캔
             const pagesPath = path.join(this.workspaceRoot, 'pages');
-            if (fs.existsSync(pagesPath)) {
+            if (this.directoryExists(pagesPath)) {
                 structure.pages = await this.scanDirectory(pagesPath, ['.jsx', '.tsx', '.js', '.ts']);
+                console.log('📂 Pages 발견:', structure.pages.length, '개');
             }
 
             // utils 폴더 스캔
             const utilsPath = path.join(this.workspaceRoot, 'utils');
-            if (fs.existsSync(utilsPath)) {
+            if (this.directoryExists(utilsPath)) {
                 structure.utils = await this.scanDirectory(utilsPath, ['.js', '.ts']);
+                console.log('📂 Utils 발견:', structure.utils.length, '개');
             }
 
             // styles 폴더 스캔
             const stylesPath = path.join(this.workspaceRoot, 'styles');
-            if (fs.existsSync(stylesPath)) {
+            if (this.directoryExists(stylesPath)) {
                 structure.styles = await this.scanDirectory(stylesPath, ['.css', '.scss', '.sass']);
+                console.log('📂 Styles 발견:', structure.styles.length, '개');
             }
 
             // public/data 폴더 스캔
             const dataPath = path.join(this.workspaceRoot, 'public', 'data');
-            if (fs.existsSync(dataPath)) {
+            if (this.directoryExists(dataPath)) {
                 structure.data = await this.scanDirectory(dataPath, ['.json']);
+                console.log('📂 Data 발견:', structure.data.length, '개');
             }
 
             return structure;
         } catch (error) {
-            console.error('Error scanning project structure:', error);
+            console.error('❌ 프로젝트 구조 스캔 실패:', error);
             return structure;
-        }
-    }
-
-    // 📄 파일 읽기
-    async readFile(filePath: string): Promise<string> {
-        try {
-            const fullPath = this.resolveFilePath(filePath);
-            return fs.readFileSync(fullPath, 'utf8');
-        } catch (error) {
-            throw new Error(`파일을 읽을 수 없습니다: ${filePath} - ${error}`);
         }
     }
 
@@ -91,9 +158,11 @@ export class FileManager {
             // 디렉토리가 없으면 생성
             if (!fs.existsSync(dirPath)) {
                 fs.mkdirSync(dirPath, { recursive: true });
+                console.log('📁 디렉토리 생성:', dirPath);
             }
 
             fs.writeFileSync(fullPath, content, 'utf8');
+            console.log('✅ 파일 쓰기 성공:', fullPath);
 
             return {
                 success: true,
@@ -101,6 +170,7 @@ export class FileManager {
                 filePath: fullPath
             };
         } catch (error) {
+            console.error('❌ 파일 쓰기 실패:', error);
             return {
                 success: false,
                 error: `파일 저장 실패: ${error}`
@@ -131,6 +201,7 @@ export class FileManager {
 
             return await this.writeFile(filePath, content);
         } catch (error) {
+            console.error('❌ 파일 생성 실패:', error);
             return {
                 success: false,
                 error: `파일 생성 실패: ${error}`
@@ -173,11 +244,62 @@ export class FileManager {
                 file.toLowerCase().includes('users')
             );
 
+            console.log('🎯 STAKE 파일 탐지 완료:', stakeFiles);
             return stakeFiles;
         } catch (error) {
-            console.error('Error finding STAKE files:', error);
+            console.error('❌ STAKE 파일 찾기 실패:', error);
             return stakeFiles;
         }
+    }
+
+    // Private helper methods
+    private resolveFilePath(filePath: string): string {
+        if (path.isAbsolute(filePath)) {
+            return filePath;
+        }
+        
+        const resolved = path.join(this.workspaceRoot, filePath);
+        console.log('🔗 경로 해결:', filePath, '→', resolved);
+        return resolved;
+    }
+
+    private directoryExists(dirPath: string): boolean {
+        try {
+            const exists = fs.existsSync(dirPath) && fs.statSync(dirPath).isDirectory();
+            console.log('📁 디렉토리 존재 확인:', dirPath, exists ? '✅' : '❌');
+            return exists;
+        } catch (error) {
+            console.log('📁 디렉토리 확인 오류:', dirPath, error);
+            return false;
+        }
+    }
+
+    private async scanDirectory(dirPath: string, extensions: string[]): Promise<string[]> {
+        const files: string[] = [];
+        
+        try {
+            const items = fs.readdirSync(dirPath);
+            console.log('📂 디렉토리 스캔:', dirPath, '항목 수:', items.length);
+            
+            for (const item of items) {
+                const itemPath = path.join(dirPath, item);
+                const stat = fs.statSync(itemPath);
+                
+                if (stat.isDirectory()) {
+                    // 재귀적으로 하위 디렉토리 스캔
+                    const subFiles = await this.scanDirectory(itemPath, extensions);
+                    files.push(...subFiles.map(f => path.relative(this.workspaceRoot, f)));
+                } else if (extensions.some(ext => item.endsWith(ext))) {
+                    const relativePath = path.relative(this.workspaceRoot, itemPath);
+                    files.push(relativePath);
+                    console.log('📄 파일 발견:', relativePath);
+                }
+            }
+        } catch (error) {
+            console.error(`❌ 디렉토리 스캔 오류 ${dirPath}:`, error);
+        }
+        
+        return files;
     }
 
     // 📊 STAKE 컴포넌트 템플릿 생성
@@ -222,39 +344,6 @@ export class FileManager {
         };
 
         return messages[changeType][fileType] || `${changeType}: Update ${fileName}`;
-    }
-
-    // Private helper methods
-    private async scanDirectory(dirPath: string, extensions: string[]): Promise<string[]> {
-        const files: string[] = [];
-        
-        try {
-            const items = fs.readdirSync(dirPath);
-            
-            for (const item of items) {
-                const itemPath = path.join(dirPath, item);
-                const stat = fs.statSync(itemPath);
-                
-                if (stat.isDirectory()) {
-                    // 재귀적으로 하위 디렉토리 스캔
-                    const subFiles = await this.scanDirectory(itemPath, extensions);
-                    files.push(...subFiles.map(f => path.relative(this.workspaceRoot, f)));
-                } else if (extensions.some(ext => item.endsWith(ext))) {
-                    files.push(path.relative(this.workspaceRoot, itemPath));
-                }
-            }
-        } catch (error) {
-            console.error(`Error scanning directory ${dirPath}:`, error);
-        }
-        
-        return files;
-    }
-
-    private resolveFilePath(filePath: string): string {
-        if (path.isAbsolute(filePath)) {
-            return filePath;
-        }
-        return path.join(this.workspaceRoot, filePath);
     }
 
     private getFileType(filePath: string): 'component' | 'util' | 'data' | 'config' | 'style' {

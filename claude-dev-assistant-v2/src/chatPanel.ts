@@ -78,6 +78,24 @@ export class ChatPanel {
         }
     }
 
+    public showProjectAnalysis(analysisContent: string) {
+        if (!this.panel) {
+            this.show();
+        }
+
+        const analysisMessage: ChatMessage = {
+            role: 'assistant',
+            content: analysisContent,
+            timestamp: new Date()
+        };
+        this.messages.push(analysisMessage);
+
+        this.panel?.webview.postMessage({
+            type: 'assistantMessage',
+            message: analysisMessage
+        });
+    }
+
     private setupWebviewMessageHandling() {
         if (!this.panel) return;
 
