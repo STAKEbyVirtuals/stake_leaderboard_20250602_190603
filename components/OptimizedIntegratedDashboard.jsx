@@ -1,10 +1,19 @@
+// components/OptimizedIntegratedDashboard.jsx
 import React, { useState, useEffect } from 'react';
 import ReferralSystem from './ReferralSystem';
 import ReferralDashboard from './ReferralDashboard';
 import GrillTemperature from './GrillTemperature';
 import GiftBoxSystem from './GiftBoxSystem';
+// 🆕 데이터 fetcher import
+import { 
+  fetchLeaderboardData, 
+  findUserData, 
+  formatUserDataForDashboard,
+  calculateLeaderboardStats,
+  getActiveUsers 
+} from '../utils/stakeDataFetcher';
 
-// 🎯 Optimized Integrated Dashboard - No Duplicates, Enhanced UX
+// 🎯 Optimized Integrated Dashboard - 실데이터 연동 버전
 const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1f5fc3b5bee10dae15" }) => {
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [isLive, setIsLive] = useState(true);
@@ -13,6 +22,12 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
   const [showJeetWarning, setShowJeetWarning] = useState(false);
   const [jeetWarningStep, setJeetWarningStep] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // 🆕 실데이터 상태 관리
+  const [isLoading, setIsLoading] = useState(true);
+  const [userData, setUserData] = useState(null);
+  const [systemStats, setSystemStats] = useState(null);
+  const [error, setError] = useState(null);
   
   // Detect mobile device
   useEffect(() => {
@@ -31,121 +46,185 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
       setCurrentTime(Date.now());
       setIsAnimating(true);
       setTimeout(() => setIsAnimating(false), 200);
+      
+      // 🆕 실시간 스코어 업데이트 (userData가 있을 때만)
+      if (userData) {
+        updateRealTimeScores();
+      }
     }, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [userData]);
+
+  // 🆕 실데이터 로드
+  useEffect(() => {
+    loadUserData();
+  }, [userAddress]);
+
+  // 🆕 데이터 로드 함수
+  const loadUserData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      console.log('📊 리더보드 데이터 로딩 중...');
+      const response = await fetchLeaderboardData();
+      
+      if (!response || !response.leaderboard) {
+        throw new Error('데이터 형식이 올바르지 않습니다');
+      }
+      
+      // 시스템 통계 계산
+      const stats = calculateLeaderboardStats(response.leaderboard);
+      setSystemStats(stats);
+      
+      // 사용자 데이터 찾기
+      const rawUserData = findUserData(response.leaderboard, userAddress);
+      
+      if (!rawUserData) {
+        throw new Error('해당 지갑 주소를 찾을 수 없습니다');
+      }
+      
+      // 활성 사용자 목록 (24시간 예상 순위 계산용)
+      const activeUsers = getActiveUsers(response.leaderboard);
+      
+      // 대시보드용 포맷으로 변환
+      const formattedData = formatUserDataForDashboard(
+        rawUserData, 
+        stats,
+        activeUsers
+      );
+      
+      setUserData(formattedData);
+      console.log('✅ 사용자 데이터 로드 완료:', formattedData);
+      
+    } catch (err) {
+      console.error('❌ 데이터 로드 실패:', err);
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 🆕 실시간 스코어 업데이트
+  const updateRealTimeScores = () => {
+    if (!userData) return;
+    
+    const currentTimeSec = Date.now() / 1000;
+    const holdingSeconds = currentTimeSec - userData.first_stake_timestamp;
+    const holdingDays = holdingSeconds / (24 * 60 * 60);
+    
+    // 실시간 점수 재계산
+    const realTimeScore = userData.display_staked * holdingDays * userData.current_multiplier;
+    const scorePerSecond = (userData.display_staked * userData.current_multiplier) / (24 * 60 * 60);
+    
+    setUserData(prev => ({
+      ...prev,
+      real_time_score: realTimeScore,
+      score_per_second: scorePerSecond,
+      stakehouse_score: realTimeScore * 0.15,
+      stakehouse_per_second: scorePerSecond * 0.15,
+      holding_days: holdingDays,
+      // 실시간 holding 시간 업데이트
+      real_time_holding: (() => {
+        const totalSeconds = Math.floor(holdingSeconds);
+        return {
+          days: Math.floor(totalSeconds / (24 * 60 * 60)),
+          hours: Math.floor((totalSeconds % (24 * 60 * 60)) / (60 * 60)),
+          minutes: Math.floor((totalSeconds % (60 * 60)) / 60),
+          seconds: totalSeconds % 60
+        };
+      })()
+    }));
+  };
 
   // Refresh handler
   const handleRefresh = () => {
     setIsRefreshing(true);
-    // Simulate refresh delay
-    setTimeout(() => {
+    loadUserData().finally(() => {
       setIsRefreshing(false);
-    }, 1000);
+    });
   };
 
   // Phase dates
-  const phase1EndDate = new Date(Date.now() + (19 * 24 * 60 * 60 * 1000));
+  const phase1EndDate = new Date('2025-06-27T09:59:59Z');
 
-  // 🎨 Accurate tier system from EvolutionJourney.jsx
-  const currentUserTier = {
-    name: "GENESIS OG", 
-    emoji: "🌌", 
-    color: "#10b981",
-    glowColor: "rgba(16,185,129,0.6)",
-    bgGradient: "linear-gradient(135deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05))",
-    borderColor: "rgba(16,185,129,0.5)",
-    multiplier: 2.0
-  };
+  // 로딩 중일 때
+  if (isLoading) {
+    return (
+      <div style={{ 
+        background: '#0a0a0a', 
+        minHeight: '100vh', 
+        padding: isMobile ? '12px' : '20px',
+        color: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 48, marginBottom: 20 }}>🥩</div>
+          <div style={{ fontSize: 20, marginBottom: 10 }}>Loading STAKE Data...</div>
+          <div style={{ fontSize: 14, color: '#666' }}>Fetching from blockchain</div>
+        </div>
+      </div>
+    );
+  }
 
-  // Enhanced user data
-  const userData = {
-    address: userAddress,
-    
-    // Tier information
-    grade: currentUserTier.name,
-    grade_emoji: currentUserTier.emoji,
-    tier_color: currentUserTier.color,
-    tier_glow_color: currentUserTier.glowColor,
-    bg_gradient: currentUserTier.bgGradient,
-    border_color: currentUserTier.borderColor,
-    current_multiplier: currentUserTier.multiplier,
-    
-    // Staking information
-    total_staked: 150000,
-    virtual_staked: 50000,
-    display_staked: 200000,
-    
-    // Phase 1 allocation calculation
-    phase1_allocation_percent: 8.62,
-    phase1_allocation_tokens: 431250,
-    phase1_allocation_usd: 1078,
-    
-    // Ranking information
-    rank: 12,
-    total_participants: 1247,
-    rank_change_24h: 3,
-    predicted_rank_24h: 8,
-    
-    // Time information
-    first_stake_timestamp: Date.now() / 1000 - (38 * 24 * 60 * 60), // 38 days ago
-    
-    // Phase status
-    current_phase: 1,
-    phase_status: "active",
-    is_diamond_hand_eligible: true,
-    
-    // 3 upgrade track status (Genesis is max level)
-    upgrade_tracks: {
-      fast_track: { available: false, next_tier: null },
-      regular_track: { available: false, next_tier: null },
-      diamond_hand: { 
-        available: false, 
-        phase_end_countdown: Math.floor((phase1EndDate.getTime() - Date.now()) / 1000),
-        next_tier: null 
-      }
-    },
-    
-    // Points breakdown
-    points_breakdown: {
-      by_restake: 2100000000 * 0.95,
-      by_referral: 2100000000 * 0.05
-    },
-    
-    // Calculated real-time values
-    get real_time_score() {
-      const secondsElapsed = (currentTime / 1000) - this.first_stake_timestamp;
-      const daysElapsed = secondsElapsed / (24 * 60 * 60);
-      const rawScore = this.display_staked * daysElapsed;
-      return rawScore * this.current_multiplier;
-    },
-    
-    get score_per_second() {
-      return (this.display_staked * this.current_multiplier) / (24 * 60 * 60);
-    },
-    
-    get stakehouse_score() {
-      return this.real_time_score * 0.15;
-    },
-    
-    get stakehouse_per_second() {
-      return (this.display_staked * this.current_multiplier * 0.15) / (24 * 60 * 60);
-    },
-    
-    get percentile() {
-      return ((this.total_participants - this.rank) / this.total_participants) * 100;
-    },
-    
-    get real_time_holding() {
-      const totalSeconds = Math.floor((currentTime / 1000) - this.first_stake_timestamp);
-      return {
-        days: Math.floor(totalSeconds / (24 * 60 * 60)),
-        hours: Math.floor((totalSeconds % (24 * 60 * 60)) / (60 * 60)),
-        minutes: Math.floor((totalSeconds % (60 * 60)) / 60),
-        seconds: totalSeconds % 60
-      };
-    }
-  };
+  // 에러 발생 시
+  if (error) {
+    return (
+      <div style={{ 
+        background: '#0a0a0a', 
+        minHeight: '100vh', 
+        padding: isMobile ? '12px' : '20px',
+        color: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 48, marginBottom: 20 }}>❌</div>
+          <div style={{ fontSize: 20, marginBottom: 10, color: '#ef4444' }}>Error Loading Data</div>
+          <div style={{ fontSize: 14, color: '#999', marginBottom: 20 }}>{error}</div>
+          <button 
+            onClick={loadUserData}
+            style={{
+              padding: '12px 24px',
+              background: '#ef4444',
+              border: 'none',
+              borderRadius: 8,
+              color: '#fff',
+              fontSize: 16,
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 데이터가 없을 때
+  if (!userData) {
+    return (
+      <div style={{ 
+        background: '#0a0a0a', 
+        minHeight: '100vh', 
+        padding: isMobile ? '12px' : '20px',
+        color: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 48, marginBottom: 20 }}>🔍</div>
+          <div style={{ fontSize: 20, marginBottom: 10 }}>No Data Found</div>
+          <div style={{ fontSize: 14, color: '#999' }}>Wallet address not found in leaderboard</div>
+        </div>
+      </div>
+    );
+  }
 
   // Number formatting
   const formatNumber = (num) => {
@@ -189,7 +268,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
 
   // Copy contract address
   const copyStakeAddress = () => {
-    const stakeAddress = "0x1234567890abcdef1234567890abcdef12345678";
+    const stakeAddress = "0xBa13ae24684bee910820Be1Fcf52067332F8412f";
     navigator.clipboard.writeText(stakeAddress);
     alert("STAKE contract address copied!");
   };
@@ -559,7 +638,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
               marginBottom: 4,
               fontWeight: 600
             }}>
-              By Restake
+              By Stake
             </div>
             <div style={{
               fontSize: isMobile ? 14 : 18,
@@ -567,7 +646,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
               color: '#fff',
               fontFamily: 'monospace'
             }}>
-              {formatNumber(userData.points_breakdown.by_restake)} P
+              {formatNumber(userData.points_breakdown.by_stake)} P
             </div>
           </div>
           
@@ -643,11 +722,16 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
                 24h Prediction
               </div>
               <div style={{ 
-                color: '#4ade80', 
+                color: userData.predicted_rank_24h < userData.rank ? '#4ade80' : '#ef4444', 
                 fontSize: isMobile ? 9 : 11, 
                 marginTop: 4 
               }}>
-                ↗ +{userData.rank - userData.predicted_rank_24h} Rise
+                {userData.predicted_rank_24h < userData.rank 
+                  ? `↗ +${userData.rank - userData.predicted_rank_24h} Rise`
+                  : userData.predicted_rank_24h > userData.rank
+                  ? `↘ -${userData.predicted_rank_24h - userData.rank} Drop`
+                  : '→ No Change'
+                }
               </div>
             </div>
             
@@ -663,20 +747,20 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
                 fontSize: isMobile ? 18 : 20, 
                 fontWeight: 900 
               }}>
-                18h 34m
+                {formatNumber(userData.grill_temperature)}°F
               </div>
               <div style={{ 
                 color: '#999', 
                 fontSize: isMobile ? 10 : 12 
               }}>
-                To Next Rank
+                Grill Temperature
               </div>
               <div style={{ 
                 color: '#8b5cf6', 
                 fontSize: isMobile ? 9 : 11, 
                 marginTop: 4 
               }}>
-                Current Trend
+                Next: {userData.predicted_next_tier}
               </div>
             </div>
           </div>
@@ -689,7 +773,8 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
             background: 'rgba(255,255,255,0.02)',
             borderRadius: 8
           }}>
-            💡 Current Trend: <span style={{ color: '#4ade80', fontWeight: 600 }}>+0.83 ranks/day</span> Rising
+            💡 Your Power: <span style={{ color: '#4ade80', fontWeight: 600 }}>{userData.points_per_second.toFixed(2)} pts/sec</span> • 
+            Average: <span style={{ color: '#fbbf24', fontWeight: 600 }}>~{(userData.display_staked / userData.total_participants / (24 * 60 * 60)).toFixed(2)} pts/sec</span>
           </div>
         </div>
       </div>
@@ -844,194 +929,6 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
     </div>
   );
 
-  // 🚀 3 Tier Upgrade Tracks - Mobile Optimized
-  const UpgradeTracksRow = () => (
-    <div style={{
-      background: 'rgba(255,255,255,0.03)',
-      border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: isMobile ? 12 : 16,
-      padding: isMobile ? 16 : 20,
-      marginBottom: isMobile ? 16 : 24
-    }}>
-      <h3 style={{
-        fontSize: isMobile ? 16 : 18,
-        fontWeight: 700,
-        color: '#fff',
-        margin: `0 0 ${isMobile ? 12 : 16}px 0`,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 6
-      }}>
-        🎯 Tier Upgrade Tracks
-      </h3>
-      
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-        gap: isMobile ? 8 : 12
-      }}>
-        {/* Fast Track */}
-        <div style={{
-          background: 'rgba(107,114,128,0.1)',
-          border: '1px solid rgba(107,114,128,0.3)',
-          borderRadius: 12,
-          padding: isMobile ? '12px 8px' : 16,
-          textAlign: 'center',
-          opacity: 0.6,
-          display: isMobile ? 'flex' : 'block',
-          alignItems: isMobile ? 'center' : 'stretch',
-          gap: isMobile ? 12 : 0
-        }}>
-          <div style={{ 
-            fontSize: isMobile ? 16 : 20, 
-            marginBottom: isMobile ? 0 : 8,
-            flexShrink: 0
-          }}>
-            ⚡
-          </div>
-          <div style={{ flex: 1, textAlign: isMobile ? 'left' : 'center' }}>
-            <div style={{
-              fontSize: isMobile ? 12 : 14,
-              fontWeight: 700,
-              color: '#6b7280',
-              marginBottom: 4
-            }}>
-              Fast Track
-            </div>
-            <div style={{
-              fontSize: isMobile ? 10 : 11,
-              color: '#999',
-              marginBottom: isMobile ? 0 : 8,
-              lineHeight: 1.3
-            }}>
-              +100K Stake
-            </div>
-          </div>
-          <div style={{
-            fontSize: isMobile ? 10 : 12,
-            color: '#6b7280',
-            fontWeight: 600,
-            flexShrink: 0
-          }}>
-            MAX Level
-          </div>
-        </div>
-
-        {/* Regular Track */}
-        <div style={{
-          background: 'rgba(107,114,128,0.1)',
-          border: '1px solid rgba(107,114,128,0.3)',
-          borderRadius: 12,
-          padding: isMobile ? '12px 8px' : 16,
-          textAlign: 'center',
-          opacity: 0.6,
-          display: isMobile ? 'flex' : 'block',
-          alignItems: isMobile ? 'center' : 'stretch',
-          gap: isMobile ? 12 : 0
-        }}>
-          <div style={{ 
-            fontSize: isMobile ? 16 : 20, 
-            marginBottom: isMobile ? 0 : 8,
-            flexShrink: 0
-          }}>
-            📅
-          </div>
-          <div style={{ flex: 1, textAlign: isMobile ? 'left' : 'center' }}>
-            <div style={{
-              fontSize: isMobile ? 12 : 14,
-              fontWeight: 700,
-              color: '#6b7280',
-              marginBottom: 4
-            }}>
-              Regular Track
-            </div>
-            <div style={{
-              fontSize: isMobile ? 10 : 11,
-              color: '#999',
-              marginBottom: isMobile ? 0 : 8,
-              lineHeight: 1.3
-            }}>
-              Hold 5 Days
-            </div>
-          </div>
-          <div style={{
-            fontSize: isMobile ? 10 : 12,
-            color: '#6b7280',
-            fontWeight: 600,
-            flexShrink: 0
-          }}>
-            MAX Level
-          </div>
-        </div>
-
-        {/* Diamond Hand Track */}
-        <div style={{
-          background: 'rgba(107,114,128,0.1)',
-          border: '1px solid rgba(107,114,128,0.3)',
-          borderRadius: 12,
-          padding: isMobile ? '12px 8px' : 16,
-          textAlign: 'center',
-          opacity: 0.6,
-          display: isMobile ? 'flex' : 'block',
-          alignItems: isMobile ? 'center' : 'stretch',
-          gap: isMobile ? 12 : 0
-        }}>
-          <div style={{ 
-            fontSize: isMobile ? 16 : 20, 
-            marginBottom: isMobile ? 0 : 8,
-            flexShrink: 0
-          }}>
-            💎
-          </div>
-          <div style={{ flex: 1, textAlign: isMobile ? 'left' : 'center' }}>
-            <div style={{
-              fontSize: isMobile ? 12 : 14,
-              fontWeight: 700,
-              color: '#6b7280',
-              marginBottom: 4
-            }}>
-              Diamond Hand
-            </div>
-            <div style={{
-              fontSize: isMobile ? 10 : 11,
-              color: '#999',
-              marginBottom: isMobile ? 0 : 8,
-              lineHeight: 1.3
-            }}>
-              Till Phase End
-            </div>
-          </div>
-          <div style={{
-            fontSize: isMobile ? 10 : 12,
-            color: '#6b7280',
-            fontWeight: 600,
-            flexShrink: 0
-          }}>
-            MAX Level
-          </div>
-        </div>
-      </div>
-      
-      {/* Description */}
-      <div style={{
-        marginTop: 12,
-        padding: isMobile ? 8 : 12,
-        background: 'rgba(255,215,0,0.05)',
-        border: '1px solid rgba(255,215,0,0.2)',
-        borderRadius: 8,
-        textAlign: 'center'
-      }}>
-        <div style={{ 
-          color: '#ffd700', 
-          fontSize: isMobile ? 10 : 12, 
-          fontWeight: 600 
-        }}>
-          👑 Genesis OG is already the maximum level!
-        </div>
-      </div>
-    </div>
-  );
-
   // 💰 Phase 1 Allocation Card with JEET Options
   const Phase1AllocationCard = () => (
     <div style={{
@@ -1088,7 +985,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
               color: '#ffd700', 
               fontWeight: 600 
             }}>
-              VIRTUAL ({userData.phase1_allocation_percent}%)
+              VIRTUAL ({userData.phase1_allocation_percent.toFixed(2)}%)
             </div>
           </div>
           
@@ -1181,7 +1078,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
           color: '#999',
           textAlign: 'center'
         }}>
-          🕐 Actual Release Date: December 7, 2025 (151 days)
+          🕐 Actual Release Date: December 7, 2025 ({Math.floor((new Date('2025-12-07') - new Date()) / (1000 * 60 * 60 * 24))} days)
         </div>
       </div>
     </div>
@@ -1247,10 +1144,10 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
         fontFamily: 'monospace'
       }}>
         {[
-          { value: userData.real_time_holding.days, label: 'Days' },
-          { value: userData.real_time_holding.hours, label: 'Hours' },
-          { value: userData.real_time_holding.minutes, label: 'Min' },
-          { value: userData.real_time_holding.seconds, label: 'Sec' }
+          { value: userData.real_time_holding?.days || 0, label: 'Days' },
+          { value: userData.real_time_holding?.hours || 0, label: 'Hours' },
+          { value: userData.real_time_holding?.minutes || 0, label: 'Min' },
+          { value: userData.real_time_holding?.seconds || 0, label: 'Sec' }
         ].map((item, index) => (
           <div key={index} style={{
             background: 'rgba(74,222,128,0.1)',
@@ -1568,7 +1465,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
             title="Current Rank"
             value={`#${userData.rank}`}
             subtitle={`out of ${userData.total_participants}`}
-            trend={userData.rank_change_24h > 0 ? `↗ +${userData.rank_change_24h}` : `↘ ${userData.rank_change_24h}`}
+            trend={userData.rank_change_24h > 0 ? `↗ +${userData.rank_change_24h}` : userData.rank_change_24h < 0 ? `↘ ${userData.rank_change_24h}` : '→ No change'}
             color="#ef4444"
           />
         </div>
@@ -1579,34 +1476,35 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
           gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr',
           gap: isMobile ? 16 : 24
         }}>
-          {/* Left: Enhanced Tier Position + Upgrade Tracks */}
+          {/* Left: Enhanced Tier Position */}
           <div>
             <EnhancedTierPositionCard />
-            <UpgradeTracksRow />
             <StakehouseCard />
           </div>
-
-          <GrillTemperature 
-            userStake={userData.display_staked}
-            referralBonus={userData.points_breakdown.by_referral}
-            userTier={userData.grade}
-            userRank={userData.rank}
-            totalUsers={1247}
-            isMobile={isMobile}
-          />
-
-          <GiftBoxSystem 
-            userStake={userData.display_staked}
-            userTier={userData.grade}
-            isMobile={isMobile}
-          />
-        
+          
           {/* Right: Phase 1 allocation + Time/Actions */}
           <div>
             <Phase1AllocationCard />
             <TimeAndActions />
           </div>
         </div>
+
+        {/* 🌡️ 그릴온도 시스템 */}
+        <GrillTemperature 
+          userStake={userData.display_staked}
+          referralBonus={userData.referral_bonus_earned}
+          userTier={userData.grade}
+          userRank={userData.rank}
+          totalUsers={userData.total_participants}
+          isMobile={isMobile}
+        />
+
+        {/* 🎁 선물상자 시스템 */}
+        <GiftBoxSystem 
+          userStake={userData.display_staked}
+          userTier={userData.grade}
+          isMobile={isMobile}
+        />
 
         {/* 🚀 추천인 시스템 섹션 추가 */}
         {userAddress && (
