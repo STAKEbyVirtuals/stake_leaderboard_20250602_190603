@@ -450,7 +450,7 @@ def process_leaderboard_data():
         return []
 
 def upload_to_apps_script_web_app(data):
-    """🚀 Apps Script Web App으로 데이터 전송 (Sheet.best 완전 대체)"""
+    """🚀 Apps Script Web App으로 데이터 전송 (JSON 안전 처리)"""
     logger.info("📤 Apps Script Web App 업로드 시작...")
     
     if not data:
@@ -465,26 +465,38 @@ def upload_to_apps_script_web_app(data):
         logger.info("🛡️ 안전 모드: 기존 21개 컬럼만 업로드")
     
     try:
-        # JSON 데이터 준비
-        json_data = json.dumps(data, ensure_ascii=False, separators=(',', ':'))
+        # 🔧 데이터 정제 및 안전 처리
+        cleaned_data = clean_data_for_json(data)
+        logger.info(f"🧹 데이터 정제 완료: {len(cleaned_data)}개 항목")
+        
+        # JSON 데이터 준비 (안전한 직렬화)
+        json_data = json.dumps(cleaned_data, ensure_ascii=True, separators=(',', ':'))
+        
+        # 📊 데이터 크기 체크
+        data_size_mb = len(json_data.encode('utf-8')) / (1024 * 1024)
+        logger.info(f"📊 JSON 크기: {data_size_mb:.2f}MB")
+        
+        # 크기가 너무 크면 청크 단위로 전송
+        if data_size_mb > 5:  # 5MB 초과시
+            return upload_large_data_in_chunks(cleaned_data)
         
         headers = {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json; charset=utf-8',
             'User-Agent': 'STAKE-Leaderboard-GitHub-Action/1.0'
         }
         
         logger.info(f"📤 Apps Script Web App으로 POST 요청")
-        logger.info(f"📊 데이터 크기: {len(data)}개 항목, {len(json_data):,} bytes")
+        logger.info(f"📊 데이터 크기: {len(cleaned_data)}개 항목, {data_size_mb:.2f}MB")
         
         response = requests.post(
             APPS_SCRIPT_WEB_APP_URL,
             data=json_data,
             headers=headers,
-            timeout=120  # Apps Script 처리 시간 고려
+            timeout=300  # 5분으로 증가
         )
         
         logger.info(f"📡 Apps Script 응답: {response.status_code}")
-        logger.info(f"📄 응답 내용: {response.text[:300]}")
+        logger.info(f"📄 응답 내용: {response.text[:500]}")
         
         if response.status_code == 200:
             try:
@@ -506,10 +518,116 @@ def upload_to_apps_script_web_app(data):
             return False
         
     except requests.exceptions.Timeout:
-        logger.error("⏰ Apps Script Web App 요청 타임아웃 (120초)")
+        logger.error("⏰ Apps Script Web App 요청 타임아웃 (300초)")
         return False
     except Exception as e:
         logger.error(f"❌ Apps Script Web App 오류: {e}")
+        return False
+
+def clean_data_for_json(data):
+    """🧹 JSON 안전 처리를 위한 데이터 정제"""
+    logger.info("🧹 JSON 안전 처리 시작...")
+    
+    cleaned_data = []
+    
+    for item in data:
+        cleaned_item = {}
+        
+        for key, value in item.items():
+            # 🔧 특수문자 처리
+            if isinstance(value, str):
+                # 문제가 될 수 있는 문자들 제거/교체
+                cleaned_value = value.replace('\n', ' ').replace('\r', ' ')
+                cleaned_value = cleaned_value.replace('\t', ' ').replace('\\', '/')
+                cleaned_value = cleaned_value.replace('"', "'").replace('\b', ' ')
+                cleaned_value = cleaned_value.replace('\f', ' ').replace('\v', ' ')
+                
+                # 제어 문자 제거
+                cleaned_value = ''.join(char for char in cleaned_value if ord(char) >= 32 or char in ['\n', '\r', '\t'])
+                
+                # 너무 긴 문자열 자르기
+                if len(cleaned_value) > 1000:
+                    cleaned_value = cleaned_value[:997] + "..."
+                
+                cleaned_item[key] = cleaned_value.strip()
+                
+            elif isinstance(value, (int, float)):
+                # 숫자값 안전 처리
+                if isinstance(value, float):
+                    if value != value:  # NaN 체크
+                        cleaned_item[key] = 0
+                    elif value == float('inf') or value == float('-inf'):
+                        cleaned_item[key] = 0
+                    else:
+                        cleaned_item[key] = round(value, 6)
+                else:
+                    cleaned_item[key] = value
+                    
+            elif isinstance(value, bool):
+                cleaned_item[key] = value
+                
+            elif value is None:
+                cleaned_item[key] = ""
+                
+            else:
+                # 기타 타입은 문자열로 변환
+                cleaned_item[key] = str(value)
+        
+        cleaned_data.append(cleaned_item)
+    
+    logger.info(f"✅ 데이터 정제 완료: {len(cleaned_data)}개 항목")
+    return cleaned_data
+
+def upload_large_data_in_chunks(data):
+    """📦 대용량 데이터 청크 단위 업로드"""
+    logger.info("📦 대용량 데이터 청크 업로드 시작...")
+    
+    chunk_size = 100  # 100개씩 나누어 전송
+    total_chunks = (len(data) + chunk_size - 1) // chunk_size
+    
+    try:
+        for i in range(0, len(data), chunk_size):
+            chunk = data[i:i + chunk_size]
+            chunk_num = (i // chunk_size) + 1
+            
+            logger.info(f"📦 청크 {chunk_num}/{total_chunks} 업로드 중... ({len(chunk)}개 항목)")
+            
+            # 청크 데이터 준비
+            chunk_data = {
+                "chunk_number": chunk_num,
+                "total_chunks": total_chunks,
+                "data": chunk,
+                "is_chunk": True
+            }
+            
+            json_data = json.dumps(chunk_data, ensure_ascii=True, separators=(',', ':'))
+            
+            headers = {
+                'Content-Type': 'application/json; charset=utf-8',
+                'User-Agent': 'STAKE-Leaderboard-GitHub-Action/1.0'
+            }
+            
+            response = requests.post(
+                APPS_SCRIPT_WEB_APP_URL,
+                data=json_data,
+                headers=headers,
+                timeout=120
+            )
+            
+            if response.status_code != 200:
+                logger.error(f"❌ 청크 {chunk_num} 업로드 실패: {response.status_code}")
+                return False
+            
+            logger.info(f"✅ 청크 {chunk_num}/{total_chunks} 업로드 완료")
+            
+            # 청크 간 대기
+            time.sleep(1)
+        
+        logger.info("✅ 모든 청크 업로드 완료")
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ 청크 업로드 실패: {e}")
         return False
 
 def save_to_github_pages(data):
