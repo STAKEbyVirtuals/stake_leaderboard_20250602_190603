@@ -1,4 +1,4 @@
-# === STAKE 리더보드 통합 시스템 (안전 모드) ===
+# === STAKE 리더보드 통합 시스템 (Apps Script Web App 연동) ===
 import requests
 import pandas as pd
 import json
@@ -21,9 +21,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# === 안전 모드 설정 ===
+# === 설정 변경: Sheet.best → Apps Script Web App ===
 SAFE_MODE = os.environ.get('SAFE_MODE', 'false').lower() == 'true'
-UPDATE_RANGE = os.environ.get('UPDATE_RANGE', 'A:U')  # 기본값: A:U (21개 컬럼)
+UPDATE_RANGE = os.environ.get('UPDATE_RANGE', 'A:U')
 
 if SAFE_MODE:
     logger.info("🛡️ 안전 모드 활성화: 기존 21개 컬럼만 업데이트")
@@ -39,15 +39,15 @@ STAKE_METHOD_ID = "0xa694fc3a"
 UNSTAKE_METHOD_ID = "0xf48355b9"
 GENESIS_BLOCK = 30732159
 
-# Sheet.best API 설정 (GitHub Actions 환경변수 사용)
-SHEET_BEST_URL = os.environ.get('SHEET_BEST_URL')
+# 🚀 Apps Script Web App URL (GitHub Actions 환경변수 사용)
+APPS_SCRIPT_WEB_APP_URL = os.environ.get('APPS_SCRIPT_WEB_APP_URL')
 
-if not SHEET_BEST_URL:
-    # 로컬 개발 시 기본값 (실제 URL로 교체)
-    SHEET_BEST_URL = 'https://api.sheetbest.com/sheets/ecc08e38-a6e9-43c9-8029-2bbf2a86fb67'
-    logger.warning("⚠️ SHEET_BEST_URL 환경변수가 설정되지 않았습니다. 기본값을 사용합니다.")
+if not APPS_SCRIPT_WEB_APP_URL:
+    # 로컬 개발 시 기본값
+    APPS_SCRIPT_WEB_APP_URL = ''
+    logger.warning("⚠️ APPS_SCRIPT_WEB_APP_URL 환경변수가 설정되지 않았습니다.")
 else:
-    logger.info(f"✅ Sheet.best URL 설정 완료: {SHEET_BEST_URL[:30]}...")
+    logger.info(f"✅ Apps Script Web App URL 설정 완료: {APPS_SCRIPT_WEB_APP_URL[:50]}...")
 
 # 페이즈 설정
 CURRENT_PHASE = 1
@@ -152,7 +152,7 @@ def safe_scan_chunk(start_block, end_block, max_retries=3):
             }])
             
             if result and 'error' in result:
-                if chunk_size > 1000:  # 1000블록으로 재시도
+                if chunk_size > 1000:
                     mid = start_block + 999
                     logs1 = safe_scan_chunk(start_block, mid, max_retries)
                     logs2 = safe_scan_chunk(mid + 1, end_block, max_retries)
@@ -170,7 +170,7 @@ def safe_scan_chunk(start_block, end_block, max_retries=3):
         except Exception as e:
             logger.error(f"청크 스캔 시도 {attempt + 1} 실패: {e}")
             if attempt < max_retries - 1:
-                time.sleep(2 ** attempt)  # 지수 백오프
+                time.sleep(2 ** attempt)
             
     return []
 
@@ -423,7 +423,7 @@ def process_leaderboard_data():
                 'unstake_count': data['unstake_count'],
                 'is_active': data['is_active'],
                 'current_phase': CURRENT_PHASE,
-                'phase_score': round(time_score, 2),  # 현재는 동일, 향후 페이즈별 로직 추가
+                'phase_score': round(time_score, 2),
                 'total_score_all_phases': round(time_score, 2),
                 'airdrop_share_phase': round(airdrop_share_phase, 6),
                 'airdrop_share_total': round(airdrop_share_total, 6),
@@ -431,7 +431,7 @@ def process_leaderboard_data():
                 'last_action_time': data['last_action_time'],
                 'rank_change_24h': rank_change_24h,
                 'score_change_24h': score_change_24h,
-                'phase_rank_history': f"P1:{rank}"  # 향후 확장
+                'phase_rank_history': f"P1:{rank}"
             }
             
             leaderboard_data.append(item_data)
@@ -449,105 +449,71 @@ def process_leaderboard_data():
         logger.error(traceback.format_exc())
         return []
 
-def upload_to_sheet_best(data):
-    """Sheet.best 시도 후 실패시 GitHub Pages로 자동 전환 (안전 모드 지원)"""
-    logger.info("📤 Sheet.best API 업로드 시작...")
+def upload_to_apps_script_web_app(data):
+    """🚀 Apps Script Web App으로 데이터 전송 (Sheet.best 완전 대체)"""
+    logger.info("📤 Apps Script Web App 업로드 시작...")
     
     if not data:
         logger.error("❌ 업로드할 데이터가 없습니다")
         return False
     
+    if not APPS_SCRIPT_WEB_APP_URL:
+        logger.error("❌ APPS_SCRIPT_WEB_APP_URL이 설정되지 않았습니다")
+        return save_to_github_pages(data)
+    
     if SAFE_MODE:
         logger.info("🛡️ 안전 모드: 기존 21개 컬럼만 업로드")
     
-    # 1. Sheet.best 시도
-    sheet_success = try_sheet_best_upload(data)
-    
-    if sheet_success:
-        logger.info("✅ Sheet.best 업로드 성공!")
-        return True
-    else:
-        logger.warning("⚠️ Sheet.best 실패, GitHub Pages로 전환...")
-        return save_to_github_pages(data)
-
-def try_sheet_best_upload(data):
-    """Sheet.best 업로드만 시도 (데이터 타입 수정)"""
     try:
-        if not data:
-            return False
-            
-        test_item = data[0]
-        
-        # 🔧 올바른 데이터 타입으로 전송 (문자열 변환 제거)
-        if SAFE_MODE:
-            # 안전 모드: 21개 컬럼만 올바른 타입으로 업로드
-            single_object = {
-                "address": test_item.get('address', ''),
-                "rank": int(test_item.get('rank', 0)) if test_item.get('rank') else 0,
-                "grade": test_item.get('grade', ''),
-                "grade_emoji": test_item.get('grade_emoji', ''),
-                "percentile": float(test_item.get('percentile', 0)) if test_item.get('percentile') else 0.0,
-                "total_staked": float(test_item.get('total_staked', 0)) if test_item.get('total_staked') else 0.0,
-                "time_score": float(test_item.get('time_score', 0)) if test_item.get('time_score') else 0.0,
-                "holding_days": float(test_item.get('holding_days', 0)) if test_item.get('holding_days') else 0.0,
-                "stake_count": int(test_item.get('stake_count', 0)) if test_item.get('stake_count') else 0,
-                "unstake_count": int(test_item.get('unstake_count', 0)) if test_item.get('unstake_count') else 0,
-                "is_active": bool(test_item.get('is_active', False)),
-                "current_phase": int(test_item.get('current_phase', 1)),
-                "phase_score": float(test_item.get('phase_score', 0)) if test_item.get('phase_score') else 0.0,
-                "total_score_all_phases": float(test_item.get('total_score_all_phases', 0)) if test_item.get('total_score_all_phases') else 0.0,
-                "airdrop_share_phase": float(test_item.get('airdrop_share_phase', 0)) if test_item.get('airdrop_share_phase') else 0.0,
-                "airdrop_share_total": float(test_item.get('airdrop_share_total', 0)) if test_item.get('airdrop_share_total') else 0.0,
-                "first_stake_time": int(test_item.get('first_stake_time', 0)) if test_item.get('first_stake_time') else 0,
-                "last_action_time": int(test_item.get('last_action_time', 0)) if test_item.get('last_action_time') else 0,
-                "rank_change_24h": int(test_item.get('rank_change_24h', 0)) if test_item.get('rank_change_24h') else 0,
-                "score_change_24h": float(test_item.get('score_change_24h', 0)) if test_item.get('score_change_24h') else 0.0,
-                "phase_rank_history": test_item.get('phase_rank_history', '')
-            }
-        else:
-            # 일반 모드: 기본 필드만 올바른 타입으로
-            single_object = {
-                "address": test_item.get('address', ''),
-                "rank": int(test_item.get('rank', 0)) if test_item.get('rank') else 0,
-                "grade": test_item.get('grade', ''),
-                "total_staked": float(test_item.get('total_staked', 0)) if test_item.get('total_staked') else 0.0,
-                "time_score": float(test_item.get('time_score', 0)) if test_item.get('time_score') else 0.0,
-                "holding_days": float(test_item.get('holding_days', 0)) if test_item.get('holding_days') else 0.0,
-                "is_active": bool(test_item.get('is_active', False))
-            }
+        # JSON 데이터 준비
+        json_data = json.dumps(data, ensure_ascii=False, separators=(',', ':'))
         
         headers = {
             'Content-Type': 'application/json',
-            'User-Agent': 'STAKE-Leaderboard/1.0'
+            'User-Agent': 'STAKE-Leaderboard-GitHub-Action/1.0'
         }
         
-        logger.info(f"📤 Sheet.best 업로드 시도 (데이터 타입 수정)")
-        logger.info(f"📊 샘플 데이터: address={single_object.get('address', 'N/A')[:10]}..., rank={single_object.get('rank')}, total_staked={single_object.get('total_staked')}")
+        logger.info(f"📤 Apps Script Web App으로 POST 요청")
+        logger.info(f"📊 데이터 크기: {len(data)}개 항목, {len(json_data):,} bytes")
         
-        response = requests.put(
-            SHEET_BEST_URL,
-            json=single_object,
+        response = requests.post(
+            APPS_SCRIPT_WEB_APP_URL,
+            data=json_data,
             headers=headers,
-            timeout=60
+            timeout=120  # Apps Script 처리 시간 고려
         )
         
-        logger.info(f"📡 Sheet.best 응답: {response.status_code}")
-        logger.info(f"📄 응답 내용: {response.text[:200]}")
+        logger.info(f"📡 Apps Script 응답: {response.status_code}")
+        logger.info(f"📄 응답 내용: {response.text[:300]}")
         
         if response.status_code == 200:
-            logger.info("✅ Sheet.best 데이터 타입 수정으로 업로드 성공!")
+            try:
+                result = response.json()
+                if result.get('status') == 'success':
+                    logger.info("✅ Apps Script Web App 업로드 성공!")
+                    logger.info(f"📊 기본 컬럼 업데이트: {result.get('basic_columns', 0)}개")
+                    logger.info(f"🔧 확장 컬럼 처리: {result.get('enhanced_columns', 0)}개")
+                    return True
+                else:
+                    logger.error(f"❌ Apps Script 처리 실패: {result.get('message', 'Unknown error')}")
+                    return False
+            except json.JSONDecodeError:
+                logger.warning("⚠️ Apps Script 응답이 JSON이 아님 (하지만 200 OK)")
+                return True
         else:
-            logger.error(f"❌ Sheet.best 업로드 실패: {response.status_code}")
+            logger.error(f"❌ Apps Script Web App 업로드 실패: {response.status_code}")
             logger.error(f"📄 에러 응답: {response.text}")
+            return False
         
-        return response.status_code == 200
-        
+    except requests.exceptions.Timeout:
+        logger.error("⏰ Apps Script Web App 요청 타임아웃 (120초)")
+        return False
     except Exception as e:
-        logger.error(f"❌ Sheet.best 오류: {e}")
+        logger.error(f"❌ Apps Script Web App 오류: {e}")
         return False
 
 def save_to_github_pages(data):
-    """GitHub Pages용 JSON 파일 생성 및 자동 커밋 (안전 모드 지원)"""
+    """GitHub Pages용 JSON 파일 생성 및 자동 커밋 (백업용)"""
     logger.info("📄 GitHub Pages용 JSON 파일 생성...")
     
     try:
@@ -561,7 +527,7 @@ def save_to_github_pages(data):
             "total_wallets": len(data),
             "active_wallets": len([d for d in data if d.get('is_active')]),
             "phase": 1,
-            "safe_mode": SAFE_MODE,  # 🆕 안전 모드 정보 추가
+            "safe_mode": SAFE_MODE,
             "update_range": UPDATE_RANGE if SAFE_MODE else "A:AM",
             "leaderboard": data[:100]  # 상위 100개
         }
@@ -591,18 +557,13 @@ def save_to_github_pages(data):
             subprocess.run(['git', 'add', 'public/leaderboard.json'], 
                          cwd='..', check=True)
             
-            commit_msg = f"Update leaderboard data (Safe Mode: {SAFE_MODE}) - {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}"
+            commit_msg = f"Update leaderboard data (Apps Script Web App) - {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}"
             subprocess.run(['git', 'commit', '-m', commit_msg], 
                          cwd='..', check=True)
             
             subprocess.run(['git', 'push'], cwd='..', check=True)
             
             logger.info("✅ GitHub에 자동 커밋 완료")
-            
-            # GitHub Pages URL 생성
-            repo_name = os.environ.get('GITHUB_REPOSITORY', 'stake-leaderboard')
-            pages_url = f"https://{repo_name.split('/')[-1]}.github.io/{repo_name.split('/')[-1]}/leaderboard.json"
-            logger.info(f"🔗 데이터 URL: {pages_url}")
             
         except subprocess.CalledProcessError as e:
             logger.warning(f"⚠️ Git 커밋 실패: {e}")
@@ -641,7 +602,7 @@ def save_backup_data(data):
         logger.error(f"❌ 백업 저장 실패: {e}")
 
 def update_leaderboard():
-    """전체 리더보드 업데이트 프로세스 (안전 모드 지원)"""
+    """전체 리더보드 업데이트 프로세스 (Apps Script Web App 연동)"""
     logger.info("🎯 === STAKE 리더보드 업데이트 시작 ===")
     
     if SAFE_MODE:
@@ -663,9 +624,11 @@ def update_leaderboard():
         # 3. 백업 저장
         save_backup_data(leaderboard_data)
         
-        # 4. Sheet.best 업로드
-        if not upload_to_sheet_best(leaderboard_data):
-            raise Exception("Sheet.best 업로드 실패")
+        # 4. 🚀 Apps Script Web App 업로드
+        if not upload_to_apps_script_web_app(leaderboard_data):
+            logger.warning("⚠️ Apps Script Web App 실패, GitHub Pages로 전환...")
+            if not save_to_github_pages(leaderboard_data):
+                raise Exception("모든 업로드 방법 실패")
         
         # 5. 성공 로그
         end_time = datetime.now()
@@ -689,6 +652,7 @@ def start_scheduler():
     logger.info("⏰ STAKE 리더보드 스케줄러 시작")
     logger.info(f"📋 설정: 6시간마다 자동 업데이트")
     logger.info(f"🛡️ 안전 모드: {SAFE_MODE}")
+    logger.info(f"🚀 Apps Script Web App 연동")
     logger.info(f"🎯 다음 실행: {datetime.now() + pd.Timedelta(hours=6)}")
     
     # 6시간마다 실행
@@ -711,12 +675,13 @@ def start_scheduler():
             time.sleep(300)  # 5분 후 재시도
 
 if __name__ == "__main__":
-    logger.info("🥩 STAKE 리더보드 시스템 시작 (안전 모드 지원)")
+    logger.info("🥩 STAKE 리더보드 시스템 시작 (Apps Script Web App 연동)")
     logger.info(f"🔗 RPC URL: {RPC_URL}")
     logger.info(f"📋 스테이킹 컨트랙트: {STAKING_ADDRESS}")
     logger.info(f"🎯 제네시스 블록: {GENESIS_BLOCK:,}")
     logger.info(f"📊 현재 페이즈: {CURRENT_PHASE}/{TOTAL_PHASES}")
     logger.info(f"🛡️ 안전 모드: {SAFE_MODE}")
+    logger.info(f"🚀 Apps Script Web App: {'설정됨' if APPS_SCRIPT_WEB_APP_URL else '미설정'}")
     
     try:
         start_scheduler()

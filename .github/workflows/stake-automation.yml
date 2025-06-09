@@ -1,4 +1,4 @@
-name: STAKE Leaderboard Auto Update (Safe Mode)
+name: STAKE Leaderboard Auto Update (Apps Script Web App)
 
 on:
   # 6시간마다 자동 실행 (UTC 기준: 00:00, 06:00, 12:00, 18:00)
@@ -53,9 +53,10 @@ jobs:
     # 4. Python 스크립트 실행 전 준비
     - name: ⚙️ Prepare Environment
       run: |
-        echo "🚀 STAKE 리더보드 업데이트 시작 (안전 모드)"
+        echo "🚀 STAKE 리더보드 업데이트 시작 (Apps Script Web App 연동)"
         echo "⚠️ 기존 21개 컬럼만 업데이트 (A:U 범위)"
         echo "✅ 신규 18개 컬럼 보호 (V:AM 범위)"
+        echo "🔗 Apps Script Web App으로 전송"
         echo "⏰ 실행 시간: $(date)"
         echo "🌍 타임존: $TZ"
         
@@ -63,19 +64,20 @@ jobs:
         mkdir -p python-scripts/backup
         
         # 환경변수 확인 (민감정보 제외)
-        echo "🔗 Sheet.best URL 설정: ${SHEET_BEST_URL:0:30}..."
+        echo "🔗 Apps Script Web App URL 설정: ${APPS_SCRIPT_WEB_APP_URL:0:50}..."
     
-    # 5. ⚠️ 안전 모드: 기존 컬럼만 업데이트
-    - name: 🛡️ Update STAKE Leaderboard (Safe Mode - A:U Only)
+    # 5. ⚠️ 안전 모드: Apps Script Web App으로 업데이트
+    - name: 🚀 Update STAKE Leaderboard (Apps Script Web App)
       env:
-        SHEET_BEST_URL: ${{ secrets.SHEET_BEST_URL }}
+        APPS_SCRIPT_WEB_APP_URL: ${{ secrets.APPS_SCRIPT_WEB_APP_URL }}
         SAFE_MODE: true  # 🆕 안전 모드 활성화
         UPDATE_RANGE: "A:U"  # 🆕 업데이트 범위 제한
       working-directory: python-scripts
       run: |
-        echo "🛡️ 안전 모드로 STAKE 데이터 추출 시작..."
+        echo "🚀 Apps Script Web App으로 STAKE 데이터 전송 시작..."
         echo "📊 업데이트 범위: A:U (기존 21개 컬럼만)"
-        echo "🔒 신규 컬럼 보호: V:AM (Apps Script 전용)"
+        echo "🔒 신규 컬럼 보호: V:AM (Apps Script 자동 처리)"
+        echo "🔗 Sheet.best 완전 제거 → Apps Script Web App 연동"
         
         # 타임아웃과 함께 Python 스크립트 실행
         timeout 10800 python stake_leaderboard_system.py || {
@@ -83,7 +85,7 @@ jobs:
           exit 1
         }
         
-        echo "✅ STAKE 리더보드 안전 업데이트 완료"
+        echo "✅ STAKE 리더보드 Apps Script Web App 업데이트 완료"
     
     # 6. 백업 파일 아티팩트로 저장
     - name: 💾 Save Backup Files
@@ -98,21 +100,25 @@ jobs:
         retention-days: 30
         if-no-files-found: ignore
     
-    # 7. 안전 모드 실행 결과 요약
-    - name: 📊 Safe Mode Execution Summary
+    # 7. Apps Script Web App 실행 결과 요약
+    - name: 📊 Apps Script Web App Execution Summary
       if: always()
       run: |
-        echo "🎯 === STAKE 안전 모드 업데이트 완료 ==="
+        echo "🎯 === STAKE Apps Script Web App 업데이트 완료 ==="
+        echo "🚀 Sheet.best 완전 제거 → Apps Script Web App 연동"
         echo "🛡️ 보호된 범위: V:AM (신규 18개 컬럼)"
         echo "✅ 업데이트된 범위: A:U (기존 21개 컬럼)"
+        echo "🔗 Apps Script에서 39개 컬럼 완전 처리"
         echo "📅 실행 시간: $(date)"
         echo "🔢 실행 번호: ${{ github.run_number }}"
         echo "📂 백업 파일 생성: python-scripts/backup/"
         echo ""
         echo "🔄 다음 단계:"
-        echo "1. Apps Script가 자동으로 V:AM 컬럼 계산"
-        echo "2. 39개 컬럼 완전한 데이터 생성"
-        echo "3. JSON 파일 자동 업데이트"
+        echo "1. Apps Script Web App이 POST 요청 수신"
+        echo "2. 기존 21개 컬럼 구글시트 업데이트"
+        echo "3. 신규 18개 컬럼 자동 계산 및 추가"
+        echo "4. 39개 컬럼 완전한 JSON 파일 생성"
+        echo "5. 완전한 STAKE 리더보드 시스템 가동"
         
         # 백업 파일 목록 출력
         if [ -d "python-scripts/backup" ]; then
@@ -130,10 +136,11 @@ jobs:
     - name: 🚨 Failure Notification
       if: failure()
       run: |
-        echo "💥 STAKE 리더보드 안전 업데이트 실패!"
+        echo "💥 STAKE 리더보드 Apps Script Web App 업데이트 실패!"
         echo "🔍 로그를 확인하여 문제를 진단하세요."
         echo "📧 GitHub Actions 탭에서 상세 로그를 확인할 수 있습니다."
         echo "⚠️ 신규 18개 컬럼은 영향받지 않습니다."
+        echo "🔄 Apps Script Web App 연동 문제일 수 있습니다."
         
         # 에러 로그 출력
         if [ -f "python-scripts/stake_leaderboard.log" ]; then
@@ -143,5 +150,5 @@ jobs:
 
 # 동시 실행 제한 (중복 실행 방지)
 concurrency:
-  group: stake-leaderboard-update-safe
+  group: stake-leaderboard-update-apps-script
   cancel-in-progress: false
