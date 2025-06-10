@@ -2,7 +2,7 @@
 // STAKE 리더보드 실데이터 연동 유틸리티 (최종 수정본)
 
 // Apps Script Web App URL (배포 후 받은 URL로 교체)
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwTzBNT-eldffIXP1MR05fsq-wHWkewsWDiWNHjsT64Ig0AA71fBQH422Di3lCmVqvc/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzqctBeUkWnZg4eDFyFpzjJ5kdBsfnexEodbiBySR0Gc9zlgDieTImkn7qywbcOjhAu/exec';
 
 // 캐시 설정
 let cachedData = null;
