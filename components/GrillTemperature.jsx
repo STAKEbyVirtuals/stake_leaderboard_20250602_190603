@@ -1,26 +1,29 @@
 import React, { useState, useEffect } from 'react';
 
-const GrillTemperature = ({ 
+const GrillTemperature = ({
   userData,
-  isMobile = false 
+  isMobile = false
 }) => {
   const [showTempInfo, setShowTempInfo] = useState(false);
-  
+
   // 🔥 실데이터 기반 온도 계산
   const grill_temperature = userData?.grill_temperature || 0;
   const score_per_second = userData?.score_per_second || 0;
   const predicted_next_tier = userData?.predicted_next_tier || 'Sizzlin\' Noob';
-  
-  const tempColor = grill_temperature >= 800 ? "#ff0000" :
-                    grill_temperature >= 600 ? "#ff4500" :
-                    grill_temperature >= 500 ? "#ffa500" :
-                    grill_temperature >= 300 ? "#ffff00" :
-                    grill_temperature >= 100 ? "#87ceeb" : "#4169e1";
 
-  const flameIntensity = grill_temperature >= 800 ? 1.0 :
-                         grill_temperature >= 600 ? 0.8 :
-                         grill_temperature >= 400 ? 0.6 :
-                         grill_temperature >= 200 ? 0.4 : 0.2;
+  // 온도 0일 때 처리
+  const tempColor = grill_temperature === 0 ? "#666666" :  // 회색
+    grill_temperature >= 800 ? "#ff0000" :
+      grill_temperature >= 600 ? "#ff4500" :
+        grill_temperature >= 500 ? "#ffa500" :
+          grill_temperature >= 300 ? "#ffff00" :
+            grill_temperature >= 100 ? "#87ceeb" : "#4169e1";
+
+  const flameIntensity = grill_temperature === 0 ? 0 :  // 불꽃 없음
+    grill_temperature >= 800 ? 1.0 :
+      grill_temperature >= 600 ? 0.8 :
+        grill_temperature >= 400 ? 0.6 :
+          grill_temperature >= 200 ? 0.4 : 0.2;
 
   return (
     <div style={{
@@ -64,7 +67,7 @@ const GrillTemperature = ({
         }}>
           🌡️ Grill Temperature
         </h2>
-        
+
         <button
           onClick={() => setShowTempInfo(!showTempInfo)}
           style={{
@@ -123,7 +126,7 @@ const GrillTemperature = ({
               }}
             />
           </svg>
-          
+
           <div style={{
             position: 'absolute',
             top: '50%',
@@ -142,8 +145,9 @@ const GrillTemperature = ({
             </div>
           </div>
         </div>
-        
+
         {/* Temperature info */}
+        
         <div style={{ flex: 1, marginLeft: 20 }}>
           <div style={{
             fontSize: isMobile ? 14 : 16,
@@ -151,7 +155,7 @@ const GrillTemperature = ({
             color: '#fff',
             marginBottom: 8
           }}>
-            🔥 Total Firepower
+            {grill_temperature === 0 ? '🥶 Cold Grill' : '🔥 Total Firepower'}
           </div>
           <div style={{
             fontSize: isMobile ? 18 : 22,
@@ -164,9 +168,9 @@ const GrillTemperature = ({
           </div>
           <div style={{
             fontSize: isMobile ? 10 : 11,
-            color: '#999'
+            color: grill_temperature === 0 ? '#666' : '#999'
           }}>
-            TOTAL
+            {grill_temperature === 0 ? 'START STAKING' : 'TOTAL'}
           </div>
         </div>
 
@@ -201,7 +205,7 @@ const GrillTemperature = ({
               {score_per_second.toFixed(2)}
             </div>
           </div>
-          
+
           <div style={{
             background: 'rgba(245,158,11,0.1)',
             border: '1px solid rgba(245,158,11,0.3)',
@@ -269,7 +273,7 @@ const GrillTemperature = ({
           }}>
             🆕
           </div>
-          
+
           <div style={{ flex: 1 }}>
             <div style={{
               fontSize: isMobile ? 14 : 16,
@@ -355,7 +359,7 @@ const GrillTemperature = ({
               }}>
                 🌡️ Temperature Zones
               </h3>
-              
+
               <button
                 onClick={() => setShowTempInfo(false)}
                 style={{
@@ -391,7 +395,7 @@ const GrillTemperature = ({
                 }}>
                   Temperature Performance Zones
                 </div>
-                
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {[
                     { range: '800-1000°F', zone: 'Elite Zone', desc: 'Top 1-5%', color: '#ff0000' },
@@ -447,7 +451,7 @@ const GrillTemperature = ({
                   ))}
                 </div>
               </div>
-              
+
               {/* 현재 상태 */}
               <div style={{
                 padding: 12,
@@ -478,8 +482,8 @@ const GrillTemperature = ({
                   marginTop: 4
                 }}>
                   {grill_temperature >= 800 ? 'Elite Zone' :
-                   grill_temperature >= 500 ? 'Perfect Zone' :
-                   grill_temperature >= 200 ? 'Active Zone' : 'Starting Zone'}
+                    grill_temperature >= 500 ? 'Perfect Zone' :
+                      grill_temperature >= 200 ? 'Active Zone' : 'Starting Zone'}
                 </div>
               </div>
             </div>

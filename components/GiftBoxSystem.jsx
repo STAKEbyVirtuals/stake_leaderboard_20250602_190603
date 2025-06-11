@@ -3,10 +3,10 @@ import { BoxSyncManager } from '../utils/boxSyncManager';
 
 const APPS_SCRIPT_URL = process.env.NEXT_PUBLIC_APPS_SCRIPT_URL || '';
 
-const GiftBoxSystem = ({ 
+const GiftBoxSystem = ({
   userData,
   isMobile = false,
-  onPointsUpdate = () => {} // 포인트 업데이트 콜백
+  onPointsUpdate = () => { } // 포인트 업데이트 콜백
 }) => {
   // 🆕 실제 백엔드 상태 관리 (원본 로직)
   const [currentBox, setCurrentBox] = useState(null);
@@ -22,15 +22,15 @@ const GiftBoxSystem = ({
   const [boxSync] = useState(() => {
     if (userData?.address) {
       // DEBUG_BOX_SYSTEM: 초기화 로그
-      // console.log('🔧 [DEBUG] BoxSyncManager 초기화:', {
-      //   userAddress: userData.address,
-      //   appsScriptUrl: APPS_SCRIPT_URL,
-      //   timestamp: new Date().toISOString()
-      // });
+       console.log('🔧 [DEBUG] BoxSyncManager 초기화:', {
+         userAddress: userData.address,
+         appsScriptUrl: APPS_SCRIPT_URL,
+         timestamp: new Date().toISOString()
+       });
       return new BoxSyncManager(APPS_SCRIPT_URL, userData.address);
     }
     // DEBUG_BOX_SYSTEM: 초기화 실패 로그
-    // console.log('❌ [DEBUG] BoxSyncManager 초기화 실패: userData.address 없음');
+     console.log('❌ [DEBUG] BoxSyncManager 초기화 실패: userData.address 없음');
     return null;
   });
 
@@ -129,6 +129,7 @@ const GiftBoxSystem = ({
   // 🔧 등급별 멀티플라이어 조회 (원본 로직)
   const getUserMultiplier = (tier) => {
     const tierMultipliers = {
+      "VIRGEN": 0,  // 신규 유저
       "Genesis OG": 2.0,
       "Heavy Eater": 1.8,
       "Stake Wizard": 1.6,
@@ -137,7 +138,7 @@ const GiftBoxSystem = ({
       "Flipstarter": 1.1,
       "Sizzlin' Noob": 1.0
     };
-    return tierMultipliers[tier] || 1.0;
+    return tierMultipliers[tier] || 0;
   };
 
   // 🔧 유틸리티 함수들
@@ -145,11 +146,11 @@ const GiftBoxSystem = ({
     if (!targetTime) return "00:00:00";
     const now = Date.now();
     const diff = Math.max(0, targetTime - now);
-    
+
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-    
+
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
@@ -179,12 +180,18 @@ const GiftBoxSystem = ({
   // 💰 포인트 계산 (원본 로직 - 1분 기준)
   const calculateBoxPoints = (type) => {
     if (!userData) return 0;
-    
+
     const boxMultiplier = BOX_SYSTEM[type].multiplier;
     const userMultiplier = getUserMultiplier(userData.grade);
     const userStake = userData.display_staked || 0;
-    
-    // 1분 기준 포인트 계산
+
+    // 신규 유저 보너스: 스테이킹 0이면 100포인트 기본값
+    if (userStake === 0) {
+      console.log('🎁 신규 유저 보너스 포인트 적용');
+      return 100 * boxMultiplier; // 상자 배수만 적용
+    }
+
+    // 기존 계산
     const minutePoints = userStake / 24 / 60;
     return Math.floor(minutePoints * boxMultiplier * userMultiplier);
   };
@@ -241,33 +248,33 @@ const GiftBoxSystem = ({
         points: points
       };
 
-      // DEBUG_BOX_SYSTEM: 상자 오픈 상세 로그
-      // console.log('📦 [DEBUG] 상자 오픈 데이터:', {
-      //   상자타입: currentBox,
-      //   박스배수: boxInfo.multiplier,
-      //   유저배수: getUserMultiplier(userData.grade),
-      //   계산포인트: points,
-      //   유저주소: userData.address,
-      //   timestamp: new Date().toISOString()
-      // });
+       //DEBUG_BOX_SYSTEM: 상자 오픈 상세 로그
+       console.log('📦 [DEBUG] 상자 오픈 데이터:', {
+         상자타입: currentBox,
+         박스배수: boxInfo.multiplier,
+         유저배수: getUserMultiplier(userData.grade),
+         계산포인트: points,
+         유저주소: userData.address,
+         timestamp: new Date().toISOString()
+       });
 
       try {
         if (boxSync) {
-          // DEBUG_BOX_SYSTEM: BoxSyncManager 호출 로그
-          // console.log('🔄 [DEBUG] BoxSyncManager.recordBox() 호출 시작');
+           //DEBUG_BOX_SYSTEM: BoxSyncManager 호출 로그
+           console.log('🔄 [DEBUG] BoxSyncManager.recordBox() 호출 시작');
           const result = boxSync.recordBox(boxData);
-          // console.log('✅ [DEBUG] BoxSyncManager.recordBox() 성공:', result);
+           console.log('✅ [DEBUG] BoxSyncManager.recordBox() 성공:', result);
         } else {
-          // DEBUG_BOX_SYSTEM: BoxSyncManager null 에러 로그
-          // console.error('❌ [DEBUG] BoxSyncManager가 null입니다');
+           //DEBUG_BOX_SYSTEM: BoxSyncManager null 에러 로그
+           console.error('❌ [DEBUG] BoxSyncManager가 null입니다');
         }
       } catch (error) {
-        // DEBUG_BOX_SYSTEM: BoxSyncManager 에러 로그
-        // console.error('❌ [DEBUG] BoxSyncManager.recordBox() 실패:', {
-        //   error: error.message,
-        //   stack: error.stack,
-        //   boxData: boxData
-        // });
+         //DEBUG_BOX_SYSTEM: BoxSyncManager 에러 로그
+         console.error('❌ [DEBUG] BoxSyncManager.recordBox() 실패:', {
+           error: error.message,
+           stack: error.stack,
+           boxData: boxData
+         });
       }
 
       // 부모 컴포넌트에 포인트 업데이트 알림
@@ -275,7 +282,7 @@ const GiftBoxSystem = ({
 
       // 5초 후 리워드 알림 숨김
       setTimeout(() => setShowReward(null), 5000);
-      
+
       console.log(`✅ 상자 오픈 완료: ${currentBox} → +${points} 포인트`);
     }, 2000);
   };
@@ -297,27 +304,27 @@ const GiftBoxSystem = ({
       if (Date.now() < expireTime) {
         setCurrentBox(savedBox);
         setBoxExpireTime(expireTime);
-        // DEBUG_BOX_SYSTEM: 상자 복원 로그
-        // console.log('🔄 저장된 상자 복원:', savedBox);
+         //DEBUG_BOX_SYSTEM: 상자 복원 로그
+         console.log('🔄 저장된 상자 복원:', savedBox);
       } else {
         localStorage.removeItem(`currentBox_${userAddress}`);
         localStorage.removeItem(`boxExpireTime_${userAddress}`);
-        // DEBUG_BOX_SYSTEM: 만료된 상자 정리 로그
-        // console.log('🗑️ 만료된 상자 정리');
+         //DEBUG_BOX_SYSTEM: 만료된 상자 정리 로그
+         console.log('🗑️ 만료된 상자 정리');
       }
     }
 
     if (savedNextDrop) {
       setNextDropTime(parseInt(savedNextDrop));
-      // DEBUG_BOX_SYSTEM: 드롭 시간 복원 로그
-      // console.log('🔄 저장된 드롭 시간 복원:', new Date(parseInt(savedNextDrop)));
+       //DEBUG_BOX_SYSTEM: 드롭 시간 복원 로그
+       console.log('🔄 저장된 드롭 시간 복원:', new Date(parseInt(savedNextDrop)));
     } else if (!savedBox) {
       // 첫 드롭 시간 설정 (테스트용 3초)
       const initialDrop = Date.now() + (3 * 1000); // 3초
       setNextDropTime(initialDrop);
       localStorage.setItem(`nextDropTime_${userAddress}`, initialDrop.toString());
       // DEBUG_BOX_SYSTEM: 첫 드롭 시간 설정 로그
-      // console.log('🆕 첫 드롭 시간 설정:', new Date(initialDrop));
+       console.log('🆕 첫 드롭 시간 설정:', new Date(initialDrop));
     }
 
     // 사용자 티어 설정 (초기에만)
@@ -329,36 +336,36 @@ const GiftBoxSystem = ({
     // 백엔드 동기화 시작 (BoxSyncManager)
     if (boxSync) {
       // DEBUG_BOX_SYSTEM: 자동 동기화 시작 로그
-      // console.log('🔄 [DEBUG] BoxSyncManager.startAutoSync() 호출');
+       console.log('🔄 [DEBUG] BoxSyncManager.startAutoSync() 호출');
       boxSync.startAutoSync();
-      // console.log('✅ [DEBUG] BoxSyncManager 자동 동기화 시작 완료');
-      
+       console.log('✅ [DEBUG] BoxSyncManager 자동 동기화 시작 완료');
+
       // DEBUG_BOX_SYSTEM: 동기화 상태 모니터링 (10초마다)
-      // const syncMonitor = setInterval(() => {
-      //   if (boxSync.syncQueue) {
-      //     console.log('📊 [DEBUG] 동기화 큐 상태:', {
-      //       큐길이: boxSync.syncQueue.length,
-      //       동기화중: boxSync.isSyncing,
-      //       timestamp: new Date().toISOString()
-      //     });
-      //   }
-      // }, 10000); // 10초마다 체크
+       const syncMonitor = setInterval(() => {
+         if (boxSync.syncQueue) {
+           console.log('📊 [DEBUG] 동기화 큐 상태:', {
+             큐길이: boxSync.syncQueue.length,
+             동기화중: boxSync.isSyncing,
+             timestamp: new Date().toISOString()
+           });
+         }
+       }, 10000); // 10초마다 체크
 
       // cleanup 함수에 모니터 정리 추가
       const originalCleanup = () => {
         // DEBUG_BOX_SYSTEM: 동기화 모니터 정리
-        // clearInterval(syncMonitor);
+         clearInterval(syncMonitor);
         if (boxSync) {
           boxSync.cleanup();
           // DEBUG_BOX_SYSTEM: BoxSyncManager 정리 로그
-          // console.log('🛑 [DEBUG] BoxSyncManager 정리 완료');
+           console.log('🛑 [DEBUG] BoxSyncManager 정리 완료');
         }
       };
 
       return originalCleanup;
     } else {
       // DEBUG_BOX_SYSTEM: BoxSyncManager 초기화 실패 로그
-      // console.error('❌ [DEBUG] BoxSyncManager가 초기화되지 않았습니다');
+       console.error('❌ [DEBUG] BoxSyncManager가 초기화되지 않았습니다');
     }
   }, [userData?.address]); // userData.address가 변경될 때만 실행
 
@@ -367,7 +374,7 @@ const GiftBoxSystem = ({
     if (!userData?.address) return;
 
     // DEBUG_BOX_SYSTEM: 타이머 시작 로그
-    // console.log('⏰ 타이머 시작');
+     console.log('⏰ 타이머 시작');
 
     const timer = setInterval(() => {
       const now = Date.now();
@@ -384,7 +391,7 @@ const GiftBoxSystem = ({
       // 새 상자 드랍 체크
       if (currentNextDrop && now >= currentNextDrop && !savedBox) {
         const newBox = generateRandomBox();
-        
+
         // 만료 시간 설정 (24시간)
         const expireTime = now + (24 * 60 * 60 * 1000); // 24시간
 
@@ -399,24 +406,24 @@ const GiftBoxSystem = ({
         localStorage.removeItem(`nextDropTime_${userAddress}`);
 
         // DEBUG_BOX_SYSTEM: 새 상자 드롭 로그
-        // console.log(`🎁 [DEBUG] 새 상자 드롭:`, {
-        //   상자타입: newBox,
-        //   만료시간: new Date(expireTime).toISOString(),
-        //   유저주소: userAddress,
-        //   현재시간: new Date().toISOString()
-        // });
+         console.log(`🎁 [DEBUG] 새 상자 드롭:`, {
+           상자타입: newBox,
+           만료시간: new Date(expireTime).toISOString(),
+           유저주소: userAddress,
+           현재시간: new Date().toISOString()
+         });
       }
 
       // 상자 만료 체크
       if (currentExpireTime && now >= currentExpireTime && savedBox) {
         // DEBUG_BOX_SYSTEM: 상자 만료 로그
-        // console.log('⏰ [DEBUG] 상자 만료됨:', {
-        //   만료된상자: savedBox,
-        //   만료시간: new Date(currentExpireTime).toISOString(),
-        //   다음드롭: new Date(newNextDrop).toISOString(),
-        //   현재시간: new Date().toISOString()
-        // });
-        
+         console.log('⏰ [DEBUG] 상자 만료됨:', {
+           만료된상자: savedBox,
+           만료시간: new Date(currentExpireTime).toISOString(),
+           다음드롭: new Date(newNextDrop).toISOString(),
+           현재시간: new Date().toISOString()
+         });
+
         // 다음 드롭 시간 설정 (테스트용 3초)
         const newNextDrop = now + (3 * 1000); // 3초
 
@@ -431,17 +438,17 @@ const GiftBoxSystem = ({
         localStorage.setItem(`nextDropTime_${userAddress}`, newNextDrop.toString());
 
         // DEBUG_BOX_SYSTEM: 다음 드롭 예정 로그
-        // console.log(`⏰ [DEBUG] 다음 드롭 예정:`, {
-        //   다음드롭시간: new Date(newNextDrop).toISOString(),
-        //   유저주소: userAddress
-        // });
+         console.log(`⏰ [DEBUG] 다음 드롭 예정:`, {
+           다음드롭시간: new Date(newNextDrop).toISOString(),
+           유저주소: userAddress
+         });
       }
     }, 1000);
 
     return () => {
       clearInterval(timer);
       // DEBUG_BOX_SYSTEM: 타이머 정리 로그
-      // console.log('🛑 타이머 정리');
+       console.log('🛑 타이머 정리');
     };
   }, [userData?.address]); // userData.address만 의존성으로 유지
 
@@ -530,14 +537,14 @@ const GiftBoxSystem = ({
           </div>
         </div>
 
-        {/* 메인 상자 영역 */}
+        {/* 메인 상자 영역 - PC에서도 세로 배치 */}
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+          display: 'flex',
+          flexDirection: 'column',
           gap: isMobile ? 16 : 24,
           marginBottom: isMobile ? 16 : 20
         }}>
-          {/* 현재 상자 */}
+          {/* 현재 상자 - 상단 */}
           <div style={{
             background: 'rgba(0,0,0,0.3)',
             borderRadius: 16,
@@ -550,6 +557,7 @@ const GiftBoxSystem = ({
             justifyContent: 'center',
             position: 'relative'
           }}>
+            {/* 상자 내용은 그대로 유지 */}
             {currentBox ? (
               <>
                 {/* 현재 상자 표시 */}
@@ -686,7 +694,7 @@ const GiftBoxSystem = ({
             )}
           </div>
 
-          {/* 상자 정보 */}
+          {/* 상자 정보 - 하단 */}
           <div style={{
             background: 'rgba(0,0,0,0.3)',
             borderRadius: 16,
@@ -936,7 +944,7 @@ const GiftBoxSystem = ({
               }}>
                 📊 Drop Rates by Tier
               </h3>
-              
+
               <button
                 onClick={() => setShowRatesInfo(false)}
                 style={{
@@ -1019,7 +1027,7 @@ const GiftBoxSystem = ({
               }}>
                 {selectedTierForRates.replace('_', ' ')} Drop Rates
               </h4>
-              
+
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(2, 1fr)',
@@ -1049,14 +1057,14 @@ const GiftBoxSystem = ({
                             {BOX_SYSTEM[boxType].emoji}
                           </span>
                           <div>
-                            <div style={{ 
+                            <div style={{
                               color: BOX_SYSTEM[boxType].color,
                               fontSize: isMobile ? 11 : 12,
                               fontWeight: 700
                             }}>
                               {BOX_SYSTEM[boxType].rarity}
                             </div>
-                            <div style={{ 
+                            <div style={{
                               color: '#999',
                               fontSize: isMobile ? 9 : 10
                             }}>
@@ -1064,7 +1072,7 @@ const GiftBoxSystem = ({
                             </div>
                           </div>
                         </div>
-                        <span style={{ 
+                        <span style={{
                           color: '#fff',
                           fontWeight: 600,
                           fontFamily: 'monospace',
@@ -1076,7 +1084,7 @@ const GiftBoxSystem = ({
                     );
                   })}
               </div>
-              
+
               {/* 설명 */}
               <div style={{
                 marginTop: 16,
@@ -1098,9 +1106,9 @@ const GiftBoxSystem = ({
                   color: '#ccc',
                   lineHeight: 1.4
                 }}>
-                  • Points = Stake × User Tier Multiplier × Box Multiplier<br/>
-                  • Higher tier = Better drop rates for rare boxes<br/>
-                  • Genesis gets 50% chance for Genesis boxes<br/>
+                  • Points = Stake × User Tier Multiplier × Box Multiplier<br />
+                  • Higher tier = Better drop rates for rare boxes<br />
+                  • Genesis gets 50% chance for Genesis boxes<br />
                   • Boxes drop every 6 hours, expire in 24 hours
                 </div>
               </div>

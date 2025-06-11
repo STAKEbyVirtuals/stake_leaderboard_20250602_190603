@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 // 🆕 실제 데이터 fetcher import
-import { 
-  fetchLeaderboardData, 
-  findUserData, 
+import {
+  fetchLeaderboardData,
+  findUserData,
   formatUserDataForDashboard,
   calculateLeaderboardStats,
-  getActiveUsers 
+  getActiveUsers
 } from '../utils/stakeDataFetcher';
 
 // 🆕 분리된 컴포넌트들 import
@@ -26,7 +26,8 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
   const [copiedContract, setCopiedContract] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+  const [boxPointsAccumulated, setBoxPointsAccumulated] = useState(0);
+
   // 🆕 실데이터 상태 관리
   const [systemStats, setSystemStats] = useState(null);
 
@@ -35,42 +36,52 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
     try {
       setIsLoading(true);
       setError(null);
-      
+
       console.log('📊 리더보드 데이터 로딩 중...');
       const response = await fetchLeaderboardData();
-      
+
       if (!response || !response.leaderboard) {
-        throw new Error('데이터 형식이 올바르지 않습니다');
+        // 데이터가 없어도 계속 진행
+        console.log('⚠️ 리더보드 데이터 없음, 기본값 사용');
       }
-      
-      // 시스템 통계 계산
-      const stats = calculateLeaderboardStats(response.leaderboard);
+
+      // 시스템 통계 계산 (데이터 없으면 기본값)
+      const stats = response?.leaderboard
+        ? calculateLeaderboardStats(response.leaderboard)
+        : { total_users: 0, active_users: 0, jeeted_users: 0, genesis_count: 0, avg_stake: 0, total_staked: 0 };
       setSystemStats(stats);
-      
-      // 사용자 데이터 찾기
-      const rawUserData = findUserData(response.leaderboard, userAddress);
-      
-      if (!rawUserData) {
-        throw new Error('해당 지갑 주소를 찾을 수 없습니다');
-      }
-      
-      // 활성 사용자 목록 (24시간 예상 순위 계산용)
-      const activeUsers = getActiveUsers(response.leaderboard);
-      
+
+      // 사용자 데이터 찾기 (없으면 기본값 생성됨)
+      const rawUserData = findUserData(response?.leaderboard || [], userAddress);
+
+      // 활성 사용자 목록
+      const activeUsers = response?.leaderboard
+        ? getActiveUsers(response.leaderboard)
+        : [];
+
       // 대시보드용 포맷으로 변환
       const formattedData = formatUserDataForDashboard(
-        rawUserData, 
+        rawUserData,
         stats,
         activeUsers
       );
-      
+
       setUserData(formattedData);
       setRealtimeScore(formattedData.real_time_score);
+      setBoxPointsAccumulated(formattedData.box_points_earned || 0); // 박스 포인트 초기화
       console.log('✅ 사용자 데이터 로드 완료:', formattedData);
-      
+
     } catch (err) {
       console.error('❌ 데이터 로드 실패:', err);
-      setError(err.message);
+      // 에러가 나도 기본값으로 계속 진행
+      const defaultData = createDefaultUserData(userAddress);
+      const formattedData = formatUserDataForDashboard(
+        defaultData,
+        { total_users: 0, active_users: 0, jeeted_users: 0, genesis_count: 0, avg_stake: 0, total_staked: 0 },
+        []
+      );
+      setUserData(formattedData);
+      setRealtimeScore(0);
     } finally {
       setIsLoading(false);
     }
@@ -79,15 +90,16 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
   // 🆕 실시간 스코어 업데이트 로직
   const updateRealTimeScores = () => {
     if (!userData) return;
-    
+
     const currentTimeSec = Date.now() / 1000;
     const holdingSeconds = currentTimeSec - userData.first_stake_timestamp;
     const holdingDays = holdingSeconds / (24 * 60 * 60);
-    
-    // 실시간 점수 재계산
-    const realTimeScore = userData.display_staked * holdingDays * userData.current_multiplier;
+
+    // 실시간 점수 재계산 (박스 포인트 포함)
+    const baseScore = userData.display_staked * holdingDays * userData.current_multiplier;
+    const realTimeScore = baseScore + boxPointsAccumulated; // 박스 포인트 추가
     const scorePerSecond = (userData.display_staked * userData.current_multiplier) / (24 * 60 * 60);
-    
+
     setUserData(prev => ({
       ...prev,
       real_time_score: realTimeScore,
@@ -106,18 +118,20 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
         };
       })()
     }));
-    
+
     setRealtimeScore(realTimeScore);
   };
 
   // 🎁 기프트박스에서 포인트 업데이트 콜백
   const handleGiftBoxPointsUpdate = (points) => {
-    setRealtimeScore(prev => prev + points);
-    // 선택적으로 userData도 업데이트
+    // 박스 포인트 누적
+    setBoxPointsAccumulated(prev => prev + points);
+
+    // userData의 box_points_earned도 업데이트
     setUserData(prev => ({
       ...prev,
-      real_time_score: prev.real_time_score + points,
-      box_points_earned: (prev.box_points_earned || 0) + points
+      box_points_earned: (prev.box_points_earned || 0) + points,
+      real_time_score: prev.real_time_score + points
     }));
   };
 
@@ -284,6 +298,8 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
   };
 
   // 내장 컴포넌트들 (모듈화되지 않은 것들)
+  // EnhancedTierPositionCard 컴포넌트 완전 개선 버전
+  // EnhancedTierPositionCard 컴포넌트 완전 개선 버전
   const EnhancedTierPositionCard = () => {
     const [localAnimateScore, setLocalAnimateScore] = useState(false);
 
@@ -294,6 +310,21 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
       }, 2000);
       return () => clearInterval(interval);
     }, []);
+
+    // 등급 이모지 헬퍼 함수
+    const getGradeEmoji = (grade) => {
+      const gradeEmojis = {
+        'Genesis OG': '🌌',
+        'Heavy Eater': '💨',
+        'Stake Wizard': '🧙',
+        'Grilluminati': '👁️',
+        'Flame Juggler': '🔥',
+        'Flipstarter': '🥩',
+        'Sizzlin\' Noob': '🆕',
+        'VIRGEN': '🐸'
+      };
+      return gradeEmojis[grade] || '❓';
+    };
 
     return (
       <div style={{
@@ -314,9 +345,9 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
           right: 0,
           bottom: 0,
           backgroundImage: `
-            radial-gradient(circle at 20% 20%, ${userData.tier_color}10 0%, transparent 50%),
-            radial-gradient(circle at 80% 80%, ${userData.tier_color}08 0%, transparent 50%)
-          `,
+          radial-gradient(circle at 20% 20%, ${userData.tier_color}10 0%, transparent 50%),
+          radial-gradient(circle at 80% 80%, ${userData.tier_color}08 0%, transparent 50%)
+        `,
           backgroundSize: '200px 200px, 150px 150px',
           pointerEvents: 'none',
           opacity: 0.3
@@ -356,7 +387,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
             </span>
             {isRefreshing ? 'Updating...' : 'Refresh'}
           </button>
-          
+
           <div style={{
             background: userData.tier_color,
             color: '#000',
@@ -368,7 +399,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
             PHASE 1
           </div>
         </div>
-        
+
         {/* Live Indicator */}
         <div style={{
           position: 'absolute',
@@ -393,7 +424,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
           }} />
           LIVE
         </div>
-        
+
         <div style={{ position: 'relative', zIndex: 1 }}>
           {/* Main Content */}
           <div style={{
@@ -418,7 +449,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
               boxShadow: `0 0 20px ${userData.tier_glow_color}`
             }}>
               {userData.grade_emoji}
-              
+
               {/* Rotating ring */}
               <div style={{
                 position: 'absolute',
@@ -432,7 +463,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
                 animation: 'spin 4s linear infinite'
               }} />
             </div>
-            
+
             <div style={{ flex: 1 }}>
               <h1 style={{
                 fontSize: isMobile ? 18 : 28,
@@ -443,7 +474,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
               }}>
                 {userData.grade}
               </h1>
-              
+
               <div style={{
                 fontSize: isMobile ? 12 : 16,
                 color: '#999',
@@ -451,7 +482,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
               }}>
                 Rank #{userData.rank} • Top {userData.percentile.toFixed(1)}%
               </div>
-              
+
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
                 <div style={{
                   fontSize: isMobile ? 20 : 32,
@@ -464,7 +495,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
                 }}>
                   {formatFullNumber(realtimeScore)}
                 </div>
-                
+
                 <div style={{
                   background: userData.tier_color,
                   color: '#000',
@@ -477,7 +508,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
                   {userData.current_multiplier}x
                 </div>
               </div>
-              
+
               <div style={{
                 fontSize: isMobile ? 10 : 12,
                 color: '#4ade80',
@@ -488,7 +519,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
               </div>
             </div>
           </div>
-          
+
           {/* Ranking Gauge */}
           <div style={{
             marginBottom: isMobile ? 16 : 20
@@ -514,7 +545,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
                 #{userData.rank} / {userData.total_participants}
               </span>
             </div>
-            
+
             <div style={{
               height: isMobile ? 16 : 20,
               background: 'rgba(255,255,255,0.1)',
@@ -533,7 +564,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
                 transition: 'width 2.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
                 boxShadow: `0 0 20px ${userData.tier_glow_color}`
               }} />
-              
+
               <div style={{
                 position: 'absolute',
                 left: gaugeAnimated ? `${userData.percentile}%` : '0%',
@@ -547,7 +578,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
                 ⭐
               </div>
             </div>
-            
+
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -623,7 +654,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
             </div>
           </div>
 
-          {/* Rank Movement Prediction - 더 컴팩트하게 */}
+          {/* Rank Movement Prediction - 실데이터 연동 */}
           <div style={{
             background: 'rgba(0,0,0,0.3)',
             border: `1px solid ${userData.border_color}`,
@@ -672,16 +703,24 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
                   24h Prediction
                 </div>
                 <div style={{
-                  color: (userData.predicted_rank_24h || userData.rank) < userData.rank ? '#4ade80' : '#ef4444',
+                  color: (userData.predicted_rank_24h || userData.rank) < userData.rank ? '#4ade80' :
+                    (userData.predicted_rank_24h || userData.rank) > userData.rank ? '#ef4444' : '#999',
                   fontSize: isMobile ? 7 : 8,
                   fontWeight: 600
                 }}>
-                  {(userData.predicted_rank_24h || userData.rank) < userData.rank
-                    ? `↗ +${userData.rank - (userData.predicted_rank_24h || userData.rank)} Rise`
-                    : (userData.predicted_rank_24h || userData.rank) > userData.rank
-                      ? `↘ -${(userData.predicted_rank_24h || userData.rank) - userData.rank} Drop`
-                      : '→ No Change'
-                  }
+                  {(() => {
+                    const currentRank = userData.rank;
+                    const predictedRank = userData.predicted_rank_24h || currentRank;
+                    const difference = currentRank - predictedRank;
+
+                    if (difference > 0) {
+                      return `↗ +${difference} Rise`;
+                    } else if (difference < 0) {
+                      return `↘ ${difference} Drop`;
+                    } else {
+                      return '→ No Change';
+                    }
+                  })()}
                 </div>
               </div>
 
@@ -703,9 +742,9 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
                   justifyContent: 'center',
                   gap: 2
                 }}>
-                  <span>👁️</span>
+                  <span>{getGradeEmoji(userData.predicted_next_tier)}</span>
                   <span style={{ fontSize: isMobile ? 8 : 9 }}>
-                    {userData.predicted_next_tier || 'Grilluminati'}
+                    {userData.predicted_next_tier || 'Next Grade'}
                   </span>
                 </div>
                 <div style={{
@@ -720,12 +759,14 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
                   fontSize: isMobile ? 7 : 8,
                   fontWeight: 600
                 }}>
-                  ↗ ~7d
+                  {userData.grade === 'Genesis OG' ? '👑 MAX' :
+                    userData.grade === 'VIRGEN' ? '↗ Start Staking' :
+                      '↗ ~7d'}
                 </div>
               </div>
             </div>
 
-            {/* Power Comparison - 더 작게 */}
+            {/* Power Comparison - 실데이터 */}
             <div style={{
               fontSize: isMobile ? 9 : 10,
               color: '#ccc',
@@ -734,8 +775,16 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
               background: 'rgba(255,255,255,0.02)',
               borderRadius: 4
             }}>
-              💡 Your Power: <span style={{ color: '#4ade80', fontWeight: 600 }}>{userData.score_per_second?.toFixed(2) || '0.00'} pts/sec</span> • 
-              Average: <span style={{ color: (userData.score_per_second || 0) > ((userData.score_per_second || 0) * 0.7) ? '#fbbf24' : '#ef4444', fontWeight: 600 }}>
+              💡 Your Power: <span style={{
+                color: userData.score_per_second > 0 ? '#4ade80' : '#666',
+                fontWeight: 600
+              }}>
+                {userData.score_per_second?.toFixed(2) || '0.00'} pts/sec
+              </span> •
+              Average: <span style={{
+                color: '#fbbf24',
+                fontWeight: 600
+              }}>
                 ~{((userData.score_per_second || 0) * 0.7).toFixed(2)} pts/sec
               </span>
             </div>
@@ -744,7 +793,8 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
       </div>
     );
   };
-  
+
+
   const StakeAmountCard = () => (
     <div style={{
       background: 'linear-gradient(135deg, rgba(255,215,0,0.15), rgba(255,193,7,0.1))',
@@ -805,7 +855,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
             stSTAKE
           </div>
         </div>
-        
+
         <div style={{
           fontSize: isMobile ? 11 : 12,
           color: '#2a2a2a',
@@ -827,7 +877,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
       const updateTimer = () => {
         const now = Date.now();
         const diff = phase1EndTime - now;
-        
+
         if (diff <= 0) {
           setTimeLeft('Phase Ended');
         } else {
@@ -836,7 +886,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
           setTimeLeft(`${days}d ${hours}h`);
         }
       };
-      
+
       updateTimer();
       const interval = setInterval(updateTimer, 60000);
       return () => clearInterval(interval);
@@ -860,7 +910,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
         }}>
           💎 Phase 1 Balance
         </h3>
-        
+
         {/* Gray box with improved layout */}
         <div style={{
           background: 'rgba(200,200,200,0.9)',
@@ -893,7 +943,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
               $STAKE
             </div>
           </div>
-          
+
           <div style={{
             fontSize: isMobile ? 11 : 12,
             color: '#2a2a2a',
@@ -903,7 +953,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
             ≈ ${userData.phase1_allocation_usd?.toLocaleString() || '0'}
           </div>
         </div>
-        
+
         <div style={{
           background: 'rgba(16,185,129,0.1)',
           borderRadius: 10,
@@ -918,14 +968,14 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
             {userData.phase1_allocation_percent?.toFixed(2) || '0.00'}% of Phase 1 Pool
           </div>
         </div>
-        
+
         <div style={{
           marginTop: 16,
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
           gap: 12
         }}>
-          <button 
+          <button
             onClick={handleJeetWarning}
             style={{
               padding: '14px 20px',
@@ -941,8 +991,8 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
           >
             💰 Claim
           </button>
-          
-          <button 
+
+          <button
             style={{
               padding: '14px 20px',
               background: 'rgba(16,185,129,0.1)',
@@ -958,7 +1008,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
             🚀 Phase 2
           </button>
         </div>
-        
+
         <div style={{
           marginTop: 16,
           padding: 12,
@@ -1025,7 +1075,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
           }}>
             🏠
           </div>
-          
+
           <div>
             <h2 style={{
               fontSize: isMobile ? 16 : 20,
@@ -1035,11 +1085,11 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
             }}>
               STAKEHOUSE
             </h2>
-            
+
             <div style={{ fontSize: isMobile ? 10 : 12, color: '#999', marginBottom: 8 }}>
               Enhanced Rewards System
             </div>
-            
+
             <div style={{
               fontSize: isMobile ? 18 : 24,
               fontWeight: 900,
@@ -1048,13 +1098,13 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
             }}>
               {formatNumber(userData.stakehouse_score || 0)} P
             </div>
-            
+
             <div style={{ fontSize: isMobile ? 9 : 11, color: '#8b5cf6', fontWeight: 600, marginTop: 4 }}>
               +{userData.stakehouse_per_second?.toFixed(2) || '0.00'} P/sec (Accumulating)
             </div>
           </div>
         </div>
-        
+
         <div style={{
           background: 'rgba(0,0,0,0.3)',
           borderRadius: 12,
@@ -1121,7 +1171,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
           </div>
         ))}
       </div>
-      
+
       <div style={{
         display: 'grid',
         gridTemplateColumns: '1fr',
@@ -1140,8 +1190,8 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
         }}>
           🛒 Stake More
         </button>
-        
-        <button 
+
+        <button
           onClick={copyStakeAddress}
           style={{
             padding: isMobile ? '12px 16px' : '10px 16px',
@@ -1199,8 +1249,8 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
           maxWidth: isMobile ? '90vw' : 500,
           width: '100%',
           textAlign: 'center',
-          border: jeetWarningStep === 1 
-            ? '2px solid rgba(239,68,68,0.3)' 
+          border: jeetWarningStep === 1
+            ? '2px solid rgba(239,68,68,0.3)'
             : '3px solid rgba(239,68,68,0.5)'
         }}>
           <h2 style={{
@@ -1211,7 +1261,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
           }}>
             {warningContent.title}
           </h2>
-          
+
           <p style={{
             fontSize: isMobile ? 14 : 16,
             color: '#fff',
@@ -1221,13 +1271,13 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
           }}>
             {warningContent.content}
           </p>
-          
+
           <div style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
             gap: 16
           }}>
-            <button 
+            <button
               onClick={() => {
                 setShowJeetWarning(false);
                 setJeetWarningStep(0);
@@ -1246,8 +1296,8 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
             >
               {warningContent.cancelText}
             </button>
-            
-            <button 
+
+            <button
               onClick={confirmJeet}
               style={{
                 padding: '16px 24px',
@@ -1311,20 +1361,20 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
           }
         `
       }} />
-      
-      <div style={{ 
-        maxWidth: isMobile ? '100%' : 1400, 
-        margin: '0 auto' 
+
+      <div style={{
+        maxWidth: isMobile ? '100%' : 1400,
+        margin: '0 auto'
       }}>
         {/* Mobile: Gift Box at top, PC: integrated in layout */}
         {isMobile && (
-          <GiftBoxSystem 
+          <GiftBoxSystem
             userData={userData}
             isMobile={isMobile}
             onPointsUpdate={handleGiftBoxPointsUpdate}
           />
         )}
-        
+
         <div style={{
           display: 'grid',
           gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr',
@@ -1336,11 +1386,11 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
             <GrillTemperature userData={userData} isMobile={isMobile} />
             <StakeAmountCard />
           </div>
-          
+
           <div>
             {/* PC only: Gift Box System */}
             {!isMobile && (
-              <GiftBoxSystem 
+              <GiftBoxSystem
                 userData={userData}
                 isMobile={isMobile}
                 onPointsUpdate={handleGiftBoxPointsUpdate}
@@ -1355,11 +1405,11 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
         <div style={{ marginTop: isMobile ? 16 : 24 }}>
           <StakehouseCard />
         </div>
-        
+
         {/* Mobile: Holding Time at bottom */}
         {isMobile && <HoldingTimeCard />}
       </div>
-      
+
       <JeetWarningModal />
     </div>
   );
