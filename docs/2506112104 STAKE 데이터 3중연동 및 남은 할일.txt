@@ -1,0 +1,128 @@
+📊 STAKE 프로젝트 진행 현황 정리
+🎯 주요 사안
+1. 신규 유저 대시보드 접속 문제
+
+문제: 스테이킹 없는 지갑 접속 시 Connection Error
+해결: ✅ 기본 UI 표시, VIRGEN 등급으로 처리
+수정 파일: stakeDataFetcher.js, OptimizedIntegratedDashboard.jsx, GiftBoxSystem.jsx, GrillTemperature.jsx
+
+2. 실시간 스테이킹 정보 업데이트
+
+문제: 6시간마다만 업데이트되어 신규 스테이킹 반영 지연
+해결: ✅ 10분 증분 업데이트 시스템 구축
+구현:
+
+체크포인트 시스템 (checkpoint.json)
+증분 스캔 함수 (extract_incremental_stake_data)
+새 워크플로우 (stake-incremental-update.yml)
+
+
+
+3. 데이터 무결성 & 시트 관리
+
+문제: 단일 시트로 증분/전체 업데이트 시 충돌 위험
+해결: ✅ Master/Live 시트 분리
+구조:
+
+Master Sheet: 6시간마다 전체 스냅샷
+Live Sheet: 10분마다 증분 업데이트 (프론트 읽기용)
+
+
+
+4. GitHub Actions 타임아웃 문제
+
+문제: Apps Script 응답 대기 중 3시간 타임아웃
+원인: Apps Script는 12초에 완료되나 응답 반환 지연
+해결: ✅ 30초 타임아웃 + 타임아웃 시 성공 처리
+
+5. 선물상자 백엔드 동기화
+
+문제: 박스 포인트가 0으로 저장, 중복 카운트
+부분 해결: Google Apps Script 수정 (processBoxSync, updateMainSheetBoxPoints)
+상태: ⚠️ 추가 테스트 필요
+
+✅ 해결 완료 사항
+
+신규 유저 온보딩
+
+데이터 없어도 대시보드 표시
+VIRGEN 등급, 0°F 온도
+선물상자 100포인트 보너스
+
+
+스테이킹 정보 실시간성
+
+10분마다 신규 트랜잭션 확인
+최대 10분 내 반영
+블록 타임스탬프 기준 정확한 포인트 계산
+
+
+시스템 안정성
+
+Master/Live 시트 분리로 데이터 보호
+타임아웃 문제 해결
+체크포인트로 중복 스캔 방지
+
+
+
+📝 남은 할일
+단기 (즉시 필요)
+
+선물상자 시스템 완성
+
+박스 포인트 정상 저장 확인
+중복 방지 로직 테스트
+신규 유저 박스 포인트 유지
+
+
+모니터링 & 검증
+
+10분/6시간 워크플로우 안정성 확인
+Live 시트 데이터 정확성 검증
+프론트엔드 정상 작동 확인
+
+
+
+중기 (1-2주)
+
+월간 무결성 검증
+
+26일 전체 검증 워크플로우 구현
+Phase 종료 전 데이터 백업
+
+
+성능 최적화
+
+제네시스 블록 전체 스캔 제거
+블록 범위 최적화
+
+
+
+장기 (Phase 2 준비)
+
+Phase 전환 시스템
+
+Phase 1 데이터 동결
+Phase 2 초기화
+히스토리 보관
+
+
+
+🔧 기술 스택 & 구조
+온체인 → Python Script → Google Sheets → Apps Script API → 프론트엔드
+         (10분/6시간)    (Master/Live)                      (Next.js)
+📌 중요 파일 위치
+
+Python: python-scripts/stake_leaderboard_system.py
+워크플로우: .github/workflows/stake-*.yml
+Apps Script: Google Sheets 연동 스크립트
+프론트: utils/stakeDataFetcher.js, 각종 컴포넌트
+
+🚨 주의사항
+
+체크포인트 관리: checkpoint.json 삭제 시 재스캔 필요
+시트 이름: _master, _live 접미사 규칙 유지
+타임아웃: Apps Script 6분, Python 30초 제한
+
+
+이 정리 내용을 다음 AI나 협업자에게 전달하면 프로젝트 상황을 빠르게 파악할 수 있습니다! 🚀

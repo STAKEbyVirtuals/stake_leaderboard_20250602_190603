@@ -1006,14 +1006,18 @@ def start_scheduler():
     logger.info(f"🚀 Apps Script Web App 연동")
     logger.info(f"🎯 다음 실행: {datetime.now() + pd.Timedelta(hours=6)}")
     
-    # 6시간마다 실행
-    schedule.every(6).hours.do(update_leaderboard)
-    
     # 즉시 한 번 실행
     logger.info("🚀 첫 번째 업데이트 즉시 실행...")
     update_leaderboard()
     
-    # 스케줄러 실행
+    # 🆕 GitHub Actions 환경에서는 스케줄러 실행하지 않음
+    if os.environ.get('GITHUB_ACTIONS'):
+        logger.info("✅ GitHub Actions 환경 - 단일 실행 완료")
+        return
+    
+    # 로컬 환경에서만 스케줄러 실행
+    schedule.every(6).hours.do(update_leaderboard)
+    
     while True:
         try:
             schedule.run_pending()
