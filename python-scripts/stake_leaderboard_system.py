@@ -10,6 +10,37 @@ from collections import defaultdict
 import traceback
 import os
 
+# === 체크포인트 관리 함수들 ===
+def load_checkpoint():
+    """체크포인트 파일 로드"""
+    checkpoint_file = 'checkpoint.json'
+    try:
+        with open(checkpoint_file, 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        # 초기 체크포인트 생성
+        initial_checkpoint = {
+            "last_full_scan": {
+                "block": GENESIS_BLOCK,
+                "timestamp": None,
+                "total_users": 0
+            },
+            "last_incremental": {
+                "block": GENESIS_BLOCK,
+                "timestamp": None
+            },
+            "genesis_scan_completed": False
+        }
+        save_checkpoint(initial_checkpoint)
+        return initial_checkpoint
+
+def save_checkpoint(checkpoint_data):
+    """체크포인트 파일 저장"""
+    checkpoint_file = 'checkpoint.json'
+    with open(checkpoint_file, 'w') as f:
+        json.dump(checkpoint_data, f, indent=2)
+    logger.info(f"✅ 체크포인트 저장 완료")
+
 # 로깅 설정
 logging.basicConfig(
     level=logging.INFO,
@@ -353,6 +384,149 @@ def extract_all_stake_data():
         logger.error(f"❌ 데이터 추출 실패: {e}")
         logger.error(traceback.format_exc())
         return False
+    
+def extract_incremental_stake_data():
+    """증분 모드: 최근 변경사항만 추출"""
+    logger.info("🚀 증분 STAKE 데이터 추출 시작...")
+    
+    try:
+        # 체크포인트 로드
+        checkpoint = load_checkpoint()
+        latest_block = get_latest_block()
+        
+        if not latest_block:
+            raise Exception("최신 블록 조회 실패")
+        
+        # 시작 블록 결정
+        start_block = checkpoint['last_incremental']['block'] + 1
+        
+        # 너무 많은 블록 방지 (최대 10,000블록)
+        if latest_block - start_block > 10000:
+            start_block = latest_block - 10000
+            logger.warning(f"⚠️ 블록 범위 제한: 최근 10,000블록만 스캔")
+        
+        if start_block > latest_block:
+            logger.info("✅ 새로운 블록 없음")
+            return True
+        
+        total_blocks = latest_block - start_block
+        logger.info(f"📊 증분 스캔 범위: {start_block:,} → {latest_block:,} ({total_blocks:,}블록)")
+        
+        # 기존 데이터 유지 (전체 초기화하지 않음)
+        # staking_data는 전역 변수이므로 기존 데이터 유지됨
+        
+        total_stake_txs = 0
+        total_unstake_txs = 0
+        processed = 0
+        
+        current_block = start_block
+        chunk_num = 1
+        
+        while current_block <= latest_block:
+            chunk_end = min(current_block + 1499, latest_block)
+            chunk_size = chunk_end - current_block + 1
+            
+            progress = processed / total_blocks * 100
+            logger.info(f"🔄 증분 {progress:.1f}% | 청크#{chunk_num} | 블록 {current_block:,}→{chunk_end:,}")
+            
+            logs = safe_scan_chunk(current_block, chunk_end)
+            
+            if not logs:
+                current_block = chunk_end + 1
+                processed += chunk_size
+                chunk_num += 1
+                continue
+            
+            # 트랜잭션 처리 (기존 로직 재사용)
+            tx_hashes = list(set(log['transactionHash'] for log in logs))
+            
+            for tx_hash in tx_hashes:
+                try:
+                    tx_result = rpc_call("eth_getTransactionByHash", [tx_hash])
+                    
+                    if not tx_result or 'result' not in tx_result or not tx_result['result']:
+                        continue
+                    
+                    tx = tx_result['result']
+                    input_data = tx.get('input', '0x')
+                    
+                    if len(input_data) >= 10:
+                        method_id = input_data[:10]
+                        from_addr = tx['from'].lower()
+                        block_num = int(tx['blockNumber'], 16)
+                        
+                        # 블록 타임스탬프
+                        block_result = rpc_call("eth_getBlockByNumber", [tx['blockNumber'], False])
+                        timestamp = 0
+                        if block_result and 'result' in block_result and block_result['result']:
+                            timestamp = int(block_result['result']['timestamp'], 16)
+                        
+                        if method_id == STAKE_METHOD_ID:
+                            # 스테이킹 트랜잭션
+                            amount = decode_amount(input_data)
+                            
+                            staking_data[from_addr]['total_staked'] += amount
+                            staking_data[from_addr]['stake_count'] += 1
+                            staking_data[from_addr]['is_active'] = True
+                            
+                            if not staking_data[from_addr]['first_stake_time']:
+                                staking_data[from_addr]['first_stake_time'] = timestamp
+                            
+                            staking_data[from_addr]['last_action_time'] = timestamp
+                            
+                            staking_data[from_addr]['stake_transactions'].append({
+                                'amount': amount,
+                                'block': block_num,
+                                'timestamp': timestamp,
+                                'hash': tx_hash
+                            })
+                            
+                            total_stake_txs += 1
+                            logger.info(f"✅ 새 스테이킹: {from_addr[:8]}... +{amount:.4f}")
+                        
+                        elif method_id == UNSTAKE_METHOD_ID:
+                            # 언스테이킹 시도
+                            staking_data[from_addr]['unstake_count'] += 1
+                            staking_data[from_addr]['is_active'] = False
+                            staking_data[from_addr]['last_action_time'] = timestamp
+                            
+                            staking_data[from_addr]['unstake_attempts'].append({
+                                'block': block_num,
+                                'timestamp': timestamp,
+                                'hash': tx_hash
+                            })
+                            
+                            total_unstake_txs += 1
+                            logger.info(f"❌ 언스테이킹: {from_addr[:8]}...")
+                
+                except Exception as e:
+                    continue
+                    
+                time.sleep(0.005)
+            
+            current_block = chunk_end + 1
+            processed += chunk_size
+            chunk_num += 1
+            time.sleep(0.1)
+        
+        # 체크포인트 업데이트
+        checkpoint['last_incremental'] = {
+            'block': latest_block,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }
+        save_checkpoint(checkpoint)
+        
+        logger.info(f"🎉 증분 데이터 추출 완료!")
+        logger.info(f"   새 Stake 트랜잭션: {total_stake_txs:,}개")
+        logger.info(f"   새 Unstake 시도: {total_unstake_txs:,}개")
+        logger.info(f"   영향받은 지갑: {total_stake_txs + total_unstake_txs}개")
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ 증분 데이터 추출 실패: {e}")
+        logger.error(traceback.format_exc())
+        return False    
 
 def process_leaderboard_data():
     """리더보드 데이터 처리 및 생성 (안전 모드 지원)"""
@@ -793,6 +967,8 @@ def start_scheduler():
             time.sleep(300)  # 5분 후 재시도
 
 if __name__ == "__main__":
+    import sys
+    
     logger.info("🥩 STAKE 리더보드 시스템 시작 (Apps Script Web App 연동)")
     logger.info(f"🔗 RPC URL: {RPC_URL}")
     logger.info(f"📋 스테이킹 컨트랙트: {STAKING_ADDRESS}")
@@ -802,7 +978,40 @@ if __name__ == "__main__":
     logger.info(f"🚀 Apps Script Web App: {'설정됨' if APPS_SCRIPT_WEB_APP_URL else '미설정'}")
     
     try:
-        start_scheduler()
+        # 커맨드라인 인자 확인
+        if '--incremental' in sys.argv or os.environ.get('INCREMENTAL_MODE') == 'true':
+            logger.info("📈 === 증분 업데이트 모드 ===")
+            
+            # 1. 증분 데이터 추출
+            if not extract_incremental_stake_data():
+                raise Exception("증분 데이터 추출 실패")
+            
+            # 2. 리더보드 데이터 처리
+            leaderboard_data = process_leaderboard_data()
+            if not leaderboard_data:
+                raise Exception("리더보드 데이터 처리 실패")
+            
+            # 3. 백업 저장
+            save_backup_data(leaderboard_data)
+            
+            # 4. Apps Script Web App 업로드
+            if not upload_to_apps_script_web_app(leaderboard_data):
+                logger.warning("⚠️ Apps Script Web App 실패, GitHub Pages로 전환...")
+                if not save_to_github_pages(leaderboard_data):
+                    raise Exception("모든 업로드 방법 실패")
+            
+            logger.info("✅ 증분 업데이트 완료")
+            
+        elif '--full-integrity' in sys.argv:
+            logger.info("🔍 === 전체 무결성 검증 모드 ===")
+            # 나중에 구현
+            logger.warning("⚠️ 전체 무결성 검증은 아직 구현되지 않았습니다")
+            
+        else:
+            logger.info("🔄 === 전체 업데이트 모드 (스케줄러) ===")
+            start_scheduler()
+            
     except Exception as e:
         logger.error(f"💥 시스템 시작 실패: {e}")
         logger.error(traceback.format_exc())
+        sys.exit(1)

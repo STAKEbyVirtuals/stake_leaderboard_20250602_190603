@@ -1,0 +1,12 @@
+{
+  "last_full_scan": {
+    "block": 0,
+    "timestamp": null,
+    "total_users": 0
+  },
+  "last_incremental": {
+    "block": 0,
+    "timestamp": null
+  },
+  "genesis_scan_completed": false
+}

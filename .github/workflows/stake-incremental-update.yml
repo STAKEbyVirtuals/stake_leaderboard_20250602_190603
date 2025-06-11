@@ -1,0 +1,98 @@
+name: STAKE Incremental Update (10min)
+
+on:
+  # 10분마다 실행
+  schedule:
+    - cron: '*/10 * * * *'
+  
+  # 수동 실행 가능
+  workflow_dispatch:
+    inputs:
+      debug_mode:
+        description: 'Enable debug logging'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  PYTHONUNBUFFERED: 1
+  TZ: Asia/Seoul
+  INCREMENTAL_MODE: true
+
+jobs:
+  incremental-update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10  # 10분 제한 (증분은 빠름)
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    
+    steps:
+    - name: 📂 Checkout Repository
+      uses: actions/checkout@v4
+    
+    - name: 🐍 Setup Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: 📦 Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: 🚀 Run Incremental Update
+      env:
+        APPS_SCRIPT_WEB_APP_URL: ${{ secrets.APPS_SCRIPT_WEB_APP_URL }}
+        SAFE_MODE: true
+        UPDATE_RANGE: "A:U"
+      working-directory: python-scripts
+      run: |
+        echo "📈 증분 업데이트 시작 (최근 블록만 스캔)"
+        echo "⏰ 실행 시간: $(date)"
+        
+        # 체크포인트 파일 확인
+        if [ -f "checkpoint.json" ]; then
+          echo "✅ 체크포인트 파일 발견"
+          cat checkpoint.json
+        else
+          echo "🆕 첫 실행 - 체크포인트 생성됨"
+        fi
+        
+        # 증분 업데이트 실행
+        python stake_leaderboard_system.py --incremental
+        
+        echo "✅ 증분 업데이트 완료"
+    
+    - name: 💾 Commit Checkpoint
+      if: success()
+      run: |
+        git config --local user.name "GitHub Actions"
+        git config --local user.email "actions@github.com"
+        
+        # 체크포인트 파일 커밋
+        git add python-scripts/checkpoint.json
+        git add public/leaderboard.json || true
+        
+        # 변경사항이 있을 때만 커밋
+        git diff --staged --quiet || git commit -m "Update checkpoint - Block $(date +%s)"
+        git push || echo "No changes to push"
+    
+    - name: 📊 Update Summary
+      if: always()
+      run: |
+        echo "### 📈 증분 업데이트 완료"
+        echo "- 실행 시간: $(date)"
+        echo "- 모드: 증분 (최근 블록만)"
+        echo "- 주기: 10분"
+        echo ""
+        if [ -f "python-scripts/checkpoint.json" ]; then
+          echo "#### 체크포인트 정보"
+          cat python-scripts/checkpoint.json
+        fi
+
+concurrency:
+  group: stake-incremental-update
+  cancel-in-progress: false
