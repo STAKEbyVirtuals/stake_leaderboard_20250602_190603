@@ -1,0 +1,7 @@
+{
+  "editor.formatOnSave": true,        // 저장시 자동 들여쓰기
+  "editor.autoIndent": "full",        // 자동 들여쓰기
+  "editor.tabSize": 2,                // 탭 크기 (2칸 또는 4칸)
+  "editor.insertSpaces": true,        // 탭 대신 스페이스 사용
+  "editor.detectIndentation": true    // 파일의 들여쓰기 자동 감지
+}

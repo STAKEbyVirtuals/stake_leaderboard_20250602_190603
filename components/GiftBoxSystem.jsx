@@ -1,9 +1,14 @@
+// GiftBoxSystem.jsx 상단에 추가
 import React, { useState, useEffect } from 'react';
+import { BoxSyncManager } from '../utils/boxSyncManager';
 
-const GiftBoxSystem = ({ 
-  userStake = 100000, 
+const APPS_SCRIPT_URL = process.env.NEXT_PUBLIC_APPS_SCRIPT_URL || '';
+
+const GiftBoxSystem = ({
+  userStake = 100000,
   userTier = "FLAME_JUGGLER",
-  isMobile = false 
+  userAddress,
+  isMobile = false
 }) => {
   const [currentBox, setCurrentBox] = useState(null);
   const [nextDropTime, setNextDropTime] = useState(null);
@@ -14,61 +19,65 @@ const GiftBoxSystem = ({
   const [showRatesInfo, setShowRatesInfo] = useState(false);
   const [selectedTierForRates, setSelectedTierForRates] = useState(userTier);
 
+  // 컴포넌트 내부
+  const [boxSync] = useState(() => new BoxSyncManager(APPS_SCRIPT_URL, userAddress));
+
+  // 상자 시스템 정의 (STAKE 프로젝트 티어 색상 적용)
   // 상자 시스템 정의 (STAKE 프로젝트 티어 색상 적용)
   const BOX_SYSTEM = {
     "COMMON": {
       name: "일반 상자",
       emoji: "📦",
-      multiplier: 1,
-      color: "#9ca3af",      // SIZZLIN' NOOB 색상
+      multiplier: 10,
+      color: "#9ca3af",
       glow: "rgba(156, 163, 175, 0.5)",
       rarity: "Common"
     },
     "UNCOMMON": {
       name: "고급 상자",
       emoji: "🎁",
-      multiplier: 1.5,
-      color: "#22c55e",      // FLIPSTARTER 색상
+      multiplier: 15,
+      color: "#22c55e",
       glow: "rgba(34, 197, 94, 0.5)",
       rarity: "Uncommon"
     },
     "RARE": {
       name: "희귀 상자",
       emoji: "💎",
-      multiplier: 2,
-      color: "#3b82f6",      // FLAME JUGGLER 색상
+      multiplier: 20,
+      color: "#3b82f6",
       glow: "rgba(59, 130, 246, 0.5)",
       rarity: "Rare"
     },
     "EPIC": {
       name: "영웅 상자",
       emoji: "🔮",
-      multiplier: 3.5,
-      color: "#9333ea",      // GRILLUMINATI 색상
+      multiplier: 35,
+      color: "#9333ea",
       glow: "rgba(147, 51, 234, 0.5)",
       rarity: "Epic"
     },
     "UNIQUE": {
       name: "유니크 상자",
       emoji: "🧙‍♂️",
-      multiplier: 5,
-      color: "#fbbf24",      // STAKE WIZARD 색상
+      multiplier: 50,
+      color: "#fbbf24",
       glow: "rgba(251, 191, 36, 0.5)",
       rarity: "Unique"
     },
     "LEGENDARY": {
       name: "전설 상자",
       emoji: "⚡",
-      multiplier: 7,
-      color: "#ef4444",      // HEAVY EATER 색상
+      multiplier: 70,
+      color: "#ef4444",
       glow: "rgba(239, 68, 68, 0.5)",
       rarity: "Legendary"
     },
     "GENESIS": {
       name: "창세 상자",
       emoji: "👑",
-      multiplier: 10,
-      color: "#10b981",      // GENESIS OG 색상
+      multiplier: 100,
+      color: "#10b981",
       glow: "rgba(16, 185, 129, 0.8)",
       rarity: "Genesis"
     }
@@ -108,21 +117,28 @@ const GiftBoxSystem = ({
 
   // 등급별 멀티플라이어 조회
   const getUserMultiplier = (tier) => {
+    //console.log('🔍 받은 tier:', tier); // 디버깅용
+
     const tierMultipliers = {
-      "GENESIS_OG": 2.0,
-      "HEAVY_EATER": 1.8,
-      "STAKE_WIZARD": 1.6,
-      "GRILLUMINATI": 1.4,
-      "FLAME_JUGGLER": 1.25,
-      "FLIPSTARTER": 1.1,
-      "SIZZLIN_NOOB": 1.0
+      "Genesis OG": 2.0,          // ← 이렇게 수정
+      "Heavy Eater": 1.8,
+      "Stake Wizard": 1.6,
+      "Grilluminati": 1.4,
+      "Flame Juggler": 1.25,
+      "Flipstarter": 1.1,
+      "Sizzlin' Noob": 1.0
     };
-    return tierMultipliers[tier] || 1.0;
+
+    const multiplier = tierMultipliers[tier] || 1.0;
+    //console.log('🎯 적용된 멀티플라이어:', multiplier);
+
+    return multiplier;
   };
 
   // 상자 드랍 로직
   const generateRandomBox = () => {
-    const rates = DROP_RATES[userTier] || DROP_RATES["SIZZLIN_NOOB"];
+    const tierKey = userTier?.toUpperCase().replace(/[\s']/g, '_');
+    const rates = DROP_RATES[tierKey] || DROP_RATES["SIZZLIN_NOOB"];
     const random = Math.random() * 100;
     let cumulative = 0;
 
@@ -135,11 +151,15 @@ const GiftBoxSystem = ({
     return "COMMON";
   };
 
-  // 포인트 계산 (userStake × 3600초 × 본인 등급 멀티플라이어 × 상자 멀티플라이어)
-  const calculateBoxPoints = (boxType) => {
-    const userMultiplier = getUserMultiplier(userTier); // 본인 등급 멀티플라이어
-    const boxMultiplier = BOX_SYSTEM[boxType].multiplier; // 상자 멀티플라이어
-    return userStake * 3600 * userMultiplier * boxMultiplier;
+  // 포인트 계산 (userStake × 1분 × 본인 등급 멀티플라이어 × 상자 멀티플라이어)
+  const calculateBoxPoints = (type) => {
+    const boxMultiplier = BOX_SYSTEM[type].multiplier;
+    const userMultiplier = getUserMultiplier(userTier);
+
+    // 1분 기준 포인트 계산
+    const minutePoints = userStake / 24 / 60;
+
+    return Math.floor(minutePoints * boxMultiplier * userMultiplier);
   };
 
   // 시간 포맷팅
@@ -147,73 +167,155 @@ const GiftBoxSystem = ({
     if (!targetTime) return "00:00:00";
     const now = Date.now();
     const diff = Math.max(0, targetTime - now);
-    
+
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-    
+
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  // 상자 오픈
+  // openBox 함수 수정
+  // GiftBoxSystem.jsx의 openBox 함수 전체 교체
   const openBox = () => {
     if (!currentBox || isOpening) return;
-    
+
     setIsOpening(true);
-    
+
     setTimeout(() => {
       const points = calculateBoxPoints(currentBox);
       const boxInfo = BOX_SYSTEM[currentBox];
-      
+
+      // 1. 즉시 로컬 업데이트
+      const currentTotal = parseFloat(localStorage.getItem(`boxTotalPoints_${userAddress}`) || 0);
+      const newTotal = currentTotal + points;
+      localStorage.setItem(`boxTotalPoints_${userAddress}`, newTotal.toString());
+
+      window.dispatchEvent(new CustomEvent('boxPointsUpdated', {
+        detail: { address: userAddress, newPoints: points, totalPoints: newTotal }
+      }));
+
+      // 2. 즉시 UI 업데이트
       const reward = {
         type: currentBox,
         points: points,
         boxInfo: boxInfo,
         timestamp: Date.now()
       };
-      
+
       setShowReward(reward);
       setOpenedBoxes(prev => [reward, ...prev].slice(0, 10));
       setCurrentBox(null);
       setBoxExpireTime(null);
       setIsOpening(false);
-      
-      // 다음 드랍 시간 설정 (6시간 후)
-      setNextDropTime(Date.now() + (6 * 60 * 60 * 1000));
-      
-      // 5초 후 리워드 알림 숨김
+
+      const newNextDrop = Date.now() + (3 * 1000);
+      setNextDropTime(newNextDrop);
+
+      // localStorage 정리
+      localStorage.removeItem(`currentBox_${userAddress}`);
+      localStorage.removeItem(`boxExpireTime_${userAddress}`);
+      localStorage.setItem(`nextDropTime_${userAddress}`, newNextDrop.toString());
+
+      // 3. 서버 저장은 백그라운드에서 (기다리지 않음)
+      const boxData = {
+        timestamp: Date.now(),
+        type: currentBox,
+        boxMultiplier: boxInfo.multiplier,
+        userMultiplier: getUserMultiplier(userTier),
+        points: points
+      };
+
+      // 비동기로 서버 저장 (await 없음)
+      fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode: window.location.hostname === 'localhost' ? 'no-cors' : 'cors',
+        body: JSON.stringify({
+          type: 'box_sync',
+          address: userAddress,
+          boxes: [boxData]
+        })
+      }).then(() => {
+        console.log('✅ 서버 저장 완료');
+      }).catch(error => {
+        console.error('서버 저장 실패:', error);
+        // 실패해도 이미 로컬은 업데이트됨
+      });
+
       setTimeout(() => setShowReward(null), 5000);
     }, 2000);
   };
+  // useEffect에 추가
+  useEffect(() => {
+    boxSync.startAutoSync();
+
+    return () => {
+      boxSync.cleanup();
+    };
+  }, []);
 
   // 초기화 및 타이머 관리
+  // 초기화 및 타이머 관리
   useEffect(() => {
-    // 초기 드랍 시간 설정 (6시간 후)
-    if (!nextDropTime) {
-      setNextDropTime(Date.now() + (6 * 60 * 60 * 1000));
+    // 저장된 상자 상태 복원
+    const savedBox = localStorage.getItem(`currentBox_${userAddress}`);
+    const savedExpireTime = localStorage.getItem(`boxExpireTime_${userAddress}`);
+    const savedNextDrop = localStorage.getItem(`nextDropTime_${userAddress}`);
+
+    if (savedBox && savedExpireTime) {
+      const expireTime = parseInt(savedExpireTime);
+      if (Date.now() < expireTime) {
+        // 아직 유효한 상자
+        setCurrentBox(savedBox);
+        setBoxExpireTime(expireTime);
+      } else {
+        // 만료된 상자 정리
+        localStorage.removeItem(`currentBox_${userAddress}`);
+        localStorage.removeItem(`boxExpireTime_${userAddress}`);
+      }
     }
-    
+
+    if (savedNextDrop) {
+      setNextDropTime(parseInt(savedNextDrop));
+    } else if (!currentBox) {
+      //setNextDropTime(Date.now() + (6 * 60 * 60 * 1000));
+      setNextDropTime(Date.now() + (1 * 1 * 3 * 1000));
+    }
+
     const timer = setInterval(() => {
       const now = Date.now();
-      
+
       // 새 상자 드랍 체크
       if (nextDropTime && now >= nextDropTime && !currentBox) {
         const newBox = generateRandomBox();
         setCurrentBox(newBox);
-        setBoxExpireTime(now + (24 * 60 * 60 * 1000)); // 24시간 후 소멸
+        //setBoxExpireTime(now + (24 * 60 * 60 * 1000));
+        setBoxExpireTime(now + (1 * 1 * 3 * 1000));
         setNextDropTime(null);
+
+        // 상자 상태 저장
+        localStorage.setItem(`currentBox_${userAddress}`, newBox);
+        localStorage.setItem(`boxExpireTime_${userAddress}`, (now + (24 * 60 * 60 * 1000)).toString());
+        localStorage.removeItem(`nextDropTime_${userAddress}`);
       }
-      
+
       // 상자 만료 체크
       if (boxExpireTime && now >= boxExpireTime && currentBox) {
         setCurrentBox(null);
         setBoxExpireTime(null);
-        setNextDropTime(now + (6 * 60 * 60 * 1000)); // 다음 드랍 6시간 후
+        //const newNextDrop = now + (6 * 60 * 60 * 1000);
+        const newNextDrop = now + (3 * 1000);
+        setNextDropTime(newNextDrop);
+
+        // 상태 정리
+        localStorage.removeItem(`currentBox_${userAddress}`);
+        localStorage.removeItem(`boxExpireTime_${userAddress}`);
+        localStorage.setItem(`nextDropTime_${userAddress}`, newNextDrop.toString());
       }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [nextDropTime, boxExpireTime, currentBox]);
+  }, [nextDropTime, boxExpireTime, currentBox, userAddress]);
 
   const formatNumber = (num) => {
     if (num >= 1000000000) return (num / 1000000000).toFixed(1) + 'B';
@@ -292,7 +394,7 @@ const GiftBoxSystem = ({
           }}>
             🎁 Gift Box System
           </h2>
-          
+
           <div style={{
             fontSize: 11,
             background: 'rgba(139,92,246,0.2)',
@@ -328,7 +430,7 @@ const GiftBoxSystem = ({
             {currentBox ? (
               <>
                 {/* 현재 상자 표시 */}
-                <div 
+                <div
                   className={isOpening ? "box-shake" : "box-float"}
                   onClick={openBox}
                   style={{
@@ -347,7 +449,7 @@ const GiftBoxSystem = ({
                 >
                   {BOX_SYSTEM[currentBox].emoji}
                 </div>
-                
+
                 <div style={{
                   fontSize: isMobile ? 14 : 16,
                   fontWeight: 700,
@@ -356,7 +458,7 @@ const GiftBoxSystem = ({
                 }}>
                   {BOX_SYSTEM[currentBox].name}
                 </div>
-                
+
                 <div style={{
                   fontSize: isMobile ? 10 : 12,
                   color: '#999',
@@ -364,7 +466,7 @@ const GiftBoxSystem = ({
                 }}>
                   User: {getUserMultiplier(userTier)}x × Box: {BOX_SYSTEM[currentBox].multiplier}x
                 </div>
-                
+
                 <div style={{
                   fontSize: isMobile ? 11 : 12,
                   color: '#4ade80',
@@ -374,7 +476,7 @@ const GiftBoxSystem = ({
                 }}>
                   +{formatNumber(calculateBoxPoints(currentBox))} Points
                 </div>
-                
+
                 <div style={{
                   fontSize: isMobile ? 9 : 10,
                   color: '#fbbf24',
@@ -386,7 +488,7 @@ const GiftBoxSystem = ({
                 }}>
                   = {formatNumber(userStake)} × {getUserMultiplier(userTier)} × {BOX_SYSTEM[currentBox].multiplier}
                 </div>
-                
+
                 {!isOpening && (
                   <div style={{
                     fontSize: isMobile ? 10 : 11,
@@ -400,7 +502,7 @@ const GiftBoxSystem = ({
                     👆 Click to Open!
                   </div>
                 )}
-                
+
                 {/* 만료 시간 */}
                 <div style={{
                   fontSize: isMobile ? 10 : 11,
@@ -413,9 +515,9 @@ const GiftBoxSystem = ({
                 }}>
                   ⏰ {formatTimeLeft(boxExpireTime)}
                 </div>
-                
+
                 {/* 반짝임 효과 */}
-                {Array.from({length: 3}, (_, i) => (
+                {Array.from({ length: 3 }, (_, i) => (
                   <div
                     key={i}
                     className="sparkle"
@@ -481,7 +583,7 @@ const GiftBoxSystem = ({
               }}>
                 📊 Your Drop Rates
               </h4>
-              
+
               <button
                 onClick={() => setShowRatesInfo(!showRatesInfo)}
                 style={{
@@ -505,7 +607,7 @@ const GiftBoxSystem = ({
                 ℹ️ Info
               </button>
             </div>
-            
+
             {/* 드랍률 그리드 - COMMON부터 정렬 */}
             <div style={{
               display: 'grid',
@@ -514,7 +616,9 @@ const GiftBoxSystem = ({
             }}>
               {['COMMON', 'UNCOMMON', 'RARE', 'EPIC', 'UNIQUE', 'LEGENDARY', 'GENESIS']
                 .map(boxType => {
-                  const rate = (DROP_RATES[userTier] || DROP_RATES["SIZZLIN_NOOB"])[boxType] || 0;
+                  const tierKey = userTier?.toUpperCase().replace(/[\s']/g, '_') || "SIZZLIN_NOOB";
+                  const dropRates = DROP_RATES[tierKey] || DROP_RATES["SIZZLIN_NOOB"];
+                  const rate = dropRates[boxType] || 0;
                   return (
                     <div key={boxType} style={{
                       display: 'flex',
@@ -534,7 +638,7 @@ const GiftBoxSystem = ({
                         <span style={{ fontSize: isMobile ? 10 : 12 }}>
                           {BOX_SYSTEM[boxType].emoji}
                         </span>
-                        <span style={{ 
+                        <span style={{
                           color: BOX_SYSTEM[boxType].color,
                           fontSize: isMobile ? 9 : 10,
                           fontWeight: 600
@@ -542,8 +646,8 @@ const GiftBoxSystem = ({
                           {BOX_SYSTEM[boxType].rarity}
                         </span>
                       </div>
-                      <span style={{ 
-                        color: rate > 20 ? BOX_SYSTEM[boxType].color : '#fff', 
+                      <span style={{
+                        color: rate > 20 ? BOX_SYSTEM[boxType].color : '#fff',
                         fontWeight: rate > 20 ? 700 : 600,
                         fontFamily: 'monospace',
                         fontSize: isMobile ? 9 : 10
@@ -572,7 +676,7 @@ const GiftBoxSystem = ({
             }}>
               📜 Recent Rewards
             </h4>
-            
+
             <div style={{
               display: 'flex',
               flexDirection: 'column',
@@ -600,8 +704,8 @@ const GiftBoxSystem = ({
                       {reward.boxInfo.rarity}
                     </span>
                   </div>
-                  <span style={{ 
-                    color: '#4ade80', 
+                  <span style={{
+                    color: '#4ade80',
                     fontWeight: 600,
                     fontFamily: 'monospace'
                   }}>
@@ -630,7 +734,7 @@ const GiftBoxSystem = ({
           boxShadow: `0 0 50px ${showReward.boxInfo.glow}, 0 25px 50px rgba(0,0,0,0.5)`,
           minWidth: isMobile ? 280 : 320
         }}
-        className="reward-pop"
+          className="reward-pop"
         >
           <div style={{
             fontSize: isMobile ? 48 : 64,
@@ -639,7 +743,7 @@ const GiftBoxSystem = ({
           }}>
             {showReward.boxInfo.emoji}
           </div>
-          
+
           <h3 style={{
             fontSize: isMobile ? 18 : 22,
             fontWeight: 800,
@@ -648,7 +752,7 @@ const GiftBoxSystem = ({
           }}>
             {showReward.boxInfo.name}
           </h3>
-          
+
           <div style={{
             fontSize: isMobile ? 24 : 32,
             fontWeight: 900,
@@ -658,7 +762,7 @@ const GiftBoxSystem = ({
           }}>
             +{formatNumber(showReward.points)}
           </div>
-          
+
           <div style={{
             fontSize: isMobile ? 12 : 14,
             color: '#999'
@@ -709,7 +813,7 @@ const GiftBoxSystem = ({
               }}>
                 📊 Drop Rates by Tier
               </h3>
-              
+
               <button
                 onClick={() => setShowRatesInfo(false)}
                 style={{
@@ -749,14 +853,18 @@ const GiftBoxSystem = ({
                 {Object.keys(DROP_RATES).map(tier => (
                   <button
                     key={tier}
-                    onClick={() => setSelectedTierForRates(tier)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedTierForRates(tier);
+                    }}
                     style={{
-                      background: selectedTierForRates === tier 
-                        ? 'rgba(139,92,246,0.3)' 
+                      background: selectedTierForRates === tier
+                        ? 'rgba(139,92,246,0.3)'
                         : 'rgba(255,255,255,0.05)',
-                      border: selectedTierForRates === tier 
-                        ? '2px solid rgba(139,92,246,0.6)' 
-                        : '1px solid rgba(255,255,255,0.1)',
+                      border: '2px solid transparent',  // 항상 2px 유지
+                      borderColor: selectedTierForRates === tier
+                        ? 'rgba(139,92,246,0.6)'
+                        : 'rgba(255,255,255,0.1)',
                       borderRadius: 8,
                       color: selectedTierForRates === tier ? '#8b5cf6' : '#ccc',
                       fontSize: isMobile ? 10 : 12,
@@ -787,7 +895,7 @@ const GiftBoxSystem = ({
               }}>
                 {selectedTierForRates.replace('_', ' ')} Drop Rates
               </h4>
-              
+
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(2, 1fr)',
@@ -795,7 +903,8 @@ const GiftBoxSystem = ({
               }}>
                 {['COMMON', 'UNCOMMON', 'RARE', 'EPIC', 'UNIQUE', 'LEGENDARY', 'GENESIS']
                   .map(boxType => {
-                    const rate = DROP_RATES[selectedTierForRates][boxType] || 0;
+                    const rates = DROP_RATES[selectedTierForRates] || DROP_RATES["SIZZLIN_NOOB"];
+                    const rate = rates[boxType] || 0;
                     return (
                       <div key={boxType} style={{
                         display: 'flex',
@@ -816,14 +925,14 @@ const GiftBoxSystem = ({
                             {BOX_SYSTEM[boxType].emoji}
                           </span>
                           <div>
-                            <div style={{ 
+                            <div style={{
                               color: BOX_SYSTEM[boxType].color,
                               fontSize: isMobile ? 11 : 12,
                               fontWeight: 700
                             }}>
                               {BOX_SYSTEM[boxType].rarity}
                             </div>
-                            <div style={{ 
+                            <div style={{
                               color: '#999',
                               fontSize: isMobile ? 9 : 10
                             }}>
@@ -831,8 +940,8 @@ const GiftBoxSystem = ({
                             </div>
                           </div>
                         </div>
-                        <span style={{ 
-                          color: '#fff', 
+                        <span style={{
+                          color: '#fff',
                           fontWeight: 600,
                           fontFamily: 'monospace',
                           fontSize: isMobile ? 12 : 14
@@ -843,7 +952,7 @@ const GiftBoxSystem = ({
                     );
                   })}
               </div>
-              
+
               {/* 설명 */}
               <div style={{
                 marginTop: 16,
@@ -865,9 +974,9 @@ const GiftBoxSystem = ({
                   color: '#ccc',
                   lineHeight: 1.4
                 }}>
-                  • Points = Stake × User Tier Multiplier × Box Multiplier<br/>
-                  • Higher tier = Better drop rates for rare boxes<br/>
-                  • Genesis gets 50% chance for Genesis boxes<br/>
+                  • Points = Stake × User Tier Multiplier × Box Multiplier<br />
+                  • Higher tier = Better drop rates for rare boxes<br />
+                  • Genesis gets 50% chance for Genesis boxes<br />
                   • Boxes drop every 6 hours, expire in 24 hours
                 </div>
               </div>
