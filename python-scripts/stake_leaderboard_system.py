@@ -679,7 +679,7 @@ def process_leaderboard_data():
         logger.error(traceback.format_exc())
         return []
 
-def upload_to_apps_script_web_app(data):
+def upload_to_apps_script_web_app(data, mode='full'):  # 🆕 mode 파라미터 추가
     """🚀 Apps Script Web App으로 데이터 전송 (JSON 안전 처리)"""
     logger.info("📤 Apps Script Web App 업로드 시작...")
     
@@ -699,8 +699,14 @@ def upload_to_apps_script_web_app(data):
         cleaned_data = clean_data_for_json(data)
         logger.info(f"🧹 데이터 정제 완료: {len(cleaned_data)}개 항목")
         
+        # 🆕 모드 정보 포함
+        request_data = {
+            'mode': mode,  # 'incremental' or 'full'
+            'data': cleaned_data
+        }
+        
         # JSON 데이터 준비 (안전한 직렬화)
-        json_data = json.dumps(cleaned_data, ensure_ascii=True, separators=(',', ':'))
+        json_data = json.dumps(request_data, ensure_ascii=True, separators=(',', ':'))
         
         # 📊 데이터 크기 체크
         data_size_mb = len(json_data.encode('utf-8')) / (1024 * 1024)
@@ -972,8 +978,8 @@ def update_leaderboard():
         # 3. 백업 저장
         save_backup_data(leaderboard_data)
         
-        # 4. 🚀 Apps Script Web App 업로드
-        if not upload_to_apps_script_web_app(leaderboard_data):
+        # 4. 🚀 Apps Script Web App 업로드 (전체 모드)
+        if not upload_to_apps_script_web_app(leaderboard_data, mode='full'):
             logger.warning("⚠️ Apps Script Web App 실패, GitHub Pages로 전환...")
             if not save_to_github_pages(leaderboard_data):
                 raise Exception("모든 업로드 방법 실패")
