@@ -563,30 +563,41 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
               borderRadius: 10,
               overflow: 'hidden',
               position: 'relative',
-              marginBottom: 8
+              marginBottom: 20  // 🆕 아래 여백 증가 (퍼센트 표시 공간)
             }}>
               <div style={{
                 height: '100%',
                 background: `linear-gradient(90deg, ${userData.tier_color}, ${userData.tier_color}80)`,
-                width: gaugeAnimated ? `${userData.percentile}%` : '0%',
+                width: gaugeAnimated ? `${100 - userData.percentile}%` : '0%',  // 🆕 반전된 값
                 borderRadius: 10,
                 position: 'relative',
                 zIndex: 2,
                 transition: 'width 2.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
                 boxShadow: `0 0 20px ${userData.tier_glow_color}`
               }} />
+            </div>
 
+            {/* 🆕 유동적 퍼센트 표시 */}
+            <div style={{
+              position: 'relative',
+              height: 0,
+              marginTop: -15  // 게이지 바로 아래 위치
+            }}>
               <div style={{
                 position: 'absolute',
-                left: gaugeAnimated ? `${userData.percentile}%` : '0%',
-                top: '50%',
-                transform: 'translate(-50%, -50%)',
-                fontSize: isMobile ? 16 : 20,
-                zIndex: 3,
+                left: gaugeAnimated ? `${100 - userData.percentile}%` : '0%',  // 🆕 반전된 위치
+                transform: 'translateX(-50%)',
                 transition: 'left 2.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                filter: `drop-shadow(0 0 8px ${userData.tier_color})`
+                fontSize: isMobile ? 11 : 13,
+                color: userData.tier_color,
+                fontWeight: 700,
+                background: 'rgba(0,0,0,0.8)',
+                padding: '2px 8px',
+                borderRadius: 4,
+                border: `1px solid ${userData.tier_color}40`,
+                whiteSpace: 'nowrap'
               }}>
-                ⭐
+                {userData.percentile.toFixed(1)}%
               </div>
             </div>
 
@@ -594,16 +605,11 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
               display: 'flex',
               justifyContent: 'space-between',
               fontSize: isMobile ? 10 : 12,
-              color: '#999'
+              color: '#999',
+              marginTop: 5
             }}>
-              <span>0% (Bottom)</span>
-              <span style={{
-                color: userData.tier_color,
-                fontWeight: 700
-              }}>
-                {userData.percentile.toFixed(1)}%
-              </span>
-              <span>100% (Top)</span>
+              <span>100% (Bottom)</span>  {/* 🆕 좌우 반전 */}
+              <span>0.1% (Top)</span>
             </div>
           </div>
 

@@ -429,26 +429,7 @@ def extract_incremental_stake_data():
                                 'unstake_transactions': []
                             }
                         logger.info(f"✅ {len(staking_data)}개 기존 데이터 로드 완료")
-                else:
-                    # public/leaderboard.json 시도
-                    if os.path.exists('../public/leaderboard.json'):
-                        with open('../public/leaderboard.json', 'r') as f:
-                            public_data = json.load(f)
-                            if 'leaderboard' in public_data:
-                                for item in public_data['leaderboard']:
-                                    addr = item['address'].lower()
-                                    staking_data[addr] = {
-                                        'total_staked': item.get('total_staked', 0),
-                                        'stake_count': item.get('stake_count', 0),
-                                        'unstake_count': item.get('unstake_count', 0),
-                                        'unstake_attempts': [],
-                                        'is_active': item.get('is_active', True),
-                                        'first_stake_time': item.get('first_stake_time'),
-                                        'last_action_time': item.get('last_action_time'),
-                                        'stake_transactions': [],
-                                        'unstake_transactions': []
-                                    }
-                                logger.info(f"✅ public에서 {len(staking_data)}개 데이터 로드")
+
             except Exception as e:
                 logger.warning(f"⚠️ 기존 데이터 로드 실패: {e}")
                 logger.info("🆕 새로운 데이터로 시작합니다.")
