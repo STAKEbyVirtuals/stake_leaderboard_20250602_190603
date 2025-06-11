@@ -397,6 +397,11 @@ def extract_incremental_stake_data():
         if not latest_block:
             raise Exception("최신 블록 조회 실패")
         
+        # 🆕 기존 데이터가 없으면 전체 스캔 필요
+        if not checkpoint.get('genesis_scan_completed', False):
+            logger.warning("⚠️ 초기 전체 스캔이 필요합니다. 전체 모드를 먼저 실행하세요.")
+            return extract_all_stake_data()  # 전체 스캔으로 전환
+        
         # 시작 블록 결정
         start_block = checkpoint['last_incremental']['block'] + 1
         
@@ -407,6 +412,34 @@ def extract_incremental_stake_data():
         
         if start_block > latest_block:
             logger.info("✅ 새로운 블록 없음")
+            # 🆕 새 블록이 없어도 기존 데이터는 유지되어야 함
+            if len(staking_data) == 0:
+                logger.info("📂 기존 데이터 로드 중...")
+                # 마지막 백업에서 데이터 복원
+                try:
+                    import glob
+                    backup_files = glob.glob('backup/stake_leaderboard_*.json')
+                    if backup_files:
+                        latest_backup = max(backup_files)
+                        with open(latest_backup, 'r') as f:
+                            backup_data = json.load(f)
+                            # staking_data 복원
+                            for item in backup_data:
+                                addr = item['address']
+                                staking_data[addr] = {
+                                    'total_staked': item.get('total_staked', 0),
+                                    'stake_count': item.get('stake_count', 0),
+                                    'unstake_count': item.get('unstake_count', 0),
+                                    'unstake_attempts': [],
+                                    'is_active': item.get('is_active', True),
+                                    'first_stake_time': item.get('first_stake_time'),
+                                    'last_action_time': item.get('last_action_time'),
+                                    'stake_transactions': [],
+                                    'unstake_transactions': []
+                                }
+                            logger.info(f"✅ {len(staking_data)}개 기존 데이터 로드 완료")
+                except Exception as e:
+                    logger.error(f"⚠️ 백업 데이터 로드 실패: {e}")
             return True
         
         total_blocks = latest_block - start_block
