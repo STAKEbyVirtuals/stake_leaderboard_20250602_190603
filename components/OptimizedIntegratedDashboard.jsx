@@ -1,20 +1,18 @@
-// components/OptimizedIntegratedDashboard.jsx
 import React, { useState, useEffect } from 'react';
-import ReferralSystem from './ReferralSystem';
-import ReferralDashboard from './ReferralDashboard';
-import GrillTemperature from './GrillTemperature';
-import GiftBoxSystem from './GiftBoxSystem';
-// 🆕 데이터 fetcher import
-import {
-  fetchLeaderboardData,
-  findUserData,
+// 🆕 실제 데이터 fetcher import
+import { 
+  fetchLeaderboardData, 
+  findUserData, 
   formatUserDataForDashboard,
   calculateLeaderboardStats,
-  getActiveUsers
+  getActiveUsers 
 } from '../utils/stakeDataFetcher';
 
-// 🎯 Optimized Integrated Dashboard - 실데이터 연동 버전
-const OptimizedIntegratedDashboard = ({ userAddress = null }) => {
+// 🆕 분리된 컴포넌트들 import
+import GrillTemperature from './GrillTemperature';
+import GiftBoxSystem from './GiftBoxSystem';
+
+const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1f5fc3b5bee10dae15" }) => {
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [isLive, setIsLive] = useState(true);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -22,28 +20,118 @@ const OptimizedIntegratedDashboard = ({ userAddress = null }) => {
   const [showJeetWarning, setShowJeetWarning] = useState(false);
   const [jeetWarningStep, setJeetWarningStep] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // 🆕 실데이터 상태 관리
-  const [isLoading, setIsLoading] = useState(true);
   const [userData, setUserData] = useState(null);
-  const [systemStats, setSystemStats] = useState(null);
+  const [realtimeScore, setRealtimeScore] = useState(0);
+  const [gaugeAnimated, setGaugeAnimated] = useState(false);
+  const [copiedContract, setCopiedContract] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // 🆕 실데이터 상태 관리
+  const [systemStats, setSystemStats] = useState(null);
 
-  // 수정 // OptimizedIntegratedDashboard.jsx
-  const [localBoxPoints, setLocalBoxPoints] = useState(0);
+  // 🔧 실제 데이터 로드 함수
+  const loadUserData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      console.log('📊 리더보드 데이터 로딩 중...');
+      const response = await fetchLeaderboardData();
+      
+      if (!response || !response.leaderboard) {
+        throw new Error('데이터 형식이 올바르지 않습니다');
+      }
+      
+      // 시스템 통계 계산
+      const stats = calculateLeaderboardStats(response.leaderboard);
+      setSystemStats(stats);
+      
+      // 사용자 데이터 찾기
+      const rawUserData = findUserData(response.leaderboard, userAddress);
+      
+      if (!rawUserData) {
+        throw new Error('해당 지갑 주소를 찾을 수 없습니다');
+      }
+      
+      // 활성 사용자 목록 (24시간 예상 순위 계산용)
+      const activeUsers = getActiveUsers(response.leaderboard);
+      
+      // 대시보드용 포맷으로 변환
+      const formattedData = formatUserDataForDashboard(
+        rawUserData, 
+        stats,
+        activeUsers
+      );
+      
+      setUserData(formattedData);
+      setRealtimeScore(formattedData.real_time_score);
+      console.log('✅ 사용자 데이터 로드 완료:', formattedData);
+      
+    } catch (err) {
+      console.error('❌ 데이터 로드 실패:', err);
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 🆕 실시간 스코어 업데이트 로직
+  const updateRealTimeScores = () => {
+    if (!userData) return;
+    
+    const currentTimeSec = Date.now() / 1000;
+    const holdingSeconds = currentTimeSec - userData.first_stake_timestamp;
+    const holdingDays = holdingSeconds / (24 * 60 * 60);
+    
+    // 실시간 점수 재계산
+    const realTimeScore = userData.display_staked * holdingDays * userData.current_multiplier;
+    const scorePerSecond = (userData.display_staked * userData.current_multiplier) / (24 * 60 * 60);
+    
+    setUserData(prev => ({
+      ...prev,
+      real_time_score: realTimeScore,
+      score_per_second: scorePerSecond,
+      stakehouse_score: realTimeScore * 0.15,
+      stakehouse_per_second: scorePerSecond * 0.15,
+      holding_days: holdingDays,
+      // 실시간 holding 시간 업데이트
+      real_time_holding: (() => {
+        const totalSeconds = Math.floor(holdingSeconds);
+        return {
+          days: Math.floor(totalSeconds / (24 * 60 * 60)),
+          hours: Math.floor((totalSeconds % (24 * 60 * 60)) / (60 * 60)),
+          minutes: Math.floor((totalSeconds % (60 * 60)) / 60),
+          seconds: totalSeconds % 60
+        };
+      })()
+    }));
+    
+    setRealtimeScore(realTimeScore);
+  };
+
+  // 🎁 기프트박스에서 포인트 업데이트 콜백
+  const handleGiftBoxPointsUpdate = (points) => {
+    setRealtimeScore(prev => prev + points);
+    // 선택적으로 userData도 업데이트
+    setUserData(prev => ({
+      ...prev,
+      real_time_score: prev.real_time_score + points,
+      box_points_earned: (prev.box_points_earned || 0) + points
+    }));
+  };
 
   // Detect mobile device
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
     };
-
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Real-time clock (updates every second)
+  // Real-time clock
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(Date.now());
@@ -63,139 +151,22 @@ const OptimizedIntegratedDashboard = ({ userAddress = null }) => {
     loadUserData();
   }, [userAddress]);
 
-  // OptimizedIntegratedDashboard.jsx의 useEffect 교체 (55번 줄부터)
+  // Gauge animation
   useEffect(() => {
-    console.log('🎯 대시보드 상자 포인트 초기화');
-    console.log('유저 주소:', userAddress);
-
-    // 초기 로드
-    const savedPoints = localStorage.getItem(`boxTotalPoints_${userAddress}`);
-    console.log('저장된 포인트:', savedPoints);
-
-    const localPoints = parseFloat(savedPoints) || 0;
-    const serverPoints = userData?.box_points_earned || 0;
-
-    console.log('로컬:', localPoints, '서버:', serverPoints);
-
-    // 더 큰 값 사용 (로컬이 더 최신)
-    setLocalBoxPoints(Math.max(localPoints, serverPoints));
-
-    // 실시간 업데이트 리스너
-    const handleBoxUpdate = (event) => {
-      console.log('📦 박스 업데이트 이벤트 수신:', event.detail);
-
-      if (event.detail.address === userAddress) {
-        console.log('✅ 주소 일치! 포인트 업데이트:', event.detail.totalPoints);
-        setLocalBoxPoints(event.detail.totalPoints);
-      } else {
-        console.log('❌ 주소 불일치:', event.detail.address, '!==', userAddress);
-      }
-    };
-
-    window.addEventListener('boxPointsUpdated', handleBoxUpdate);
-    console.log('🎧 이벤트 리스너 등록 완료');
-
-    return () => {
-      window.removeEventListener('boxPointsUpdated', handleBoxUpdate);
-      console.log('🔇 이벤트 리스너 제거');
-    };
-  }, [userAddress, userData]);
-
-  // 🆕 데이터 로드 함수
-  const loadUserData = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      console.log('📊 리더보드 데이터 로딩 중...');
-      const response = await fetchLeaderboardData();
-
-      if (!response || !response.leaderboard) {
-        throw new Error('데이터 형식이 올바르지 않습니다');
-      }
-
-      // 시스템 통계 계산
-      const stats = calculateLeaderboardStats(response.leaderboard);
-      setSystemStats(stats);
-
-      // 사용자 데이터 찾기
-      const rawUserData = findUserData(response.leaderboard, userAddress);
-
-      if (!rawUserData) {
-        throw new Error('해당 지갑 주소를 찾을 수 없습니다');
-      }
-
-      // 활성 사용자 목록 (24시간 예상 순위 계산용)
-      const activeUsers = getActiveUsers(response.leaderboard);
-
-      // 대시보드용 포맷으로 변환
-      const formattedData = formatUserDataForDashboard(
-        rawUserData,
-        stats,
-        activeUsers
-      );
-
-      setUserData(formattedData);
-      console.log('✅ 사용자 데이터 로드 완료:', formattedData);
-
-    } catch (err) {
-      console.error('❌ 데이터 로드 실패:', err);
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
+    if (userData && !gaugeAnimated) {
+      setTimeout(() => {
+        setGaugeAnimated(true);
+      }, 500);
     }
-  };
+  }, [userData, gaugeAnimated]);
 
-  // 🆕 실시간 스코어 업데이트
-  const updateRealTimeScores = () => {
-    if (!userData) return;
-
-    const currentTimeSec = Date.now() / 1000;
-    const holdingSeconds = currentTimeSec - userData.first_stake_timestamp;
-    const holdingDays = holdingSeconds / (24 * 60 * 60);
-
-    // 실시간 점수 재계산
-    const realTimeScore = userData.display_staked * holdingDays * userData.current_multiplier;
-    const scorePerSecond = (userData.display_staked * userData.current_multiplier) / (24 * 60 * 60);
-
-    setUserData(prev => ({
-      ...prev,
-      real_time_score: realTimeScore,
-      score_per_second: scorePerSecond,
-      stakehouse_score: realTimeScore * 0.15,
-      stakehouse_per_second: scorePerSecond * 0.15,
-      holding_days: holdingDays,
-      // 실시간 holding 시간 업데이트
-      real_time_holding: (() => {
-        const totalSeconds = Math.floor(holdingSeconds);
-        return {
-          days: Math.floor(totalSeconds / (24 * 60 * 60)),
-          hours: Math.floor((totalSeconds % (24 * 60 * 60)) / (60 * 60)),
-          minutes: Math.floor((totalSeconds % (60 * 60)) / 60),
-          seconds: totalSeconds % 60
-        };
-      })()
-    }));
-  };
-
-  // Refresh handler
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    loadUserData().finally(() => {
-      setIsRefreshing(false);
-    });
-  };
-
-  // Phase dates
-  const phase1EndDate = new Date('2025-06-27T09:59:59Z');
-
-  // 로딩 중일 때
+  // 로딩 상태
   if (isLoading) {
     return (
       <div style={{
         background: '#0a0a0a',
         minHeight: '100vh',
-        padding: isMobile ? '12px' : '20px',
+        padding: '20px',
         color: '#fff',
         display: 'flex',
         alignItems: 'center',
@@ -204,19 +175,35 @@ const OptimizedIntegratedDashboard = ({ userAddress = null }) => {
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 48, marginBottom: 20 }}>🥩</div>
           <div style={{ fontSize: 20, marginBottom: 10 }}>Loading STAKE Data...</div>
-          <div style={{ fontSize: 14, color: '#666' }}>Fetching from blockchain</div>
+          <div style={{ fontSize: 14, color: '#666' }}>Fetching real-time blockchain data</div>
+          <div style={{
+            width: 200,
+            height: 4,
+            background: 'rgba(255,255,255,0.1)',
+            borderRadius: 2,
+            margin: '20px auto',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              width: '100%',
+              height: '100%',
+              background: 'linear-gradient(90deg, #4ade80, #22c55e)',
+              borderRadius: 2,
+              animation: 'pulse 2s infinite'
+            }} />
+          </div>
         </div>
       </div>
     );
   }
 
-  // 에러 발생 시
+  // 에러 상태
   if (error) {
     return (
       <div style={{
         background: '#0a0a0a',
         minHeight: '100vh',
-        padding: isMobile ? '12px' : '20px',
+        padding: '20px',
         color: '#fff',
         display: 'flex',
         alignItems: 'center',
@@ -224,7 +211,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = null }) => {
       }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 48, marginBottom: 20 }}>❌</div>
-          <div style={{ fontSize: 20, marginBottom: 10, color: '#ef4444' }}>Error Loading Data</div>
+          <div style={{ fontSize: 20, marginBottom: 10, color: '#ef4444' }}>Connection Error</div>
           <div style={{ fontSize: 14, color: '#999', marginBottom: 20 }}>{error}</div>
           <button
             onClick={loadUserData}
@@ -239,35 +226,16 @@ const OptimizedIntegratedDashboard = ({ userAddress = null }) => {
               cursor: 'pointer'
             }}
           >
-            Retry
+            🔄 Retry Connection
           </button>
         </div>
       </div>
     );
   }
 
-  // 데이터가 없을 때
-  if (!userData) {
-    return (
-      <div style={{
-        background: '#0a0a0a',
-        minHeight: '100vh',
-        padding: isMobile ? '12px' : '20px',
-        color: '#fff',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 48, marginBottom: 20 }}>🔍</div>
-          <div style={{ fontSize: 20, marginBottom: 10 }}>No Data Found</div>
-          <div style={{ fontSize: 14, color: '#999' }}>Wallet address not found in leaderboard</div>
-        </div>
-      </div>
-    );
-  }
+  if (!userData) return null;
 
-  // Number formatting
+  // 유틸리티 함수들
   const formatNumber = (num) => {
     if (num >= 1000000000) return (num / 1000000000).toFixed(2) + 'B';
     if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
@@ -275,25 +243,29 @@ const OptimizedIntegratedDashboard = ({ userAddress = null }) => {
     return Math.floor(num).toLocaleString();
   };
 
-  const formatScore = (num) => {
-    //return (num / 1000000).toFixed(2) + 'M';
-    if (num >= 1000000000) return (num / 1000000000).toFixed(2) + 'B';
-    if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
-    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+  const formatFullNumber = (num) => {
     return Math.floor(num).toLocaleString();
   };
 
-  // Time formatting (countdown)
-  const formatCountdown = (seconds) => {
-    if (seconds <= 0) return "Complete";
-    const days = Math.floor(seconds / (24 * 60 * 60));
-    const hours = Math.floor((seconds % (24 * 60 * 60)) / (60 * 60));
-    if (days > 0) return `${days}d ${hours}h`;
-    if (hours > 0) return `${hours}h ${Math.floor((seconds % (60 * 60)) / 60)}m`;
-    return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+  const copyStakeAddress = () => {
+    const stakeAddress = "0xBa13ae24684bee910820Be1Fcf52067332F8412f";
+    navigator.clipboard.writeText(stakeAddress).then(() => {
+      setCopiedContract(true);
+      setTimeout(() => setCopiedContract(false), 2000);
+    }).catch(() => {
+      alert(`Contract address: ${stakeAddress}`);
+    });
   };
 
-  // JEET warning handler
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    loadUserData().finally(() => {
+      setIsRefreshing(false);
+      setGaugeAnimated(false);
+      setTimeout(() => setGaugeAnimated(true), 100);
+    });
+  };
+
   const handleJeetWarning = () => {
     if (jeetWarningStep === 0) {
       setJeetWarningStep(1);
@@ -311,552 +283,710 @@ const OptimizedIntegratedDashboard = ({ userAddress = null }) => {
     }
   };
 
-  // Copy contract address
-  const copyStakeAddress = () => {
-    const stakeAddress = "0xBa13ae24684bee910820Be1Fcf52067332F8412f";
-    navigator.clipboard.writeText(stakeAddress);
-    alert("STAKE contract address copied!");
-  };
+  // 내장 컴포넌트들 (모듈화되지 않은 것들)
+  const EnhancedTierPositionCard = () => {
+    const [localAnimateScore, setLocalAnimateScore] = useState(false);
 
-  // 🔥 Top key metrics cards - Reduced and Optimized
-  const MetricCard = ({ title, value, subtitle, trend, color, icon, isLive = false, highlight = false, special = false }) => (
-    <div style={{
-      background: special
-        ? 'linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,193,7,0.1))'
-        : highlight
-          ? 'linear-gradient(135deg, rgba(74,222,128,0.15), rgba(34,197,94,0.1))'
-          : 'rgba(255,255,255,0.05)',
-      border: special
-        ? '3px solid rgba(255,215,0,0.4)'
-        : highlight
-          ? '2px solid rgba(74,222,128,0.3)'
-          : '1px solid rgba(255,255,255,0.1)',
-      borderRadius: isMobile ? 12 : 16,
-      padding: isMobile ? '16px 12px' : '20px',
-      textAlign: 'center',
-      position: 'relative',
-      overflow: 'hidden',
-      minHeight: isMobile ? 'auto' : '140px',
-      boxShadow: special ? '0 0 20px rgba(255,215,0,0.2)' : 'none'
-    }}>
-      {isLive && (
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setLocalAnimateScore(true);
+        setTimeout(() => setLocalAnimateScore(false), 300);
+      }, 2000);
+      return () => clearInterval(interval);
+    }, []);
+
+    return (
+      <div style={{
+        background: userData.bg_gradient,
+        border: `3px solid ${userData.tier_color}`,
+        borderRadius: isMobile ? 16 : 24,
+        padding: isMobile ? 20 : 32,
+        marginBottom: isMobile ? 16 : 24,
+        position: 'relative',
+        overflow: 'hidden',
+        boxShadow: `0 0 30px ${userData.tier_glow_color}`
+      }}>
+        {/* Background Pattern */}
         <div style={{
           position: 'absolute',
-          top: isMobile ? 6 : 8,
-          right: isMobile ? 6 : 8,
-          width: isMobile ? 6 : 8,
-          height: isMobile ? 6 : 8,
-          background: '#4ade80',
-          borderRadius: '50%',
-          animation: 'pulse 2s infinite'
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundImage: `
+            radial-gradient(circle at 20% 20%, ${userData.tier_color}10 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, ${userData.tier_color}08 0%, transparent 50%)
+          `,
+          backgroundSize: '200px 200px, 150px 150px',
+          pointerEvents: 'none',
+          opacity: 0.3
         }} />
-      )}
 
-      {/* Vault Icon for stSTAKE */}
-      {special && (
+        {/* Phase Badge + Refresh */}
         <div style={{
           position: 'absolute',
-          top: 8,
-          left: 8,
-          fontSize: isMobile ? 16 : 20,
-          filter: 'drop-shadow(0 0 4px rgba(255,215,0,0.6))'
+          top: isMobile ? 12 : 16,
+          right: isMobile ? 12 : 16,
+          display: 'flex',
+          gap: 8,
+          alignItems: 'center'
         }}>
-          🏦
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            style={{
+              background: 'rgba(255,255,255,0.1)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: 6,
+              padding: '6px 8px',
+              color: '#fff',
+              fontSize: 12,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              transition: 'all 0.2s'
+            }}
+          >
+            <span style={{
+              display: 'inline-block',
+              animation: isRefreshing ? 'spin 1s linear infinite' : 'none'
+            }}>
+              🔄
+            </span>
+            {isRefreshing ? 'Updating...' : 'Refresh'}
+          </button>
+          
+          <div style={{
+            background: userData.tier_color,
+            color: '#000',
+            padding: isMobile ? '4px 8px' : '6px 12px',
+            borderRadius: 8,
+            fontSize: isMobile ? 10 : 12,
+            fontWeight: 900
+          }}>
+            PHASE 1
+          </div>
         </div>
-      )}
-
-      <div style={{
-        fontSize: isMobile ? 12 : 14,
-        color: '#999',
-        marginBottom: isMobile ? 6 : 8,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 4
-      }}>
-        <span style={{ fontSize: isMobile ? 14 : 16 }}>{icon}</span>
-        {title}
-      </div>
-
-      <div style={{
-        fontSize: isMobile ? 20 : 28,
-        fontWeight: 900,
-        color: color || '#fff',
-        marginBottom: 4,
-        fontFamily: 'monospace',
-        lineHeight: 1.2,
-        textShadow: special ? '0 0 10px rgba(255,215,0,0.4)' : 'none'
-      }}>
-        {value}
-      </div>
-
-      {subtitle && (
+        
+        {/* Live Indicator */}
         <div style={{
-          fontSize: isMobile ? 9 : 11,
-          color: '#666',
-          marginBottom: isMobile ? 6 : 8,
-          lineHeight: 1.3
-        }}>
-          {subtitle}
-        </div>
-      )}
-
-      {trend && (
-        <div style={{
-          fontSize: isMobile ? 9 : 11,
-          color: trend.startsWith('+') ? '#4ade80' : '#ef4444',
-          fontWeight: 600
-        }}>
-          {trend}
-        </div>
-      )}
-    </div>
-  );
-
-  // 🎯 Enhanced Gaming-Style Tier Position Card with Integrated Rank Prediction
-  const EnhancedTierPositionCard = () => (
-    <div className="tier-card-glow" style={{
-      background: userData.bg_gradient,
-      border: `3px solid ${userData.tier_color}`,
-      borderRadius: isMobile ? 16 : 24,
-      padding: isMobile ? 20 : 32,
-      marginBottom: isMobile ? 16 : 24,
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
-      {/* Background Pattern */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundImage: `
-          radial-gradient(circle at 20% 20%, ${userData.tier_color}10 0%, transparent 50%),
-          radial-gradient(circle at 80% 80%, ${userData.tier_color}08 0%, transparent 50%),
-          linear-gradient(45deg, rgba(255,255,255,0.02) 25%, transparent 25%),
-          linear-gradient(-45deg, rgba(255,255,255,0.02) 25%, transparent 25%)
-        `,
-        backgroundSize: '200px 200px, 150px 150px, 30px 30px, 30px 30px',
-        pointerEvents: 'none',
-        opacity: 0.3
-      }} />
-
-      {/* Phase Badge */}
-      <div style={{
-        position: 'absolute',
-        top: isMobile ? 12 : 16,
-        right: isMobile ? 12 : 16,
-        background: userData.tier_color,
-        color: '#000',
-        padding: isMobile ? '4px 8px' : '6px 12px',
-        borderRadius: 8,
-        fontSize: isMobile ? 10 : 12,
-        fontWeight: 900,
-        textTransform: 'uppercase',
-        letterSpacing: '1px',
-        boxShadow: `0 0 10px ${userData.tier_glow_color}`
-      }}>
-        PHASE 1
-      </div>
-
-      {/* Live Indicator */}
-      <div style={{
-        position: 'absolute',
-        top: isMobile ? 12 : 16,
-        left: isMobile ? 12 : 16,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 6,
-        background: 'rgba(74,222,128,0.2)',
-        border: '1px solid rgba(74,222,128,0.5)',
-        borderRadius: 20,
-        padding: '4px 8px',
-        fontSize: isMobile ? 10 : 11,
-        color: '#4ade80'
-      }}>
-        <div style={{
-          width: 6,
-          height: 6,
-          background: '#4ade80',
-          borderRadius: '50%',
-          animation: 'pulse 2s infinite'
-        }} />
-        LIVE
-      </div>
-
-      <div style={{ position: 'relative', zIndex: 1 }}>
-        {/* Main Content */}
-        <div style={{
+          position: 'absolute',
+          top: isMobile ? 12 : 16,
+          left: isMobile ? 12 : 16,
           display: 'flex',
           alignItems: 'center',
-          gap: isMobile ? 16 : 24,
-          marginBottom: isMobile ? 20 : 24,
-          marginTop: isMobile ? 16 : 20
+          gap: 6,
+          background: 'rgba(74,222,128,0.2)',
+          border: '1px solid rgba(74,222,128,0.5)',
+          borderRadius: 20,
+          padding: '4px 8px',
+          fontSize: isMobile ? 10 : 11,
+          color: '#4ade80'
         }}>
-          {/* Tier Avatar */}
           <div style={{
-            width: isMobile ? 80 : 120,
-            height: isMobile ? 80 : 120,
-            background: `radial-gradient(circle, ${userData.tier_color}40, ${userData.tier_color}10)`,
-            border: `3px solid ${userData.tier_color}`,
+            width: 6,
+            height: 6,
+            background: '#4ade80',
             borderRadius: '50%',
+            animation: 'pulse 2s infinite'
+          }} />
+          LIVE
+        </div>
+        
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          {/* Main Content */}
+          <div style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: isMobile ? 32 : 48,
-            position: 'relative',
-            flexShrink: 0,
-            boxShadow: `0 0 20px ${userData.tier_glow_color}, inset 0 0 20px ${userData.tier_glow_color}`
+            gap: isMobile ? 16 : 24,
+            marginBottom: isMobile ? 20 : 24,
+            marginTop: isMobile ? 36 : 40
           }}>
-            {userData.grade_emoji}
-
-            {/* Tier Ring Animation */}
             <div style={{
-              position: 'absolute',
-              top: -4,
-              left: -4,
-              right: -4,
-              bottom: -4,
-              border: `2px solid ${userData.tier_color}`,
+              width: isMobile ? 80 : 120,
+              height: isMobile ? 80 : 120,
+              background: `radial-gradient(circle, ${userData.tier_color}40, ${userData.tier_color}10)`,
+              border: `3px solid ${userData.tier_color}`,
               borderRadius: '50%',
-              borderTop: '2px solid transparent',
-              animation: 'spin 4s linear infinite'
-            }} />
-          </div>
-
-          {/* Title & Score */}
-          <div style={{ flex: 1 }}>
-            <h1 style={{
-              fontSize: isMobile ? 18 : 28,
-              fontWeight: 900,
-              color: userData.tier_color,
-              margin: '0 0 8px 0',
-              textShadow: `0 0 20px ${userData.tier_glow_color}`,
-              filter: `drop-shadow(0 0 8px ${userData.tier_glow_color})`
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: isMobile ? 32 : 48,
+              position: 'relative',
+              flexShrink: 0,
+              boxShadow: `0 0 20px ${userData.tier_glow_color}`
             }}>
-              {userData.grade}
-            </h1>
-
+              {userData.grade_emoji}
+              
+              {/* Rotating ring */}
+              <div style={{
+                position: 'absolute',
+                top: -4,
+                left: -4,
+                right: -4,
+                bottom: -4,
+                border: `2px solid ${userData.tier_color}`,
+                borderRadius: '50%',
+                borderTop: '2px solid transparent',
+                animation: 'spin 4s linear infinite'
+              }} />
+            </div>
+            
+            <div style={{ flex: 1 }}>
+              <h1 style={{
+                fontSize: isMobile ? 18 : 28,
+                fontWeight: 900,
+                color: userData.tier_color,
+                margin: '0 0 8px 0',
+                textShadow: `0 0 20px ${userData.tier_glow_color}`
+              }}>
+                {userData.grade}
+              </h1>
+              
+              <div style={{
+                fontSize: isMobile ? 12 : 16,
+                color: '#999',
+                marginBottom: 8
+              }}>
+                Rank #{userData.rank} • Top {userData.percentile.toFixed(1)}%
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                <div style={{
+                  fontSize: isMobile ? 20 : 32,
+                  fontWeight: 900,
+                  color: '#fff',
+                  fontFamily: 'monospace',
+                  transform: localAnimateScore ? 'scale(1.02)' : 'scale(1)',
+                  transition: 'transform 0.3s ease',
+                  textShadow: '0 0 10px rgba(255,255,255,0.3)'
+                }}>
+                  {formatFullNumber(realtimeScore)}
+                </div>
+                
+                <div style={{
+                  background: userData.tier_color,
+                  color: '#000',
+                  padding: '2px 8px',
+                  borderRadius: 6,
+                  fontSize: isMobile ? 12 : 16,
+                  fontWeight: 900,
+                  boxShadow: `0 0 8px ${userData.tier_glow_color}`
+                }}>
+                  {userData.current_multiplier}x
+                </div>
+              </div>
+              
+              <div style={{
+                fontSize: isMobile ? 10 : 12,
+                color: '#4ade80',
+                fontWeight: 600,
+                marginTop: 4
+              }}>
+                +{userData.score_per_second?.toFixed(2) || '0.00'} P/sec
+              </div>
+            </div>
+          </div>
+          
+          {/* Ranking Gauge */}
+          <div style={{
+            marginBottom: isMobile ? 16 : 20
+          }}>
             <div style={{
-              fontSize: isMobile ? 12 : 16,
-              color: '#999',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
               marginBottom: 8
             }}>
-              Rank #{userData.rank} • Top {userData.percentile.toFixed(1)}%
-            </div>
-
-            {/* Real-time Score with Multiplier */}
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-              <div className="score-animation" style={{
-                fontSize: isMobile ? 20 : 32,
-                fontWeight: 900,
-                color: '#fff',
-                fontFamily: 'monospace',
-                textShadow: '0 0 10px rgba(255,255,255,0.3)'
+              <span style={{
+                fontSize: isMobile ? 12 : 14,
+                color: '#ccc',
+                fontWeight: 600
               }}>
-                {(userData.real_time_score + localBoxPoints) >= 1000000000 ? ((userData.real_time_score + localBoxPoints) / 1000000000).toFixed(2) + 'B' :
-                  (userData.real_time_score + localBoxPoints) >= 1000000 ? ((userData.real_time_score + localBoxPoints) / 1000000).toFixed(2) + 'M' :
-                    (userData.real_time_score + localBoxPoints) >= 1000 ? ((userData.real_time_score + localBoxPoints) / 1000).toFixed(1) + 'K' :
-                      Math.floor(userData.real_time_score + localBoxPoints).toLocaleString()} P
-              </div>
-
-              {/* Multiplier Badge */}
+                Phase 1 Ranking
+              </span>
+              <span style={{
+                fontSize: isMobile ? 12 : 14,
+                color: userData.tier_color,
+                fontWeight: 700
+              }}>
+                #{userData.rank} / {userData.total_participants}
+              </span>
+            </div>
+            
+            <div style={{
+              height: isMobile ? 16 : 20,
+              background: 'rgba(255,255,255,0.1)',
+              borderRadius: 10,
+              overflow: 'hidden',
+              position: 'relative',
+              marginBottom: 8
+            }}>
               <div style={{
-                background: userData.tier_color,
-                color: '#000',
-                padding: '2px 8px',
-                borderRadius: 6,
-                fontSize: isMobile ? 12 : 16,
-                fontWeight: 900,
-                textShadow: 'none',
-                boxShadow: `0 0 8px ${userData.tier_glow_color}`
+                height: '100%',
+                background: `linear-gradient(90deg, ${userData.tier_color}, ${userData.tier_color}80)`,
+                width: gaugeAnimated ? `${userData.percentile}%` : '0%',
+                borderRadius: 10,
+                position: 'relative',
+                zIndex: 2,
+                transition: 'width 2.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                boxShadow: `0 0 20px ${userData.tier_glow_color}`
+              }} />
+              
+              <div style={{
+                position: 'absolute',
+                left: gaugeAnimated ? `${userData.percentile}%` : '0%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+                fontSize: isMobile ? 16 : 20,
+                zIndex: 3,
+                transition: 'left 2.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                filter: `drop-shadow(0 0 8px ${userData.tier_color})`
               }}>
-                {userData.current_multiplier}x
+                ⭐
               </div>
             </div>
-
+            
             <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
               fontSize: isMobile ? 10 : 12,
-              color: '#4ade80',
-              fontWeight: 600,
-              marginTop: 4
+              color: '#999'
             }}>
-              +{userData.score_per_second.toFixed(2)} P/sec
-            </div>
-          </div>
-        </div>
-
-        {/* Phase Ranking Gauge */}
-        <div style={{
-          marginBottom: isMobile ? 16 : 20
-        }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 8
-          }}>
-            <span style={{
-              fontSize: isMobile ? 12 : 14,
-              color: '#ccc',
-              fontWeight: 600
-            }}>
-              Phase 1 Ranking
-            </span>
-            <span style={{
-              fontSize: isMobile ? 12 : 14,
-              color: userData.tier_color,
-              fontWeight: 700
-            }}>
-              #{userData.rank} / {userData.total_participants}
-            </span>
-          </div>
-
-          {/* Ranking Gauge Bar */}
-          <div style={{
-            height: isMobile ? 12 : 16,
-            background: 'rgba(255,255,255,0.1)',
-            borderRadius: 8,
-            overflow: 'hidden',
-            position: 'relative',
-            marginBottom: 8
-          }}>
-            <div className="rank-gauge-fill" style={{
-              height: '100%',
-              background: `linear-gradient(90deg, ${userData.tier_color}, ${userData.tier_color}80)`,
-              width: `${userData.percentile}%`,
-              borderRadius: 8,
-              position: 'relative',
-              boxShadow: `0 0 10px ${userData.tier_glow_color}`
-            }} />
-
-            {/* Current position marker (fire 🔥) */}
-            <div style={{
-              position: 'absolute',
-              left: `${userData.percentile}%`,
-              top: isMobile ? -4 : -6,
-              transform: 'translateX(-50%)',
-              fontSize: isMobile ? 16 : 20,
-              filter: 'drop-shadow(0 0 8px rgba(255,69,0,0.8))',
-              zIndex: 3
-            }}>
-              🔥
+              <span>0% (Bottom)</span>
+              <span style={{
+                color: userData.tier_color,
+                fontWeight: 700
+              }}>
+                {userData.percentile.toFixed(1)}%
+              </span>
+              <span>100% (Top)</span>
             </div>
           </div>
 
-          {/* Gauge Labels */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            fontSize: isMobile ? 10 : 12,
-            color: '#999'
-          }}>
-            <span>#{userData.total_participants} ({userData.total_participants} total)</span>
-            <span style={{
-              position: 'relative',
-              left: `${userData.percentile - 50}%`,
-              color: userData.tier_color,
-              fontWeight: 700,
-              filter: `drop-shadow(0 0 4px ${userData.tier_glow_color})`
-            }}>
-              #{userData.rank}
-            </span>
-            <span>#1 (Top)</span>
-          </div>
-        </div>
-
-        {/* Points Breakdown */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: isMobile ? 12 : 16,
-          marginBottom: isMobile ? 16 : 20
-        }}>
-          <div style={{
-            background: 'rgba(74,222,128,0.1)',
-            border: '1px solid rgba(74,222,128,0.3)',
-            borderRadius: 12,
-            padding: isMobile ? 12 : 16,
-            textAlign: 'center'
-          }}>
-            <div style={{
-              fontSize: isMobile ? 10 : 12,
-              color: '#4ade80',
-              marginBottom: 4,
-              fontWeight: 600
-            }}>
-              By Stake
-            </div>
-            <div style={{
-              fontSize: isMobile ? 14 : 18,
-              fontWeight: 900,
-              color: '#fff',
-              fontFamily: 'monospace'
-            }}>
-              {formatNumber(userData.points_breakdown.by_stake)} P
-            </div>
-          </div>
-
-          <div style={{
-            background: 'rgba(245,158,11,0.1)',
-            border: '1px solid rgba(245,158,11,0.3)',
-            borderRadius: 12,
-            padding: isMobile ? 12 : 16,
-            textAlign: 'center'
-          }}>
-            <div style={{
-              fontSize: isMobile ? 10 : 12,
-              color: '#f59e0b',
-              marginBottom: 4,
-              fontWeight: 600
-            }}>
-              By Referral
-            </div>
-            <div style={{
-              fontSize: isMobile ? 14 : 18,
-              fontWeight: 900,
-              color: '#fff',
-              fontFamily: 'monospace'
-            }}>
-              {formatNumber(userData.points_breakdown.by_referral)} P
-            </div>
-          </div>
-        </div>
-
-        {/* 🆕 Integrated Rank Movement Prediction */}
-        <div style={{
-          background: 'rgba(0,0,0,0.3)',
-          border: `1px solid ${userData.border_color}`,
-          borderRadius: 12,
-          padding: isMobile ? 16 : 20
-        }}>
-          <h4 style={{
-            fontSize: isMobile ? 14 : 16,
-            fontWeight: 700,
-            color: '#fff',
-            margin: `0 0 ${isMobile ? 12 : 16}px 0`,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6
-          }}>
-            📈 Rank Movement Prediction
-          </h4>
-
+          {/* Points Breakdown - 높이 줄이기 */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-            gap: isMobile ? 12 : 16,
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: isMobile ? 8 : 12,
             marginBottom: isMobile ? 12 : 16
           }}>
             <div style={{
               background: 'rgba(74,222,128,0.1)',
-              border: '1px solid rgba(74,222,128,0.2)',
-              borderRadius: 12,
-              padding: isMobile ? 12 : 16,
+              border: '1px solid rgba(74,222,128,0.3)',
+              borderRadius: 8,
+              padding: isMobile ? 8 : 12,
               textAlign: 'center'
             }}>
               <div style={{
+                fontSize: isMobile ? 9 : 10,
                 color: '#4ade80',
-                fontSize: isMobile ? 18 : 20,
-                fontWeight: 900
+                marginBottom: 2,
+                fontWeight: 600
               }}>
-                #{userData.predicted_rank_24h}
+                By Stake
               </div>
               <div style={{
-                color: '#999',
-                fontSize: isMobile ? 10 : 12
+                fontSize: isMobile ? 12 : 14,
+                fontWeight: 900,
+                color: '#fff',
+                fontFamily: 'monospace'
               }}>
-                24h Prediction
-              </div>
-              <div style={{
-                color: userData.predicted_rank_24h < userData.rank ? '#4ade80' : '#ef4444',
-                fontSize: isMobile ? 9 : 11,
-                marginTop: 4
-              }}>
-                {userData.predicted_rank_24h < userData.rank
-                  ? `↗ +${userData.rank - userData.predicted_rank_24h} Rise`
-                  : userData.predicted_rank_24h > userData.rank
-                    ? `↘ -${userData.predicted_rank_24h - userData.rank} Drop`
-                    : '→ No Change'
-                }
+                {formatNumber(userData.points_breakdown?.by_stake || 0)} P
               </div>
             </div>
 
             <div style={{
-              background: 'rgba(139,92,246,0.1)',
-              border: '1px solid rgba(139,92,246,0.2)',
-              borderRadius: 12,
-              padding: isMobile ? 12 : 16,
+              background: 'rgba(245,158,11,0.1)',
+              border: '1px solid rgba(245,158,11,0.3)',
+              borderRadius: 8,
+              padding: isMobile ? 8 : 12,
               textAlign: 'center'
             }}>
               <div style={{
-                color: '#8b5cf6',
-                fontSize: isMobile ? 18 : 20,
-                fontWeight: 900
+                fontSize: isMobile ? 9 : 10,
+                color: '#f59e0b',
+                marginBottom: 2,
+                fontWeight: 600
               }}>
-                {formatNumber(userData.grill_temperature)}°F
+                By Referral
               </div>
               <div style={{
-                color: '#999',
-                fontSize: isMobile ? 10 : 12
+                fontSize: isMobile ? 12 : 14,
+                fontWeight: 900,
+                color: '#fff',
+                fontFamily: 'monospace'
               }}>
-                Grill Temperature
-              </div>
-              <div style={{
-                color: '#8b5cf6',
-                fontSize: isMobile ? 9 : 11,
-                marginTop: 4
-              }}>
-                Next: {userData.predicted_next_tier}
+                {formatNumber(userData.points_breakdown?.by_referral || 0)} P
               </div>
             </div>
           </div>
 
+          {/* Rank Movement Prediction - 더 컴팩트하게 */}
           <div style={{
-            fontSize: isMobile ? 11 : 13,
-            color: '#ccc',
-            textAlign: 'center',
-            padding: isMobile ? 8 : 12,
-            background: 'rgba(255,255,255,0.02)',
-            borderRadius: 8
+            background: 'rgba(0,0,0,0.3)',
+            border: `1px solid ${userData.border_color}`,
+            borderRadius: 8,
+            padding: isMobile ? 8 : 12
           }}>
-            💡 Your Power: <span style={{ color: '#4ade80', fontWeight: 600 }}>{userData.points_per_second.toFixed(2)} pts/sec</span> •
-            Average: <span style={{ color: '#fbbf24', fontWeight: 600 }}>~{(userData.display_staked / userData.total_participants / (24 * 60 * 60)).toFixed(2)} pts/sec</span>
+            <h4 style={{
+              fontSize: isMobile ? 11 : 12,
+              fontWeight: 700,
+              color: '#fff',
+              margin: '0 0 8px 0',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4
+            }}>
+              📈 Rank Movement Prediction
+            </h4>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: 8,
+              marginBottom: 8
+            }}>
+              {/* 24h Prediction */}
+              <div style={{
+                background: 'rgba(74,222,128,0.1)',
+                border: '1px solid rgba(74,222,128,0.2)',
+                borderRadius: 6,
+                padding: isMobile ? 6 : 8,
+                textAlign: 'center'
+              }}>
+                <div style={{
+                  color: '#4ade80',
+                  fontSize: isMobile ? 14 : 16,
+                  fontWeight: 900,
+                  marginBottom: 2
+                }}>
+                  #{userData.predicted_rank_24h || userData.rank}
+                </div>
+                <div style={{
+                  color: '#999',
+                  fontSize: isMobile ? 8 : 9,
+                  marginBottom: 2
+                }}>
+                  24h Prediction
+                </div>
+                <div style={{
+                  color: (userData.predicted_rank_24h || userData.rank) < userData.rank ? '#4ade80' : '#ef4444',
+                  fontSize: isMobile ? 7 : 8,
+                  fontWeight: 600
+                }}>
+                  {(userData.predicted_rank_24h || userData.rank) < userData.rank
+                    ? `↗ +${userData.rank - (userData.predicted_rank_24h || userData.rank)} Rise`
+                    : (userData.predicted_rank_24h || userData.rank) > userData.rank
+                      ? `↘ -${(userData.predicted_rank_24h || userData.rank) - userData.rank} Drop`
+                      : '→ No Change'
+                  }
+                </div>
+              </div>
+
+              {/* Grade Change Prediction */}
+              <div style={{
+                background: 'rgba(139,92,246,0.1)',
+                border: '1px solid rgba(139,92,246,0.2)',
+                borderRadius: 6,
+                padding: isMobile ? 6 : 8,
+                textAlign: 'center'
+              }}>
+                <div style={{
+                  color: '#8b5cf6',
+                  fontSize: isMobile ? 10 : 11,
+                  fontWeight: 700,
+                  marginBottom: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 2
+                }}>
+                  <span>👁️</span>
+                  <span style={{ fontSize: isMobile ? 8 : 9 }}>
+                    {userData.predicted_next_tier || 'Grilluminati'}
+                  </span>
+                </div>
+                <div style={{
+                  color: '#999',
+                  fontSize: isMobile ? 8 : 9,
+                  marginBottom: 2
+                }}>
+                  Next Grade
+                </div>
+                <div style={{
+                  color: '#4ade80',
+                  fontSize: isMobile ? 7 : 8,
+                  fontWeight: 600
+                }}>
+                  ↗ ~7d
+                </div>
+              </div>
+            </div>
+
+            {/* Power Comparison - 더 작게 */}
+            <div style={{
+              fontSize: isMobile ? 9 : 10,
+              color: '#ccc',
+              textAlign: 'center',
+              padding: isMobile ? 4 : 6,
+              background: 'rgba(255,255,255,0.02)',
+              borderRadius: 4
+            }}>
+              💡 Your Power: <span style={{ color: '#4ade80', fontWeight: 600 }}>{userData.score_per_second?.toFixed(2) || '0.00'} pts/sec</span> • 
+              Average: <span style={{ color: (userData.score_per_second || 0) > ((userData.score_per_second || 0) * 0.7) ? '#fbbf24' : '#ef4444', fontWeight: 600 }}>
+                ~{((userData.score_per_second || 0) * 0.7).toFixed(2)} pts/sec
+              </span>
+            </div>
           </div>
+        </div>
+      </div>
+    );
+  };
+  
+  const StakeAmountCard = () => (
+    <div style={{
+      background: 'linear-gradient(135deg, rgba(255,215,0,0.15), rgba(255,193,7,0.1))',
+      border: '2px solid rgba(255,215,0,0.3)',
+      borderRadius: isMobile ? 16 : 20,
+      padding: isMobile ? 16 : 20,
+      marginBottom: isMobile ? 16 : 24,
+      position: 'relative'
+    }}>
+      <div style={{
+        position: 'absolute',
+        top: 8,
+        left: 8,
+        fontSize: isMobile ? 16 : 20,
+        filter: 'drop-shadow(0 0 4px rgba(255,215,0,0.6))'
+      }}>
+        🏦
+      </div>
+
+      <h3 style={{
+        fontSize: isMobile ? 16 : 18,
+        fontWeight: 700,
+        color: '#ffd700',
+        margin: `0 0 ${isMobile ? 12 : 16}px 0`,
+        textAlign: 'center'
+      }}>
+        🥩 My stSTAKE
+      </h3>
+
+      {/* Gray box with improved layout */}
+      <div style={{
+        background: 'rgba(200,200,200,0.9)',
+        borderRadius: 8,
+        padding: '10px 14px',
+        textAlign: 'center',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          marginBottom: 4
+        }}>
+          <div style={{
+            fontSize: isMobile ? 20 : 24,
+            fontWeight: 900,
+            color: '#2a2a2a',
+            fontFamily: 'monospace'
+          }}>
+            {userData.display_staked?.toLocaleString() || '0'}
+          </div>
+          <div style={{
+            fontSize: isMobile ? 12 : 14,
+            fontWeight: 700,
+            color: '#4a4a4a'
+          }}>
+            stSTAKE
+          </div>
+        </div>
+        
+        <div style={{
+          fontSize: isMobile ? 11 : 12,
+          color: '#2a2a2a',
+          fontWeight: 600,
+          fontFamily: 'monospace'
+        }}>
+          ≈ ${((userData.display_staked || 0) * 0.0025).toLocaleString()}
         </div>
       </div>
     </div>
   );
 
-  // 🏠 STAKEHOUSE Gaming Card - Coming Soon
+  // Phase 1 할당 카드
+  const Phase1AllocationCard = () => {
+    const phase1EndTime = new Date('2025-06-27T09:59:59Z').getTime();
+    const [timeLeft, setTimeLeft] = useState('');
+
+    useEffect(() => {
+      const updateTimer = () => {
+        const now = Date.now();
+        const diff = phase1EndTime - now;
+        
+        if (diff <= 0) {
+          setTimeLeft('Phase Ended');
+        } else {
+          const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          setTimeLeft(`${days}d ${hours}h`);
+        }
+      };
+      
+      updateTimer();
+      const interval = setInterval(updateTimer, 60000);
+      return () => clearInterval(interval);
+    }, []);
+
+    return (
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05))',
+        border: '2px solid rgba(16,185,129,0.3)',
+        borderRadius: isMobile ? 16 : 20,
+        padding: isMobile ? 16 : 24,
+        marginBottom: isMobile ? 16 : 24,
+        position: 'relative'
+      }}>
+        <h3 style={{
+          fontSize: isMobile ? 14 : 16,
+          fontWeight: 700,
+          color: '#10b981',
+          margin: `0 0 ${isMobile ? 12 : 16}px 0`,
+          textAlign: 'center'
+        }}>
+          💎 Phase 1 Balance
+        </h3>
+        
+        {/* Gray box with improved layout */}
+        <div style={{
+          background: 'rgba(200,200,200,0.9)',
+          borderRadius: 8,
+          padding: '10px 14px',
+          marginBottom: 16,
+          textAlign: 'center',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            marginBottom: 4
+          }}>
+            <div style={{
+              fontSize: isMobile ? 20 : 24,
+              fontWeight: 900,
+              color: '#2a2a2a',
+              fontFamily: 'monospace'
+            }}>
+              {userData.phase1_allocation_tokens?.toLocaleString() || '0'}
+            </div>
+            <div style={{
+              fontSize: isMobile ? 12 : 14,
+              fontWeight: 700,
+              color: '#4a4a4a'
+            }}>
+              $STAKE
+            </div>
+          </div>
+          
+          <div style={{
+            fontSize: isMobile ? 11 : 12,
+            color: '#2a2a2a',
+            fontWeight: 600,
+            fontFamily: 'monospace'
+          }}>
+            ≈ ${userData.phase1_allocation_usd?.toLocaleString() || '0'}
+          </div>
+        </div>
+        
+        <div style={{
+          background: 'rgba(16,185,129,0.1)',
+          borderRadius: 10,
+          padding: 12,
+          textAlign: 'center',
+          marginBottom: 16
+        }}>
+          <div style={{ color: '#10b981', fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
+            🔥 Top {userData.percentile?.toFixed(1) || '0.0'}% Elite Tier!
+          </div>
+          <div style={{ color: '#ccc', fontSize: 11 }}>
+            {userData.phase1_allocation_percent?.toFixed(2) || '0.00'}% of Phase 1 Pool
+          </div>
+        </div>
+        
+        <div style={{
+          marginTop: 16,
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 12
+        }}>
+          <button 
+            onClick={handleJeetWarning}
+            style={{
+              padding: '14px 20px',
+              background: 'rgba(239,68,68,0.1)',
+              border: '2px solid rgba(239,68,68,0.2)',
+              borderRadius: 12,
+              color: '#ef4444',
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: 'pointer',
+              minHeight: '48px'
+            }}
+          >
+            💰 Claim
+          </button>
+          
+          <button 
+            style={{
+              padding: '14px 20px',
+              background: 'rgba(16,185,129,0.1)',
+              border: '2px solid rgba(16,185,129,0.2)',
+              borderRadius: 12,
+              color: '#10b981',
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: 'pointer',
+              minHeight: '48px'
+            }}
+          >
+            🚀 Phase 2
+          </button>
+        </div>
+        
+        <div style={{
+          marginTop: 16,
+          padding: 12,
+          background: 'rgba(251,191,36,0.1)',
+          border: '1px solid rgba(251,191,36,0.3)',
+          borderRadius: 8,
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: 11, color: '#fbbf24', fontWeight: 600, marginBottom: 4 }}>
+            🕐 Phase 1 ends in: {timeLeft}
+          </div>
+          <div style={{ fontSize: 10, color: '#fbbf24' }}>
+            Claim available: December 7, 2025
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // STAKEHOUSE 카드 (전체 너비)
   const StakehouseCard = () => (
     <div style={{
       background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(139,92,246,0.05))',
       border: '3px solid rgba(139,92,246,0.4)',
       borderRadius: isMobile ? 16 : 20,
       padding: isMobile ? 20 : 24,
-      marginBottom: isMobile ? 16 : 24,
-      position: 'relative',
-      overflow: 'hidden'
+      position: 'relative'
     }}>
-      {/* Background Pattern */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundImage: `
-          radial-gradient(circle at 20% 20%, rgba(139,92,246,0.1) 0%, transparent 50%),
-          radial-gradient(circle at 80% 80%, rgba(139,92,246,0.08) 0%, transparent 50%)
-        `,
-        backgroundSize: '200px 200px, 150px 150px',
-        pointerEvents: 'none',
-        opacity: 0.5
-      }} />
-
-      {/* Coming Soon Badge */}
       <div style={{
         position: 'absolute',
         top: isMobile ? 12 : 16,
@@ -866,22 +996,22 @@ const OptimizedIntegratedDashboard = ({ userAddress = null }) => {
         padding: isMobile ? '4px 8px' : '6px 12px',
         borderRadius: 8,
         fontSize: isMobile ? 10 : 12,
-        fontWeight: 900,
-        textTransform: 'uppercase',
-        letterSpacing: '1px'
+        fontWeight: 900
       }}>
         COMING SOON
       </div>
 
-      <div style={{ position: 'relative', zIndex: 1 }}>
-        {/* Main Content */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: isMobile ? 16 : 20
+      }}>
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: isMobile ? 16 : 20,
-          marginBottom: isMobile ? 16 : 20
+          gap: isMobile ? 16 : 20
         }}>
-          {/* STAKEHOUSE Icon */}
           <div style={{
             width: isMobile ? 60 : 80,
             height: isMobile ? 60 : 80,
@@ -891,28 +1021,12 @@ const OptimizedIntegratedDashboard = ({ userAddress = null }) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: isMobile ? 24 : 32,
-            position: 'relative',
-            flexShrink: 0
+            fontSize: isMobile ? 24 : 32
           }}>
             🏠
-
-            {/* Loading Ring */}
-            <div style={{
-              position: 'absolute',
-              top: -3,
-              left: -3,
-              right: -3,
-              bottom: -3,
-              border: '2px solid transparent',
-              borderTop: '2px solid #8b5cf6',
-              borderRadius: '50%',
-              animation: 'spin 3s linear infinite'
-            }} />
           </div>
-
-          {/* Title & Score */}
-          <div style={{ flex: 1 }}>
+          
+          <div>
             <h2 style={{
               fontSize: isMobile ? 16 : 20,
               fontWeight: 900,
@@ -921,55 +1035,37 @@ const OptimizedIntegratedDashboard = ({ userAddress = null }) => {
             }}>
               STAKEHOUSE
             </h2>
-
-            <div style={{
-              fontSize: isMobile ? 10 : 12,
-              color: '#999',
-              marginBottom: 8
-            }}>
+            
+            <div style={{ fontSize: isMobile ? 10 : 12, color: '#999', marginBottom: 8 }}>
               Enhanced Rewards System
             </div>
-
-            {/* Points Counter */}
+            
             <div style={{
               fontSize: isMobile ? 18 : 24,
               fontWeight: 900,
               color: '#fff',
               fontFamily: 'monospace'
             }}>
-              {formatNumber(userData.stakehouse_score)} P
+              {formatNumber(userData.stakehouse_score || 0)} P
             </div>
-
-            <div style={{
-              fontSize: isMobile ? 9 : 11,
-              color: '#8b5cf6',
-              fontWeight: 600,
-              marginTop: 4
-            }}>
-              +{userData.stakehouse_per_second.toFixed(2)} P/sec (Accumulating)
+            
+            <div style={{ fontSize: isMobile ? 9 : 11, color: '#8b5cf6', fontWeight: 600, marginTop: 4 }}>
+              +{userData.stakehouse_per_second?.toFixed(2) || '0.00'} P/sec (Accumulating)
             </div>
           </div>
         </div>
-
-        {/* Progress Indicator */}
+        
         <div style={{
           background: 'rgba(0,0,0,0.3)',
           borderRadius: 12,
-          padding: isMobile ? 12 : 16,
-          textAlign: 'center'
+          padding: isMobile ? 16 : 20,
+          textAlign: 'center',
+          maxWidth: isMobile ? '60%' : '40%'
         }}>
-          <div style={{
-            fontSize: isMobile ? 12 : 14,
-            color: '#8b5cf6',
-            fontWeight: 600,
-            marginBottom: 8
-          }}>
-            🚀 Points are accumulating for the upcoming launch!
+          <div style={{ fontSize: isMobile ? 12 : 14, color: '#8b5cf6', fontWeight: 600, marginBottom: 8 }}>
+            🚀 Points accumulating for launch!
           </div>
-          <div style={{
-            fontSize: isMobile ? 10 : 12,
-            color: '#999'
-          }}>
+          <div style={{ fontSize: isMobile ? 10 : 12, color: '#999' }}>
             Your STAKEHOUSE points will be converted to enhanced rewards when the system goes live.
           </div>
         </div>
@@ -977,212 +1073,24 @@ const OptimizedIntegratedDashboard = ({ userAddress = null }) => {
     </div>
   );
 
-  // 💰 Phase 1 Allocation Card with JEET Options
-  const Phase1AllocationCard = () => (
-    <div style={{
-      background: 'linear-gradient(135deg, rgba(255,215,0,0.15), rgba(255,193,7,0.1))',
-      border: '2px solid rgba(255,215,0,0.3)',
-      borderRadius: isMobile ? 16 : 20,
-      padding: isMobile ? 16 : 24,
-      marginBottom: isMobile ? 16 : 24,
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
-      {/* Background glow */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: 'radial-gradient(circle at 30% 20%, rgba(255,215,0,0.2), transparent 70%)',
-        pointerEvents: 'none'
-      }} />
-
-      <div style={{ position: 'relative', zIndex: 1 }}>
-        <h3 style={{
-          fontSize: isMobile ? 16 : 20,
-          fontWeight: 800,
-          color: '#ffd700',
-          margin: `0 0 ${isMobile ? 12 : 16}px 0`,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6
-        }}>
-          💎 Phase 1 Expected Allocation
-        </h3>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-          gap: isMobile ? 16 : 20,
-          marginBottom: isMobile ? 12 : 16
-        }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{
-              fontSize: isMobile ? 22 : 28,
-              fontWeight: 900,
-              color: '#fff',
-              marginBottom: 4,
-              fontFamily: 'monospace'
-            }}>
-              {formatNumber(userData.phase1_allocation_tokens)}
-            </div>
-            <div style={{
-              fontSize: isMobile ? 12 : 14,
-              color: '#ffd700',
-              fontWeight: 600
-            }}>
-              VIRTUAL ({userData.phase1_allocation_percent.toFixed(2)}%)
-            </div>
-          </div>
-
-          <div style={{ textAlign: 'center' }}>
-            <div style={{
-              fontSize: isMobile ? 22 : 28,
-              fontWeight: 900,
-              color: '#4ade80',
-              marginBottom: 4,
-              fontFamily: 'monospace'
-            }}>
-              ${formatNumber(userData.phase1_allocation_usd)}
-            </div>
-            <div style={{
-              fontSize: isMobile ? 12 : 14,
-              color: '#4ade80',
-              fontWeight: 600
-            }}>
-              Current Market Value
-            </div>
-          </div>
-        </div>
-
-        <div style={{
-          background: 'rgba(0,0,0,0.2)',
-          borderRadius: 12,
-          padding: isMobile ? 12 : 16,
-          textAlign: 'center'
-        }}>
-          <div style={{
-            color: '#ffd700',
-            fontSize: isMobile ? 14 : 16,
-            fontWeight: 700,
-            marginBottom: 4
-          }}>
-            🔥 Top {userData.percentile.toFixed(1)}% Elite Tier!
-          </div>
-          <div style={{
-            color: '#999',
-            fontSize: isMobile ? 10 : 12
-          }}>
-            Final Rank: #{userData.rank} / {userData.total_participants} users
-          </div>
-        </div>
-
-        {/* Phase 1 end and choice buttons */}
-        <div style={{
-          marginTop: isMobile ? 16 : 20,
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-          gap: 12
-        }}>
-          <button
-            onClick={handleJeetWarning}
-            style={{
-              padding: isMobile ? '16px 20px' : '14px 20px',
-              background: 'rgba(239,68,68,0.15)',
-              border: '2px solid rgba(239,68,68,0.3)',
-              borderRadius: 12,
-              color: '#ef4444',
-              fontSize: isMobile ? 16 : 14,
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              minHeight: '48px' // Touch-friendly
-            }}
-          >
-            💰 Claim Now
-          </button>
-
-          <button style={{
-            padding: isMobile ? '16px 20px' : '14px 20px',
-            background: 'rgba(74,222,128,0.15)',
-            border: '2px solid rgba(74,222,128,0.3)',
-            borderRadius: 12,
-            color: '#4ade80',
-            fontSize: isMobile ? 16 : 14,
-            fontWeight: 700,
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            minHeight: '48px' // Touch-friendly
-          }}>
-            🚀 Continue Phase 2
-          </button>
-        </div>
-
-        <div style={{
-          marginTop: 12,
-          fontSize: isMobile ? 9 : 11,
-          color: '#999',
-          textAlign: 'center'
-        }}>
-          🕐 Actual Release Date: December 7, 2025 ({Math.floor((new Date('2025-12-07') - new Date()) / (1000 * 60 * 60 * 24))} days)
-        </div>
-      </div>
-    </div>
-  );
-
-  // ⏰ Time Information + Action Buttons with Refresh
-  const TimeAndActions = () => (
+  // 홀딩 타임 카드
+  const HoldingTimeCard = () => (
     <div style={{
       background: 'rgba(255,255,255,0.03)',
       border: '1px solid rgba(255,255,255,0.1)',
       borderRadius: isMobile ? 12 : 16,
       padding: isMobile ? 16 : 20,
-      textAlign: 'center'
+      marginBottom: isMobile ? 16 : 24
     }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: isMobile ? 10 : 12
+      <h4 style={{
+        fontSize: isMobile ? 14 : 16,
+        fontWeight: 700,
+        color: '#fff',
+        margin: '0 0 12px 0',
+        textAlign: 'center'
       }}>
-        <h4 style={{
-          fontSize: isMobile ? 14 : 16,
-          fontWeight: 700,
-          color: '#fff',
-          margin: 0
-        }}>
-          ⏰ Holding Time (Real-time)
-        </h4>
-
-        {/* Refresh Button */}
-        <button
-          onClick={handleRefresh}
-          style={{
-            background: 'rgba(74,222,128,0.1)',
-            border: '1px solid rgba(74,222,128,0.3)',
-            borderRadius: 8,
-            padding: '6px 12px',
-            color: '#4ade80',
-            fontSize: isMobile ? 10 : 12,
-            fontWeight: 600,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            transition: 'all 0.2s'
-          }}
-          disabled={isRefreshing}
-        >
-          <span style={{
-            animation: isRefreshing ? 'spin 1s linear infinite' : 'none'
-          }}>
-            🔄
-          </span>
-          {isRefreshing ? 'Updating...' : 'Refresh'}
-        </button>
-      </div>
+        ⏰ Holding Time (Real-time)
+      </h4>
 
       <div style={{
         display: 'grid',
@@ -1204,24 +1112,16 @@ const OptimizedIntegratedDashboard = ({ userAddress = null }) => {
             padding: isMobile ? '6px 2px' : '8px 4px',
             textAlign: 'center'
           }}>
-            <div style={{
-              color: '#4ade80',
-              fontSize: isMobile ? 14 : 16,
-              fontWeight: 900
-            }}>
+            <div style={{ color: '#4ade80', fontSize: isMobile ? 14 : 16, fontWeight: 900 }}>
               {item.value.toString().padStart(2, '0')}
             </div>
-            <div style={{
-              color: '#999',
-              fontSize: isMobile ? 8 : 10
-            }}>
+            <div style={{ color: '#999', fontSize: isMobile ? 8 : 10 }}>
               {item.label}
             </div>
           </div>
         ))}
       </div>
-
-      {/* Action buttons */}
+      
       <div style={{
         display: 'grid',
         gridTemplateColumns: '1fr',
@@ -1236,52 +1136,33 @@ const OptimizedIntegratedDashboard = ({ userAddress = null }) => {
           fontSize: isMobile ? 16 : 14,
           fontWeight: 700,
           cursor: 'pointer',
-          minHeight: '48px' // Touch-friendly
+          minHeight: '48px'
         }}>
           🛒 Stake More
         </button>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: isMobile ? 10 : 8
-        }}>
-          <button
-            onClick={copyStakeAddress}
-            style={{
-              padding: isMobile ? '12px 16px' : '10px 16px',
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 8,
-              color: '#fff',
-              fontSize: isMobile ? 12 : 11,
-              fontWeight: 600,
-              cursor: 'pointer',
-              minHeight: '44px' // Touch-friendly
-            }}
-          >
-            📋 STAKE Address
-          </button>
-
-          <button style={{
+        
+        <button 
+          onClick={copyStakeAddress}
+          style={{
             padding: isMobile ? '12px 16px' : '10px 16px',
-            background: 'rgba(139,92,246,0.1)',
-            border: '1px solid rgba(139,92,246,0.3)',
+            background: copiedContract ? 'rgba(74,222,128,0.2)' : 'rgba(255,255,255,0.05)',
+            border: copiedContract ? '1px solid rgba(74,222,128,0.5)' : '1px solid rgba(255,255,255,0.1)',
             borderRadius: 8,
-            color: '#8b5cf6',
+            color: copiedContract ? '#4ade80' : '#fff',
             fontSize: isMobile ? 12 : 11,
             fontWeight: 600,
             cursor: 'pointer',
-            minHeight: '44px' // Touch-friendly
-          }}>
-            🏠 STAKEHOUSE
-          </button>
-        </div>
+            minHeight: '44px',
+            transition: 'all 0.3s'
+          }}
+        >
+          {copiedContract ? '✅ Copied!' : '📋 Contract Address'}
+        </button>
       </div>
     </div>
   );
 
-  // JEET Warning Modal
+  // JEET 경고 모달
   const JeetWarningModal = () => {
     if (!showJeetWarning) return null;
 
@@ -1305,7 +1186,6 @@ const OptimizedIntegratedDashboard = ({ userAddress = null }) => {
         width: '100vw',
         height: '100vh',
         background: 'rgba(0,0,0,0.9)',
-        backdropFilter: 'blur(8px)',
         zIndex: 1000,
         display: 'flex',
         alignItems: 'center',
@@ -1313,14 +1193,14 @@ const OptimizedIntegratedDashboard = ({ userAddress = null }) => {
         padding: isMobile ? 16 : 20
       }}>
         <div style={{
-          background: 'linear-gradient(135deg, #1a1d29 0%, #252833 50%, #1e2028 100%)',
+          background: '#1a1d29',
           borderRadius: isMobile ? 16 : 20,
           padding: isMobile ? 24 : 32,
           maxWidth: isMobile ? '90vw' : 500,
           width: '100%',
           textAlign: 'center',
-          border: jeetWarningStep === 1
-            ? '2px solid rgba(239,68,68,0.3)'
+          border: jeetWarningStep === 1 
+            ? '2px solid rgba(239,68,68,0.3)' 
             : '3px solid rgba(239,68,68,0.5)'
         }}>
           <h2 style={{
@@ -1331,7 +1211,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = null }) => {
           }}>
             {warningContent.title}
           </h2>
-
+          
           <p style={{
             fontSize: isMobile ? 14 : 16,
             color: '#fff',
@@ -1341,13 +1221,13 @@ const OptimizedIntegratedDashboard = ({ userAddress = null }) => {
           }}>
             {warningContent.content}
           </p>
-
+          
           <div style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
             gap: 16
           }}>
-            <button
+            <button 
               onClick={() => {
                 setShowJeetWarning(false);
                 setJeetWarningStep(0);
@@ -1361,13 +1241,13 @@ const OptimizedIntegratedDashboard = ({ userAddress = null }) => {
                 fontSize: isMobile ? 14 : 16,
                 fontWeight: 600,
                 cursor: 'pointer',
-                minHeight: '48px' // Touch-friendly
+                minHeight: '48px'
               }}
             >
               {warningContent.cancelText}
             </button>
-
-            <button
+            
+            <button 
               onClick={confirmJeet}
               style={{
                 padding: '16px 24px',
@@ -1378,7 +1258,7 @@ const OptimizedIntegratedDashboard = ({ userAddress = null }) => {
                 fontSize: isMobile ? 14 : 16,
                 fontWeight: 700,
                 cursor: 'pointer',
-                minHeight: '48px' // Touch-friendly
+                minHeight: '48px'
               }}
             >
               {warningContent.confirmText}
@@ -1397,191 +1277,89 @@ const OptimizedIntegratedDashboard = ({ userAddress = null }) => {
       color: '#fff',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     }}>
-      {/* CSS animations */}
-      <style jsx>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-        
-        @keyframes scoreCountUp {
-          0% { transform: scale(1); }
-          50% { transform: scale(1.02); }
-          100% { transform: scale(1); }
-        }
-        
-        @keyframes tierGlow {
-          0%, 100% { 
-            box-shadow: 0 0 20px ${userData.tier_glow_color}, 
-                        0 0 40px ${userData.tier_glow_color},
-                        inset 0 0 20px ${userData.tier_glow_color};
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
           }
-          50% { 
-            box-shadow: 0 0 30px ${userData.tier_glow_color}, 
-                        0 0 60px ${userData.tier_glow_color},
-                        inset 0 0 30px ${userData.tier_glow_color};
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
           }
-        }
-        
-        @keyframes rankGaugeFill {
-          0% { width: 0%; }
-          100% { width: ${userData.percentile}%; }
-        }
-        
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        
-        .score-animation {
-          animation: ${isAnimating ? 'scoreCountUp 0.2s ease-out' : 'none'};
-        }
-        
-        .tier-card-glow {
-          animation: tierGlow 3s ease-in-out infinite;
-        }
-        
-        .rank-gauge-fill {
-          animation: rankGaugeFill 2s ease-out;
-        }
-      `}</style>
-
-      <div style={{
-        maxWidth: isMobile ? '100%' : 1400,
-        margin: '0 auto'
+          @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1); }
+          }
+          @keyframes flame {
+            0%, 100% { 
+              transform: translateX(-50%) scale(1) rotate(-1deg);
+              filter: brightness(1);
+            }
+            25% { 
+              transform: translateX(-50%) scale(1.05) rotate(1deg);
+              filter: brightness(1.2);
+            }
+            50% { 
+              transform: translateX(-50%) scale(0.95) rotate(-0.5deg);
+              filter: brightness(0.9);
+            }
+            75% { 
+              transform: translateX(-50%) scale(1.02) rotate(0.5deg);
+              filter: brightness(1.1);
+            }
+          }
+        `
+      }} />
+      
+      <div style={{ 
+        maxWidth: isMobile ? '100%' : 1400, 
+        margin: '0 auto' 
       }}>
-        {/* Header */}
-        <div style={{
-          textAlign: 'center',
-          marginBottom: isMobile ? 20 : 32
-        }}>
-          <h1 style={{
-            fontSize: isMobile ? 24 : 32,
-            fontWeight: 900,
-            margin: '0 0 8px 0',
-            background: 'linear-gradient(135deg, #4ade80, #22c55e)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent'
-          }}>
-            🎯 Ultimate Dashboard
-          </h1>
-          <div style={{
-            fontSize: isMobile ? 12 : 14,
-            color: '#999',
-            fontFamily: 'monospace'
-          }}>
-            {userAddress.slice(0, 6)}...{userAddress.slice(-4)}
-          </div>
-        </div>
-
-        {/* 🔥 Top: Key metrics cards - Reduced and Optimized (3 cards) */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
-          gap: isMobile ? 8 : 16,
-          marginBottom: isMobile ? 16 : 24
-        }}>
-          {/* stSTAKE - Special Vault Style */}
-          <div style={{
-            gridColumn: isMobile ? '1 / -1' : 'auto'
-          }}>
-            <MetricCard
-              icon="🥩"
-              title="stSTAKE"
-              value={formatNumber(userData.display_staked)}
-              subtitle={`Real: ${formatNumber(userData.total_staked)} + Event: ${formatNumber(userData.virtual_staked)}`}
-              trend={`+${userData.score_per_second.toFixed(2)}/sec`}
-              color="#ffd700"
-              isLive={isLive}
-              special={true}
-            />
-          </div>
-
-          {/* 메트릭 카드 수정 */}
-          <MetricCard
-            icon="🎯"
-            title="STAKE Score"
-            value={formatScore(userData.real_time_score + localBoxPoints)}
-            subtitle={`Stake: ${formatScore(userData.real_time_score)} + Box: ${formatScore(localBoxPoints)}`}
-            trend={`+${(userData.score_per_second * userData.current_multiplier).toFixed(1)}/sec`}
-            color="#10b981"
-            isLive={isLive}
-            highlight={true}
+        {/* Mobile: Gift Box at top, PC: integrated in layout */}
+        {isMobile && (
+          <GiftBoxSystem 
+            userData={userData}
+            isMobile={isMobile}
+            onPointsUpdate={handleGiftBoxPointsUpdate}
           />
-
-          <MetricCard
-            icon="🏆"
-            title="Current Rank"
-            value={`#${userData.rank}`}
-            subtitle={`out of ${userData.total_participants}`}
-            trend={userData.rank_change_24h > 0 ? `↗ +${userData.rank_change_24h}` : userData.rank_change_24h < 0 ? `↘ ${userData.rank_change_24h}` : '→ No change'}
-            color="#ef4444"
-          />
-        </div>
-
-        {/* Main content area - Mobile: Single column */}
+        )}
+        
         <div style={{
           display: 'grid',
           gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr',
-          gap: isMobile ? 16 : 24
+          gap: isMobile ? 16 : 24,
+          marginBottom: isMobile ? 16 : 24
         }}>
-          {/* Left: Enhanced Tier Position */}
           <div>
             <EnhancedTierPositionCard />
-            <StakehouseCard />
+            <GrillTemperature userData={userData} isMobile={isMobile} />
+            <StakeAmountCard />
           </div>
-
-          {/* Right: Phase 1 allocation + Time/Actions */}
+          
           <div>
+            {/* PC only: Gift Box System */}
+            {!isMobile && (
+              <GiftBoxSystem 
+                userData={userData}
+                isMobile={isMobile}
+                onPointsUpdate={handleGiftBoxPointsUpdate}
+              />
+            )}
             <Phase1AllocationCard />
-            <TimeAndActions />
+            <HoldingTimeCard />
           </div>
         </div>
 
-        {/* 🌡️ 그릴온도 시스템 */}
-        <GrillTemperature
-          userStake={userData.display_staked}
-          referralBonus={userData.referral_bonus_earned}
-          userTier={userData.grade}
-          userRank={userData.rank}
-          totalUsers={userData.total_participants}
-          isMobile={isMobile}
-        />
-
-        {/* 🎁 선물상자 시스템 */}
-        <GiftBoxSystem
-          userStake={userData.display_staked}
-          userTier={userData.grade}
-          userAddress={userAddress}
-          isMobile={isMobile}
-        />
-
-        {/* 🚀 추천인 시스템 섹션 추가 */}
-        {userAddress && (
-          <div style={{
-            marginTop: isMobile ? 24 : 32,
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-            gap: isMobile ? 16 : 24
-          }}>
-            {/* 추천인 시스템 카드 */}
-            <div style={{
-              gridColumn: isMobile ? '1 / -1' : 'auto'
-            }}>
-              <ReferralSystem walletAddress={userAddress} />
-            </div>
-
-            {/* 추천인 대시보드 */}
-            <div style={{
-              gridColumn: isMobile ? '1 / -1' : 'auto'
-            }}>
-              <ReferralDashboard walletAddress={userAddress} />
-            </div>
-          </div>
-        )}
+        {/* Bottom: STAKEHOUSE Full Width */}
+        <div style={{ marginTop: isMobile ? 16 : 24 }}>
+          <StakehouseCard />
+        </div>
+        
+        {/* Mobile: Holding Time at bottom */}
+        {isMobile && <HoldingTimeCard />}
       </div>
-
-      {/* JEET warning modal */}
+      
       <JeetWarningModal />
     </div>
   );

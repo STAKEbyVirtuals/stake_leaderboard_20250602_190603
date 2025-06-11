@@ -1,4 +1,6 @@
 // utils/boxSyncManager.js
+// STAKE 프로젝트 상자 백엔드 동기화 시스템
+
 export class BoxSyncManager {
   constructor(webAppUrl, userAddress) {
     this.webAppUrl = webAppUrl;
@@ -36,7 +38,7 @@ export class BoxSyncManager {
     const key = `boxTotalPoints_${this.userAddress}`;
     const current = parseFloat(localStorage.getItem(key) || 0);
     const newTotal = current + points;
-    localStorage.setItem(key, newTotal);
+    localStorage.setItem(key, newTotal.toString());
     
     // 이벤트 발생
     window.dispatchEvent(new CustomEvent('boxPointsUpdated', {
@@ -59,6 +61,7 @@ export class BoxSyncManager {
     try {
       const response = await fetch(this.webAppUrl, {
         method: 'POST',
+        mode: window.location.hostname === 'localhost' ? 'no-cors' : 'cors',
         headers: {
           'Content-Type': 'application/json'
         },
@@ -69,17 +72,23 @@ export class BoxSyncManager {
         })
       });
       
-      const result = await response.json();
-      
-      if (result.status === 'success') {
-        console.log(`✅ ${result.synced}개 상자 동기화 완료`);
+      if (response.ok) {
+        const result = await response.json();
         
-        // 동기화 성공 표시
-        this.markSynced(itemsToSync);
+        if (result.status === 'success') {
+          console.log(`✅ ${result.synced || itemsToSync.length}개 상자 동기화 완료`);
+          
+          // 동기화 성공 표시
+          this.markSynced(itemsToSync);
+        } else {
+          // 실패시 다시 큐에 추가
+          this.syncQueue.unshift(...itemsToSync);
+          console.error('❌ 동기화 실패:', result.message);
+        }
       } else {
-        // 실패시 다시 큐에 추가
+        // HTTP 에러시 다시 큐에 추가
         this.syncQueue.unshift(...itemsToSync);
-        console.error('❌ 동기화 실패:', result.message);
+        console.error('❌ HTTP 에러:', response.status);
       }
     } catch (error) {
       console.error('❌ 동기화 오류:', error);
