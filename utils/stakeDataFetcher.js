@@ -55,15 +55,15 @@ export async function fetchLeaderboardData(forceRefresh = false) {
  */
 export function findUserData(leaderboard, walletAddress) {
   if (!walletAddress) return null;
-  
+
   // 리더보드에서 찾기
   if (leaderboard && Array.isArray(leaderboard)) {
-    const found = leaderboard.find(user => 
+    const found = leaderboard.find(user =>
       user.address.toLowerCase() === walletAddress.toLowerCase()
     );
     if (found) return found;
   }
-  
+
   // 없으면 신규 유저용 기본값 반환
   console.log('🆕 신규 유저 감지:', walletAddress);
   return createDefaultUserData(walletAddress);
@@ -263,6 +263,20 @@ export function formatUserDataForDashboard(userData, systemStats, allActiveUsers
         minutes: Math.floor((totalSeconds % (60 * 60)) / 60),
         seconds: totalSeconds % 60
       };
+    },
+
+    // 🆕 pending 박스 포인트 가져오기
+    get pending_box_points() {
+      const savedQueue = localStorage.getItem(`boxSyncQueue_${userData.address}`);
+      if (savedQueue) {
+        try {
+          const queue = JSON.parse(savedQueue);
+          return queue.reduce((total, item) => total + (item.points || 0), 0);
+        } catch (e) {
+          return 0;
+        }
+      }
+      return 0;
     }
   };
 }

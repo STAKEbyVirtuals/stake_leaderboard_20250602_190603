@@ -67,7 +67,10 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
       );
 
       setUserData(formattedData);
-      setRealtimeScore(formattedData.real_time_score);
+
+      // 🆕 pending 포인트를 포함한 실시간 스코어 계산
+      const pendingPoints = formattedData.pending_box_points || 0;
+      setRealtimeScore(formattedData.real_time_score + pendingPoints);
       setBoxPointsAccumulated(formattedData.box_points_earned || 0); // 박스 포인트 초기화
       console.log('✅ 사용자 데이터 로드 완료:', formattedData);
 
@@ -97,7 +100,12 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
 
     // 실시간 점수 재계산 (박스 포인트 포함)
     const baseScore = userData.display_staked * holdingDays * userData.current_multiplier;
-    const realTimeScore = baseScore + boxPointsAccumulated; // 박스 포인트 추가
+
+    // 🆕 pending 포인트 확인
+    const pendingPoints = userData.pending_box_points || 0;
+    const totalBoxPoints = boxPointsAccumulated + pendingPoints;
+
+    const realTimeScore = baseScore + totalBoxPoints; // 박스 포인트 추가
     const scorePerSecond = (userData.display_staked * userData.current_multiplier) / (24 * 60 * 60);
 
     setUserData(prev => ({
@@ -133,6 +141,9 @@ const OptimizedIntegratedDashboard = ({ userAddress = "0x95740c952739faed6527fc1
       box_points_earned: (prev.box_points_earned || 0) + points,
       real_time_score: prev.real_time_score + points
     }));
+
+    // 🆕 실시간 스코어도 업데이트
+    setRealtimeScore(prev => prev + points);
   };
 
   // Detect mobile device
