@@ -861,7 +861,7 @@ def save_to_github_pages(data):
             "phase": 1,
             "safe_mode": SAFE_MODE,
             "update_range": UPDATE_RANGE if SAFE_MODE else "A:AM",
-            "leaderboard": data[:100]  # 상위 100개
+            "leaderboard": data
         }
         
         # JSON 파일 저장
