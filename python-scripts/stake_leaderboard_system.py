@@ -388,6 +388,201 @@ def extract_all_stake_data():
 def extract_incremental_stake_data():
     """증분 모드: 최근 변경사항만 추출"""
     logger.info("🚀 증분 STAKE 데이터 추출 시작...")
+    
+    try:
+        # 1. 백업 디렉토리 확인 및 생성
+        os.makedirs('backup', exist_ok=True)
+        logger.info("📂 백업 디렉토리 확인/생성 완료")
+        
+        # 2. 백업 파일 찾기 (여러 위치에서 시도)
+        import glob
+        backup_files = []
+        
+        # 현재 디렉토리의 backup 폴더
+        backup_files = glob.glob('backup/stake_leaderboard_*.json')
+        
+        # 없으면 현재 디렉토리에서 직접 찾기
+        if not backup_files:
+            backup_files = glob.glob('stake_leaderboard_*.json')
+            logger.info("📂 현재 디렉토리에서 백업 파일 검색")
+        
+        # 그래도 없으면 상위 디렉토리 확인
+        if not backup_files:
+            backup_files = glob.glob('../backup/stake_leaderboard_*.json')
+            logger.info("📂 상위 디렉토리에서 백업 파일 검색")
+        
+        # 백업 파일 로드
+        if backup_files:
+            latest_backup = max(backup_files)
+            logger.info(f"📂 백업 파일 발견: {latest_backup}")
+            
+            with open(latest_backup, 'r') as f:
+                backup_data = json.load(f)
+                
+                # staking_data에 로드
+                for item in backup_data:
+                    addr = item['address'].lower()
+                    staking_data[addr] = {
+                        'total_staked': item.get('total_staked', 0),
+                        'stake_count': item.get('stake_count', 0),
+                        'unstake_count': item.get('unstake_count', 0),
+                        'unstake_attempts': [],
+                        'is_active': item.get('is_active', True),
+                        'first_stake_time': item.get('first_stake_time'),
+                        'last_action_time': item.get('last_action_time'),
+                        'stake_transactions': [],
+                        'unstake_transactions': []
+                    }
+                
+                logger.info(f"✅ {len(staking_data)}개 기존 데이터 로드 완료")
+        else:
+            logger.warning("⚠️ 백업 파일을 찾을 수 없습니다. 빈 상태로 시작합니다.")
+            logger.warning("💡 6시간 전체 스캔을 한 번 실행하여 백업을 생성하세요.")
+        
+        # 3. 체크포인트와 블록 정보 확인
+        checkpoint = load_checkpoint()
+        latest_block = get_latest_block()
+        
+        if not latest_block:
+            raise Exception("최신 블록 조회 실패")
+        
+        # 4. 스캔 시작 블록 결정
+        if not checkpoint.get('genesis_scan_completed', False):
+            logger.warning("⚠️ 초기 전체 스캔이 아직 실행되지 않았습니다.")
+            # 전체 스캔이 없으면 최근 10,000블록만
+            start_block = max(GENESIS_BLOCK, latest_block - 10000)
+            logger.info(f"📊 최근 10,000블록만 스캔합니다.")
+        else:
+            # 정상적인 증분 처리
+            start_block = checkpoint['last_incremental']['block'] + 1
+            
+            # 너무 많은 블록 방지 (최대 10,000블록)
+            if latest_block - start_block > 10000:
+                start_block = latest_block - 10000
+                logger.warning(f"⚠️ 블록 범위 제한: 최근 10,000블록만 스캔")
+        
+        if start_block > latest_block:
+            logger.info("✅ 새로운 블록 없음")
+            return True
+        
+        # 5. 블록 스캔 및 트랜잭션 처리
+        total_blocks = latest_block - start_block
+        logger.info(f"📊 증분 스캔 범위: {start_block:,} → {latest_block:,} ({total_blocks:,}블록)")
+        
+        total_stake_txs = 0
+        total_unstake_txs = 0
+        processed = 0
+        
+        current_block = start_block
+        chunk_num = 1
+        
+        while current_block <= latest_block:
+            chunk_end = min(current_block + 1499, latest_block)
+            chunk_size = chunk_end - current_block + 1
+            
+            progress = processed / total_blocks * 100
+            logger.info(f"🔄 증분 {progress:.1f}% | 청크#{chunk_num} | 블록 {current_block:,}→{chunk_end:,}")
+            
+            logs = safe_scan_chunk(current_block, chunk_end)
+            
+            if not logs:
+                current_block = chunk_end + 1
+                processed += chunk_size
+                chunk_num += 1
+                continue
+            
+            # 트랜잭션 처리
+            tx_hashes = list(set(log['transactionHash'] for log in logs))
+            
+            for tx_hash in tx_hashes:
+                try:
+                    tx_result = rpc_call("eth_getTransactionByHash", [tx_hash])
+                    
+                    if not tx_result or 'result' not in tx_result or not tx_result['result']:
+                        continue
+                    
+                    tx = tx_result['result']
+                    input_data = tx.get('input', '0x')
+                    
+                    if len(input_data) >= 10:
+                        method_id = input_data[:10]
+                        from_addr = tx['from'].lower()
+                        block_num = int(tx['blockNumber'], 16)
+                        
+                        # 블록 타임스탬프
+                        block_result = rpc_call("eth_getBlockByNumber", [tx['blockNumber'], False])
+                        timestamp = 0
+                        if block_result and 'result' in block_result and block_result['result']:
+                            timestamp = int(block_result['result']['timestamp'], 16)
+                        
+                        if method_id == STAKE_METHOD_ID:
+                            # 스테이킹 트랜잭션
+                            amount = decode_amount(input_data)
+                            
+                            staking_data[from_addr]['total_staked'] += amount
+                            staking_data[from_addr]['stake_count'] += 1
+                            staking_data[from_addr]['is_active'] = True
+                            
+                            if not staking_data[from_addr]['first_stake_time']:
+                                staking_data[from_addr]['first_stake_time'] = timestamp
+                            
+                            staking_data[from_addr]['last_action_time'] = timestamp
+                            
+                            staking_data[from_addr]['stake_transactions'].append({
+                                'amount': amount,
+                                'block': block_num,
+                                'timestamp': timestamp,
+                                'hash': tx_hash
+                            })
+                            
+                            total_stake_txs += 1
+                            logger.info(f"✅ 새 스테이킹: {from_addr[:8]}... +{amount:.4f}")
+                        
+                        elif method_id == UNSTAKE_METHOD_ID:
+                            # 언스테이킹 시도
+                            staking_data[from_addr]['unstake_count'] += 1
+                            staking_data[from_addr]['is_active'] = False
+                            staking_data[from_addr]['last_action_time'] = timestamp
+                            
+                            staking_data[from_addr]['unstake_attempts'].append({
+                                'block': block_num,
+                                'timestamp': timestamp,
+                                'hash': tx_hash
+                            })
+                            
+                            total_unstake_txs += 1
+                            logger.info(f"❌ 언스테이킹: {from_addr[:8]}...")
+                
+                except Exception as e:
+                    continue
+                    
+                time.sleep(0.005)
+            
+            current_block = chunk_end + 1
+            processed += chunk_size
+            chunk_num += 1
+            time.sleep(0.1)
+        
+        # 6. 체크포인트 업데이트
+        checkpoint['last_incremental'] = {
+            'block': latest_block,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }
+        save_checkpoint(checkpoint)
+        
+        logger.info(f"🎉 증분 데이터 추출 완료!")
+        logger.info(f"   기존 데이터: {len(staking_data)}개 유지")
+        logger.info(f"   새 Stake 트랜잭션: {total_stake_txs:,}개")
+        logger.info(f"   새 Unstake 시도: {total_unstake_txs:,}개")
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ 증분 데이터 추출 실패: {e}")
+        logger.error(traceback.format_exc())
+        return False
+    """증분 모드: 최근 변경사항만 추출"""
+    logger.info("🚀 증분 STAKE 데이터 추출 시작...")
         # 🆕 디버깅 로그
     logger.info(f"📊 현재 작업 디렉토리: {os.getcwd()}")
     logger.info(f"📊 backup 폴더 존재: {os.path.exists('backup')}")
@@ -1122,6 +1317,29 @@ def save_to_github_pages(data):
         return False
 
 def save_backup_data(data):
+    """백업 데이터 저장"""
+    try:
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        
+        # 백업 디렉토리 생성
+        os.makedirs('backup', exist_ok=True)
+        
+        safe_mode_suffix = "_safe" if SAFE_MODE else ""
+        backup_file = f'backup/stake_leaderboard_{timestamp}{safe_mode_suffix}.json'
+        
+        with open(backup_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        
+        logger.info(f"💾 백업 저장 완료: {backup_file}")
+        
+        # CSV도 저장
+        df = pd.DataFrame(data)
+        csv_file = f'backup/stake_leaderboard_{timestamp}{safe_mode_suffix}.csv'
+        df.to_csv(csv_file, index=False, encoding='utf-8-sig')
+        logger.info(f"💾 CSV 백업 저장 완료: {csv_file}")
+        
+    except Exception as e:
+        logger.error(f"❌ 백업 저장 실패: {e}")
     """백업 데이터 저장"""
     try:
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
