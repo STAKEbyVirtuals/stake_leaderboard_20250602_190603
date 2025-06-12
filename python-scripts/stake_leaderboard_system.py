@@ -388,7 +388,15 @@ def extract_all_stake_data():
 def extract_incremental_stake_data():
     """증분 모드: 최근 변경사항만 추출"""
     logger.info("🚀 증분 STAKE 데이터 추출 시작...")
+        # 🆕 디버깅 로그
+    logger.info(f"📊 현재 작업 디렉토리: {os.getcwd()}")
+    logger.info(f"📊 backup 폴더 존재: {os.path.exists('backup')}")
     
+    import glob
+    backup_files = glob.glob('backup/stake_leaderboard_*.json')
+    logger.info(f"📊 백업 파일 목록: {backup_files}")
+
+
     try:
         # 1. 먼저 백업에서 전체 데이터 로드 (중요!)
         logger.info("📂 기존 데이터 로드 중...")
