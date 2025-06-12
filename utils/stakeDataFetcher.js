@@ -77,13 +77,14 @@ function calculatePredictedRank24h(userData, allActiveUsers) {
     return userData?.rank || 1;
   }
 
-  const currentTime = Date.now() / 1000;
-  const after24h = currentTime + (24 * 60 * 60);
-
-  // 내 24시간 후 예상 포인트
+  // 내 현재 총 포인트 (이미 멀티플라이어와 박스 포인트 포함됨)
+  const myCurrentTotalScore = parseFloat(userData.real_time_score) || 0;
+  
+  // 내 P/S
   const myPointsPerSecond = parseFloat(userData.points_per_second) || 0;
-  const myCurrentScore = parseFloat(userData.time_score) || 0;
-  const myFutureScore = myCurrentScore + (myPointsPerSecond * 24 * 60 * 60);
+  
+  // 내 24시간 후 예상 포인트
+  const myFutureScore = myCurrentTotalScore + (myPointsPerSecond * 24 * 60 * 60);
 
   // 다른 사용자들의 24시간 후 예상 포인트 계산
   let higherScoreCount = 0;
@@ -91,9 +92,14 @@ function calculatePredictedRank24h(userData, allActiveUsers) {
   allActiveUsers.forEach(user => {
     if (user.address === userData.address) return;
 
+    // 다른 유저도 동일하게 처리
+    const userCurrentTotalScore = parseFloat(user.time_score) || 0;
+    const userMultiplier = getTierInfo(user.grade).multiplier;
+    const userBoxPoints = parseFloat(user.box_points_earned) || 0;
+    const userTotalScore = (userCurrentTotalScore * userMultiplier) + userBoxPoints;
+    
     const userPointsPerSecond = parseFloat(user.points_per_second) || 0;
-    const userCurrentScore = parseFloat(user.time_score) || 0;
-    const userFutureScore = userCurrentScore + (userPointsPerSecond * 24 * 60 * 60);
+    const userFutureScore = userTotalScore + (userPointsPerSecond * 24 * 60 * 60);
 
     if (userFutureScore > myFutureScore) {
       higherScoreCount++;
@@ -224,8 +230,10 @@ export function formatUserDataForDashboard(userData, systemStats, allActiveUsers
     is_diamond_hand_eligible: userData.is_active === true || userData.is_active === 'TRUE',
 
     // 포인트 정보 (실시간 계산)
+    // 포인트 정보 (실시간 계산)
     real_time_score: realTimeScore * tierInfo.multiplier,
     score_per_second: scorePerSecond * tierInfo.multiplier,
+    points_per_second: scorePerSecond * tierInfo.multiplier,  // 추가!
     stakehouse_score: realTimeScore * tierInfo.multiplier * 0.15,
     stakehouse_per_second: scorePerSecond * tierInfo.multiplier * 0.15,
 
