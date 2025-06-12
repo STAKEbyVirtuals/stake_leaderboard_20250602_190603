@@ -397,6 +397,35 @@ def extract_incremental_stake_data():
         if not latest_block:
             raise Exception("최신 블록 조회 실패")
         
+        try:
+            import glob
+            backup_files = glob.glob('backup/stake_leaderboard_*.json')
+            if backup_files:
+                latest_backup = max(backup_files)
+                logger.info(f"📂 백업 파일에서 전체 데이터 로드 중...")
+                with open(latest_backup, 'r') as f:
+                    backup_data = json.load(f)
+                    for item in backup_data:
+                        addr = item['address'].lower()
+                        staking_data[addr] = {
+                            'total_staked': item.get('total_staked', 0),
+                            'stake_count': item.get('stake_count', 0),
+                            'unstake_count': item.get('unstake_count', 0),
+                            'unstake_attempts': [],
+                            'is_active': item.get('is_active', True),
+                            'first_stake_time': item.get('first_stake_time'),
+                            'last_action_time': item.get('last_action_time'),
+                            'stake_transactions': [],
+                            'unstake_transactions': []
+                        }
+                logger.info(f"✅ {len(staking_data)}개 기존 데이터 로드 완료")
+        except Exception as e:
+            logger.error(f"❌ 백업 로드 실패: {e}")
+
+
+
+
+
         # 🆕 초기 스캔이 없으면 최근 블록만 처리
         if not checkpoint.get('genesis_scan_completed', False):
             logger.warning("⚠️ 초기 전체 스캔이 아직 실행되지 않았습니다.")
