@@ -1469,10 +1469,10 @@ if __name__ == "__main__":
             # 3. 백업 저장
             save_backup_data(leaderboard_data)
             
-            # 4. Apps Script Web App 업로드
-            if not upload_to_apps_script_web_app(leaderboard_data):
-                logger.warning("⚠️ Apps Script Web App 실패, GitHub Pages로 전환...")
-                if not save_to_github_pages(leaderboard_data):
+            # 4. Apps Script Web App 업로드 (증분 모드 전달)
+            if not upload_to_apps_script_web_app(leaderboard_data, mode='incremental'):
+             logger.warning("⚠️ Apps Script Web App 실패, GitHub Pages로 전환...")
+            if not save_to_github_pages(leaderboard_data):
                     raise Exception("모든 업로드 방법 실패")
             
             logger.info("✅ 증분 업데이트 완료")
