@@ -5,8 +5,8 @@
     "total_users": 0
   },
   "last_incremental": {
-    "block": 50024214,
-    "timestamp": "2026-08-15T23:49:37.215051+00:00"
+    "block": 50024512,
+    "timestamp": "2026-08-15T23:59:33.043204+00:00"
   },
   "genesis_scan_completed": false
 }
